@@ -127,16 +127,16 @@ export function PropertyForm({ open, onClose, editProperty }: Props) {
     const propertyData = {
       name,
       type,
-      address: address || undefined,
-      maps_url: mapsUrl || undefined,
+      address: address || null,
+      maps_url: mapsUrl || null,
       partner_id: partnerId || null,
-      owner_name: ownerName || undefined,
-      default_price: defaultPrice ? parseFloat(defaultPrice) : undefined,
+      owner_name: ownerName || null,
+      default_price: defaultPrice ? parseFloat(defaultPrice) : null,
       pricing_type: pricingType,
       bedrooms: bedrooms || 0,
       bathrooms: bathrooms || 0,
       terraces: terraces || 0,
-      notes: notes || undefined,
+      notes: notes || null,
       icon: TYPE_ICONS[type] || '🏠',
     }
 
@@ -147,10 +147,12 @@ export function PropertyForm({ open, onClose, editProperty }: Props) {
 
       if (isEdit && editProperty) {
         // Update existing property
-        await supabase
+        const { error } = await supabase
           .from('properties')
           .update(propertyData)
           .eq('id', editProperty.id)
+
+        if (error) throw error
 
         queryClient.invalidateQueries({ queryKey: ['properties'] })
         reset()
@@ -163,35 +165,38 @@ export function PropertyForm({ open, onClose, editProperty }: Props) {
           })
         }
       } else {
-        // Create new property
-        createProperty.mutate(propertyData as Parameters<typeof createProperty.mutate>[0], {
-          onSuccess: () => {
-            reset()
-            onClose()
+        // Create new property directly
+        const { error } = await supabase.from('properties').insert(propertyData)
 
-            // Upload image in background
-            if (savedImageFile) {
-              const uploadInBackground = async () => {
-                const { data: props } = await supabase
-                  .from('properties')
-                  .select('id')
-                  .eq('name', savedName)
-                  .order('created_at', { ascending: false })
-                  .limit(1)
+        if (error) {
+          console.error('Property create error:', error)
+          alert(`Fout bij aanmaken: ${error.message}`)
+          setSaving(false)
+          return
+        }
 
-                if (props && props[0]) {
-                  await uploadImage(props[0].id)
-                  queryClient.invalidateQueries({ queryKey: ['properties'] })
-                }
-              }
-              uploadInBackground()
-            }
-          },
-          onError: () => setSaving(false),
-        })
-        return
+        queryClient.invalidateQueries({ queryKey: ['properties'] })
+        reset()
+        onClose()
+
+        // Upload image in background
+        if (savedImageFile) {
+          const { data: props } = await supabase
+            .from('properties')
+            .select('id')
+            .eq('name', savedName)
+            .order('created_at', { ascending: false })
+            .limit(1)
+
+          if (props && props[0]) {
+            uploadImage(props[0].id).then(() => {
+              queryClient.invalidateQueries({ queryKey: ['properties'] })
+            })
+          }
+        }
       }
-    } catch {
+    } catch (err) {
+      console.error('Property submit error:', err)
       setSaving(false)
     }
   }
