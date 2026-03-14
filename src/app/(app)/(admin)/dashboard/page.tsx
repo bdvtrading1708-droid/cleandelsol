@@ -10,9 +10,33 @@ import { CleanerAvatar } from '@/components/cleaners/cleaner-avatar'
 
 type Period = 'dag' | 'week' | 'maand' | 'jaar' | 'alles'
 
+function toDateStr(d: Date): string {
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function smoothPath(pts: { x: number; y: number }[]): string {
+  if (pts.length < 2) return ''
+  const d: string[] = [`M ${pts[0].x},${pts[0].y}`]
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || { x: 2 * pts[0].x - pts[1].x, y: 2 * pts[0].y - pts[1].y }
+    const p1 = pts[i]
+    const p2 = pts[i + 1]
+    const p3 = pts[i + 2] || { x: 2 * p2.x - p1.x, y: 2 * p2.y - p1.y }
+    const cp1x = p1.x + (p2.x - p0.x) / 6
+    const cp1y = p1.y + (p2.y - p0.y) / 6
+    const cp2x = p2.x - (p3.x - p1.x) / 6
+    const cp2y = p2.y - (p3.y - p1.y) / 6
+    d.push(`C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`)
+  }
+  return d.join(' ')
+}
+
 function filterByPeriod(jobs: any[], period: Period) {
   const now = new Date()
-  const today = now.toISOString().split('T')[0]
+  const today = toDateStr(now)
 
   if (period === 'dag') return jobs.filter(j => j.date === today)
   if (period === 'week') {
@@ -22,7 +46,7 @@ function filterByPeriod(jobs: any[], period: Period) {
     mon.setDate(now.getDate() - diff)
     const sun = new Date(mon)
     sun.setDate(mon.getDate() + 6)
-    return jobs.filter(j => j.date >= mon.toISOString().split('T')[0] && j.date <= sun.toISOString().split('T')[0])
+    return jobs.filter(j => j.date >= toDateStr(mon) && j.date <= toDateStr(sun))
   }
   if (period === 'maand') {
     const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
@@ -54,13 +78,13 @@ export default function DashboardPage() {
   const margin = rev > 0 ? Math.round((profit / rev) * 100) : 0
 
   // 7-day chart
-  const today = new Date().toISOString().split('T')[0]
+  const today = toDateStr(new Date())
   const days = tArray('days')
   const bars = []
   for (let i = 6; i >= 0; i--) {
     const d = new Date()
     d.setDate(d.getDate() - i)
-    const ds = d.toISOString().split('T')[0]
+    const ds = toDateStr(d)
     const src = selectedCleaner ? jobs.filter(j => j.cleaner_id === selectedCleaner) : jobs
     const dayJobs = src.filter(j => j.date === ds)
     const dow = d.getDay() === 0 ? 6 : d.getDay() - 1
@@ -108,20 +132,41 @@ export default function DashboardPage() {
         </div>
 
         {/* Chart */}
-        <div className="flex items-end gap-0.5 h-[38px] mb-4">
-          {bars.map((b, i) => {
-            const h = Math.max(2, Math.round((b.value / maxBar) * 34))
-            return (
-              <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
-                <div
-                  className="w-full rounded-t-[3px] min-h-[2px] transition-all duration-300"
-                  style={{ height: h, background: b.isToday ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.22)' }}
-                />
-                <div className="text-[7px] font-semibold" style={{ color: 'rgba(255,255,255,0.30)' }}>{b.label}</div>
+        {(() => {
+          const cw = 200, ch = 44, pt = 4, pb = 4, uh = ch - pt - pb
+          const points = bars.map((b, i) => ({
+            x: (i / (bars.length - 1)) * cw,
+            y: pt + uh - (b.value / maxBar) * uh,
+          }))
+          const linePath = smoothPath(points)
+          const curvePart = linePath.indexOf('C') >= 0 ? linePath.slice(linePath.indexOf('C')) : `L ${points[points.length - 1].x},${points[points.length - 1].y}`
+          const fillPath = `M 0,${ch} L ${points[0].x},${points[0].y} ${curvePart} L ${cw},${ch} Z`
+          const todayIdx = bars.findIndex(b => b.isToday)
+          return (
+            <>
+              <svg viewBox={`0 0 ${cw} ${ch}`} className="w-full h-[52px] mb-1" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="heroChartGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="rgba(80,200,120,0.25)" />
+                    <stop offset="100%" stopColor="rgba(80,200,120,0)" />
+                  </linearGradient>
+                </defs>
+                <path d={fillPath} fill="url(#heroChartGrad)" />
+                <path d={linePath} fill="none" stroke="rgba(80,200,120,0.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                {todayIdx >= 0 && (
+                  <circle cx={points[todayIdx].x} cy={points[todayIdx].y} r="2.5" fill="rgba(80,200,120,0.9)" />
+                )}
+              </svg>
+              <div className="flex justify-between mb-4">
+                {bars.map((b, i) => (
+                  <div key={i} className="text-[7px] font-semibold text-center" style={{ color: b.isToday ? 'rgba(255,255,255,0.50)' : 'rgba(255,255,255,0.30)' }}>
+                    {b.label}
+                  </div>
+                ))}
               </div>
-            )
-          })}
-        </div>
+            </>
+          )
+        })()}
 
         {/* Stats */}
         <div className="grid grid-cols-2 gap-2 mb-4">
