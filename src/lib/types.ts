@@ -49,6 +49,7 @@ export interface Job {
   cleaner_id: string
   date: string
   start_time?: string
+  end_time?: string
   client_price?: number
   cleaner_payout?: number
   status: JobStatus

@@ -22,6 +22,7 @@ export function JobForm({ open, onClose }: Props) {
   const [cleanerId, setCleanerId] = useState('')
   const [date, setDate] = useState('')
   const [startTime, setStartTime] = useState('')
+  const [endTime, setEndTime] = useState('')
   const [clientPrice, setClientPrice] = useState('')
   const [cleanerPayout, setCleanerPayout] = useState('')
   const [kmDriven, setKmDriven] = useState('')
@@ -32,6 +33,7 @@ export function JobForm({ open, onClose }: Props) {
     setCleanerId('')
     setDate('')
     setStartTime('')
+    setEndTime('')
     setClientPrice('')
     setCleanerPayout('')
     setKmDriven('')
@@ -46,6 +48,7 @@ export function JobForm({ open, onClose }: Props) {
       cleaner_id: cleanerId,
       date,
       start_time: startTime || undefined,
+      end_time: endTime || undefined,
       client_price: clientPrice ? parseFloat(clientPrice) : undefined,
       cleaner_payout: cleanerPayout ? parseFloat(cleanerPayout) : undefined,
       km_driven: kmDriven ? parseFloat(kmDriven) : undefined,
@@ -131,20 +134,22 @@ export function JobForm({ open, onClose }: Props) {
             </select>
           </div>
 
-          {/* Date + Time row */}
+          {/* Date */}
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+              Datum
+            </label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
+              style={inputStyle}
+            />
+          </div>
+
+          {/* Start + End time row */}
           <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
-                Datum
-              </label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
-                style={inputStyle}
-              />
-            </div>
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
                 {t('startT')}
@@ -153,6 +158,18 @@ export function JobForm({ open, onClose }: Props) {
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
+                className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+                {t('endT')}
+              </label>
+              <input
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
                 className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
                 style={inputStyle}
               />

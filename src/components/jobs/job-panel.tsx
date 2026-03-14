@@ -82,7 +82,7 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
                   {job.property?.name || '—'}
                 </SheetTitle>
                 <div className="text-[13px] mt-0.5" style={{ color: 'var(--t3)' }}>
-                  {job.cleaner?.name || '—'} · {formatDate(job.date)} · {job.start_time || '—'}
+                  {job.cleaner?.name || '—'} · {formatDate(job.date)} · {job.start_time || '—'}{job.end_time ? ` – ${job.end_time}` : ''}
                 </div>
               </div>
               <div
