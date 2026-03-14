@@ -3,6 +3,7 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useLocale } from '@/lib/i18n'
 import { useCreateProperty } from '@/lib/hooks/use-properties'
+import { usePartners } from '@/lib/hooks/use-partners'
 import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useQueryClient } from '@tanstack/react-query'
@@ -26,11 +27,13 @@ const TYPE_ICONS: Record<string, string> = {
 export function PropertyForm({ open, onClose }: Props) {
   const { t } = useLocale()
   const createProperty = useCreateProperty()
+  const { data: partners = [] } = usePartners()
   const queryClient = useQueryClient()
 
   const [name, setName] = useState('')
   const [type, setType] = useState('house')
   const [address, setAddress] = useState('')
+  const [partnerId, setPartnerId] = useState('')
   const [ownerName, setOwnerName] = useState('')
   const [defaultPrice, setDefaultPrice] = useState('')
   const [pricingType, setPricingType] = useState<'hourly' | 'fixed'>('hourly')
@@ -43,6 +46,7 @@ export function PropertyForm({ open, onClose }: Props) {
     setName('')
     setType('house')
     setAddress('')
+    setPartnerId('')
     setOwnerName('')
     setDefaultPrice('')
     setPricingType('hourly')
@@ -67,6 +71,7 @@ export function PropertyForm({ open, onClose }: Props) {
       name,
       type,
       address: address || undefined,
+      partner_id: partnerId || undefined,
       owner_name: ownerName || undefined,
       default_price: defaultPrice ? parseFloat(defaultPrice) : undefined,
       pricing_type: pricingType,
@@ -214,7 +219,30 @@ export function PropertyForm({ open, onClose }: Props) {
             />
           </div>
 
-          {/* Owner */}
+          {/* Partner */}
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+              Partner
+            </label>
+            <select
+              value={partnerId}
+              onChange={(e) => {
+                setPartnerId(e.target.value)
+                // Auto-fill owner name from partner
+                const p = partners.find(p => p.id === e.target.value)
+                if (p) setOwnerName(p.name)
+              }}
+              className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none appearance-none"
+              style={inputStyle}
+            >
+              <option value="">Geen partner</option>
+              {partners.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Owner (manual override) */}
           <div>
             <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
               Eigenaar

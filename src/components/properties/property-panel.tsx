@@ -124,7 +124,7 @@ export function PropertyPanel({ property, open, onClose }: Props) {
               </SheetTitle>
               {property.type && (
                 <div className="text-[12px] mt-0.5" style={{ color: 'var(--t3)' }}>
-                  {property.type} {property.owner_name ? `· ${property.owner_name}` : ''}
+                  {property.type} {property.partner?.name ? `· ${property.partner.name}` : property.owner_name ? `· ${property.owner_name}` : ''}
                 </div>
               )}
             </div>

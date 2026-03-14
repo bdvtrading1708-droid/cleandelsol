@@ -79,6 +79,11 @@ export default function PropertiesPage() {
                   <span className="px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-[.05em]" style={{ background: 'var(--fill)', color: 'var(--t3)' }}>
                     {prop.type || '—'}
                   </span>
+                  {prop.partner?.name && (
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-semibold" style={{ background: 'var(--fill)', color: 'var(--t2)' }}>
+                      {prop.partner.name}
+                    </span>
+                  )}
                   {prop.default_price != null && (
                     <span className="px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: 'var(--fill)', color: 'var(--t1)' }}>
                       {formatCurrency(prop.default_price)}

@@ -2,35 +2,40 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
-import type { Property } from '@/lib/types'
+import type { Partner } from '@/lib/types'
 
-export function useProperties() {
+export function usePartners() {
   const supabase = createClient()
 
   return useQuery({
-    queryKey: ['properties'],
+    queryKey: ['partners'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('properties')
-        .select('*, partner:partners(*)')
+        .from('partners')
+        .select('*')
         .order('name')
       if (error) throw error
-      return (data || []) as Property[]
+      return (data || []) as Partner[]
     },
   })
 }
 
-export function useCreateProperty() {
+export function useCreatePartner() {
   const supabase = createClient()
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (property: Omit<Property, 'id'>) => {
-      const { error } = await supabase.from('properties').insert(property)
+    mutationFn: async (partner: Omit<Partner, 'id'>) => {
+      const { data, error } = await supabase
+        .from('partners')
+        .insert(partner)
+        .select('id')
+        .single()
       if (error) throw error
+      return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['properties'] })
+      queryClient.invalidateQueries({ queryKey: ['partners'] })
     },
   })
 }

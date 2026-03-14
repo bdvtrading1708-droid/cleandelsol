@@ -12,6 +12,15 @@ export interface User {
   avatar_url?: string
 }
 
+export interface Partner {
+  id: string
+  name: string
+  phone?: string
+  email?: string
+  notes?: string
+  avatar_url?: string
+}
+
 export interface Property {
   id: string
   name: string
@@ -24,6 +33,8 @@ export interface Property {
   pricing_type?: 'hourly' | 'fixed'
   fixed_price?: number
   image_url?: string
+  partner_id?: string
+  partner?: Partner
 }
 
 export type JobStatus = 'planned' | 'progress' | 'delivered' | 'done'

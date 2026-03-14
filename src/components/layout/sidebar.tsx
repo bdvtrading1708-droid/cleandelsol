@@ -4,11 +4,11 @@ import { useAuth } from '@/providers/auth-provider'
 import { useLocale } from '@/lib/i18n'
 import { usePathname, useRouter } from 'next/navigation'
 import { NAV_ADMIN, NAV_CLEANER, isNavItem } from '@/lib/constants'
-import { Home, Calendar, ClipboardList, Building2, Users, BarChart3, Settings, LogOut } from 'lucide-react'
+import { Home, Calendar, ClipboardList, Building2, Users, BarChart3, Settings, LogOut, Handshake } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 const iconMap: Record<string, React.ElementType> = {
-  Home, Calendar, ClipboardList, Building2, Users, BarChart3, Settings,
+  Home, Calendar, ClipboardList, Building2, Users, BarChart3, Settings, Handshake,
 }
 
 const routeMap: Record<string, string> = {
@@ -17,6 +17,7 @@ const routeMap: Record<string, string> = {
   jobs: '/jobs',
   properties: '/properties',
   cleaners: '/cleaners',
+  partners: '/partners',
   financial: '/financial',
   'my-jobs': '/my-jobs',
   'my-earnings': '/my-earnings',

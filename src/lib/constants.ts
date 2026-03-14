@@ -20,6 +20,7 @@ export const NAV_ADMIN: NavEntry[] = [
   { section: 'mgmt' },
   { id: 'jobs', icon: 'ClipboardList', translationKey: 'jobs', addAction: 'newJob' },
   { id: 'properties', icon: 'Building2', translationKey: 'props', addAction: 'newProp' },
+  { id: 'partners', icon: 'Handshake', translationKey: 'partners', addAction: 'newPartner' },
   { id: 'cleaners', icon: 'Users', translationKey: 'cleaners', addAction: 'newCleaner' },
   { section: 'finances' },
   { id: 'financial', icon: 'BarChart3', translationKey: 'fin', addAction: null },
