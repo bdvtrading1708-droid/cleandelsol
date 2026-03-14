@@ -21,20 +21,23 @@ export default function LoginPage() {
     try {
       const supabase = createClient()
 
-      const { error: authError } = await supabase.auth.signInWithPassword({
+      const { data: signInData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (authError) {
+        console.error('Sign in error:', authError.message)
         setError(t('loginErr'))
         setLoading(false)
         return
       }
 
-      const { data: { user: authUser } } = await supabase.auth.getUser()
+      // Use the user from signInWithPassword response directly
+      const authUser = signInData.user
 
       if (!authUser) {
+        console.error('No user in sign in response')
         setError(t('loginErr'))
         setLoading(false)
         return
@@ -55,7 +58,8 @@ export default function LoginPage() {
       } else {
         router.push('/my-jobs')
       }
-    } catch {
+    } catch (err) {
+      console.error('Login catch error:', err)
       setError(t('loginErr'))
       setLoading(false)
     }
