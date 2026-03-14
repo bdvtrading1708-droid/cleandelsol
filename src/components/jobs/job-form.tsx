@@ -24,6 +24,7 @@ export function JobForm({ open, onClose }: Props) {
   const [startTime, setStartTime] = useState('')
   const [clientPrice, setClientPrice] = useState('')
   const [cleanerPayout, setCleanerPayout] = useState('')
+  const [kmDriven, setKmDriven] = useState('')
   const [notes, setNotes] = useState('')
 
   const reset = () => {
@@ -33,6 +34,7 @@ export function JobForm({ open, onClose }: Props) {
     setStartTime('')
     setClientPrice('')
     setCleanerPayout('')
+    setKmDriven('')
     setNotes('')
   }
 
@@ -46,6 +48,7 @@ export function JobForm({ open, onClose }: Props) {
       start_time: startTime || undefined,
       client_price: clientPrice ? parseFloat(clientPrice) : undefined,
       cleaner_payout: cleanerPayout ? parseFloat(cleanerPayout) : undefined,
+      km_driven: kmDriven ? parseFloat(kmDriven) : undefined,
       notes: notes || undefined,
     }, {
       onSuccess: () => {
@@ -186,6 +189,22 @@ export function JobForm({ open, onClose }: Props) {
                 placeholder="0"
               />
             </div>
+          </div>
+
+          {/* KM driven */}
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+              {t('kmD')} (€0,10/km)
+            </label>
+            <input
+              type="number"
+              step="1"
+              value={kmDriven}
+              onChange={(e) => setKmDriven(e.target.value)}
+              className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
+              style={inputStyle}
+              placeholder="0"
+            />
           </div>
 
           {/* Notes */}
