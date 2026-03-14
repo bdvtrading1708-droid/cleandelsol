@@ -146,40 +146,33 @@ export default function PropertiesPage() {
               )}
 
               {/* Property cards grid */}
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-4 gap-1.5">
                 {group.properties.map(prop => (
                   <div
                     key={prop.id}
-                    className="rounded-[14px] overflow-hidden flex flex-col transition-all cursor-pointer active:scale-[0.98]"
-                    style={{ background: 'var(--card)', boxShadow: 'var(--shadow)' }}
+                    className="rounded-[10px] overflow-hidden flex flex-col transition-all cursor-pointer active:scale-[0.97]"
+                    style={{ background: 'var(--card)', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}
                     onClick={() => setSelectedProperty(prop)}
                   >
                     {prop.image_url ? (
-                      <div className="w-full aspect-square overflow-hidden">
+                      <div className="w-full aspect-[4/3] overflow-hidden">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={prop.image_url} alt={prop.name} className="w-full h-full object-cover" />
                       </div>
                     ) : (
-                      <div className="w-full aspect-square flex items-center justify-center text-[32px]" style={{ background: 'var(--fill)' }}>
+                      <div className="w-full aspect-[4/3] flex items-center justify-center text-[22px]" style={{ background: 'var(--fill)' }}>
                         {prop.icon || PROPERTY_ICONS[prop.type] || '🏠'}
                       </div>
                     )}
-                    <div className="p-2 flex flex-col flex-1">
-                      <div className="text-[12px] font-bold tracking-[-0.2px] line-clamp-2 leading-tight mb-1" style={{ color: 'var(--t1)' }}>
+                    <div className="px-1.5 py-1 flex flex-col flex-1">
+                      <div className="text-[10px] font-semibold tracking-[-0.2px] line-clamp-1 leading-tight" style={{ color: 'var(--t1)' }}>
                         {prop.name}
                       </div>
-                      <div className="flex flex-wrap gap-0.5 mt-auto">
-                        {prop.default_price != null && (
-                          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold" style={{ background: 'var(--fill)', color: 'var(--t1)' }}>
-                            {formatCurrency(prop.default_price)}
-                          </span>
-                        )}
-                        {(prop.bedrooms || prop.bathrooms) ? (
-                          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-medium" style={{ background: 'var(--fill)', color: 'var(--t3)' }}>
-                            {prop.bedrooms ? `${prop.bedrooms}🛏` : ''}{prop.bathrooms ? ` ${prop.bathrooms}🚿` : ''}{prop.terraces ? ` ${prop.terraces}☀️` : ''}
-                          </span>
-                        ) : null}
-                      </div>
+                      {prop.default_price != null && (
+                        <div className="text-[9px] font-medium mt-0.5" style={{ color: 'var(--t3)' }}>
+                          {formatCurrency(prop.default_price)}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

@@ -3,10 +3,10 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useLocale } from '@/lib/i18n'
 import { useAuth } from '@/providers/auth-provider'
-import { useUpdateJobStatus } from '@/lib/hooks/use-jobs'
+import { useUpdateJobStatus, useDeleteJob } from '@/lib/hooks/use-jobs'
 import { STATUS_COLORS } from '@/lib/constants'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { MapPin, Clock, Car, FileText, Camera, ChevronRight } from 'lucide-react'
+import { MapPin, Clock, Car, FileText, Camera, ChevronRight, Trash2 } from 'lucide-react'
 import type { Job, JobStatus } from '@/lib/types'
 import { useState } from 'react'
 import { JobDeliveryForm } from './job-delivery-form'
@@ -29,8 +29,10 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
   const { t } = useLocale()
   const { user } = useAuth()
   const updateStatus = useUpdateJobStatus()
+  const deleteJob = useDeleteJob()
   const [showDelivery, setShowDelivery] = useState(false)
   const [showPhotos, setShowPhotos] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   if (!job) return null
 
@@ -159,6 +161,40 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
               >
                 {updateStatus.isPending ? t('loading') : actionLabel}
               </button>
+            )}
+
+            {/* Delete button (admin only) */}
+            {isAdmin && (
+              confirmDelete ? (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      deleteJob.mutate(job.id, { onSuccess: () => { setConfirmDelete(false); onClose() } })
+                    }}
+                    disabled={deleteJob.isPending}
+                    className="flex-1 h-[44px] rounded-[14px] text-[13px] font-bold transition-all"
+                    style={{ background: '#ef4444', color: '#fff', opacity: deleteJob.isPending ? 0.6 : 1 }}
+                  >
+                    {deleteJob.isPending ? 'Verwijderen...' : 'Ja, verwijderen'}
+                  </button>
+                  <button
+                    onClick={() => setConfirmDelete(false)}
+                    className="flex-1 h-[44px] rounded-[14px] text-[13px] font-semibold transition-all"
+                    style={{ background: 'var(--fill)', color: 'var(--t2)' }}
+                  >
+                    {t('cancel')}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmDelete(true)}
+                  className="w-full h-[44px] rounded-[14px] text-[13px] font-semibold flex items-center justify-center gap-2 transition-all"
+                  style={{ background: 'var(--fill)', color: '#ef4444' }}
+                >
+                  <Trash2 size={15} />
+                  Opdracht verwijderen
+                </button>
+              )
             )}
           </div>
         </SheetContent>
