@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useProperties } from '@/lib/hooks/use-properties'
 import { useLocale } from '@/lib/i18n'
 import { formatCurrency } from '@/lib/utils'
@@ -23,6 +23,48 @@ export default function PropertiesPage() {
   const { t } = useLocale()
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
   const [showForm, setShowForm] = useState(false)
+  const [filter, setFilter] = useState<string>('all')
+
+  // Group properties by partner, sorted by count (most properties first)
+  const partnerGroups = useMemo(() => {
+    const groups: Record<string, { name: string; properties: Property[] }> = {}
+    const noPartner: Property[] = []
+
+    properties.forEach(prop => {
+      if (prop.partner?.id) {
+        if (!groups[prop.partner.id]) {
+          groups[prop.partner.id] = { name: prop.partner.name, properties: [] }
+        }
+        groups[prop.partner.id].properties.push(prop)
+      } else {
+        noPartner.push(prop)
+      }
+    })
+
+    // Sort by property count descending
+    const sorted = Object.entries(groups)
+      .sort((a, b) => b[1].properties.length - a[1].properties.length)
+      .map(([id, group]) => ({ id, ...group }))
+
+    if (noPartner.length > 0) {
+      sorted.push({ id: 'none', name: 'Zonder partner', properties: noPartner })
+    }
+
+    return sorted
+  }, [properties])
+
+  // Get unique partner names for filter
+  const partnerFilters = useMemo(() => {
+    return partnerGroups
+      .filter(g => g.id !== 'none')
+      .map(g => ({ id: g.id, name: g.name, count: g.properties.length }))
+  }, [partnerGroups])
+
+  // Filter properties
+  const filteredGroups = useMemo(() => {
+    if (filter === 'all') return partnerGroups
+    return partnerGroups.filter(g => g.id === filter)
+  }, [partnerGroups, filter])
 
   if (isLoading) {
     return <div className="flex items-center justify-center py-20" style={{ color: 'var(--t3)' }}>{t('loading')}</div>
@@ -33,6 +75,9 @@ export default function PropertiesPage() {
       <div className="flex items-center justify-between mt-3.5 mb-4">
         <div className="text-xl font-bold tracking-[-0.5px]" style={{ color: 'var(--t1)' }}>
           {t('props')}
+          <span className="text-[13px] font-normal ml-2" style={{ color: 'var(--t3)' }}>
+            {properties.length}
+          </span>
         </div>
         <button
           onClick={() => setShowForm(true)}
@@ -43,53 +88,103 @@ export default function PropertiesPage() {
         </button>
       </div>
 
+      {/* Partner filter */}
+      {partnerFilters.length > 0 && (
+        <div className="flex gap-1 mb-4 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+          <button
+            className="px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all shrink-0"
+            style={{
+              background: filter === 'all' ? 'var(--t1)' : 'var(--fill)',
+              color: filter === 'all' ? 'var(--bg)' : 'var(--t3)',
+            }}
+            onClick={() => setFilter('all')}
+          >
+            Alles ({properties.length})
+          </button>
+          {partnerFilters.map(p => (
+            <button
+              key={p.id}
+              className="px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all shrink-0"
+              style={{
+                background: filter === p.id ? 'var(--t1)' : 'var(--fill)',
+                color: filter === p.id ? 'var(--bg)' : 'var(--t3)',
+              }}
+              onClick={() => setFilter(p.id)}
+            >
+              {p.name} ({p.count})
+            </button>
+          ))}
+        </div>
+      )}
+
       {properties.length === 0 ? (
         <div className="text-center py-12" style={{ color: 'var(--t3)' }}>
           <div className="text-sm font-semibold" style={{ color: 'var(--t2)' }}>Geen properties</div>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-2.5">
-          {properties.map(prop => (
-            <div
-              key={prop.id}
-              className="rounded-[18px] overflow-hidden flex flex-col transition-all cursor-pointer active:scale-[0.98]"
-              style={{ background: 'var(--card)', boxShadow: 'var(--shadow)' }}
-              onClick={() => setSelectedProperty(prop)}
-            >
-              {prop.image_url ? (
-                <div className="w-full h-[100px] overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={prop.image_url} alt={prop.name} className="w-full h-full object-cover" />
-                </div>
-              ) : (
-                <div className="pt-4 px-4 text-[28px]">
-                  {prop.icon || PROPERTY_ICONS[prop.type] || '🏠'}
+        <div className="flex flex-col gap-5">
+          {filteredGroups.map(group => (
+            <div key={group.id}>
+              {/* Partner section header */}
+              {filter === 'all' && (
+                <div className="flex items-center gap-2 mb-2.5">
+                  <div
+                    className="text-[13px] font-bold tracking-[-0.2px]"
+                    style={{ color: 'var(--t1)' }}
+                  >
+                    {group.name}
+                  </div>
+                  <span
+                    className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                    style={{ background: 'var(--fill)', color: 'var(--t3)' }}
+                  >
+                    {group.properties.length}
+                  </span>
+                  <div className="flex-1 h-[1px]" style={{ background: 'var(--border)' }} />
                 </div>
               )}
-              <div className={prop.image_url ? 'p-3 pt-2 flex flex-col flex-1' : 'pb-4 flex flex-col flex-1'}>
-                <div className="text-[14px] font-bold tracking-[-0.2px] truncate mb-0.5" style={{ color: 'var(--t1)' }}>
-                  {prop.name}
-                </div>
-                {prop.address && (
-                  <div className="text-[11px] leading-snug mb-2.5 line-clamp-2" style={{ color: 'var(--t3)' }}>
-                    {prop.address}
+
+              {/* Property cards grid */}
+              <div className="grid grid-cols-2 gap-2.5">
+                {group.properties.map(prop => (
+                  <div
+                    key={prop.id}
+                    className="rounded-[18px] overflow-hidden flex flex-col transition-all cursor-pointer active:scale-[0.98]"
+                    style={{ background: 'var(--card)', boxShadow: 'var(--shadow)' }}
+                    onClick={() => setSelectedProperty(prop)}
+                  >
+                    {prop.image_url ? (
+                      <div className="w-full h-[100px] overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={prop.image_url} alt={prop.name} className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="pt-4 px-4 text-[28px]">
+                        {prop.icon || PROPERTY_ICONS[prop.type] || '🏠'}
+                      </div>
+                    )}
+                    <div className={prop.image_url ? 'p-3 pt-2 flex flex-col flex-1' : 'px-4 pb-4 flex flex-col flex-1'}>
+                      <div className="text-[14px] font-bold tracking-[-0.2px] truncate mb-0.5" style={{ color: 'var(--t1)' }}>
+                        {prop.name}
+                      </div>
+                      {prop.address && (
+                        <div className="text-[11px] leading-snug mb-2.5 line-clamp-2" style={{ color: 'var(--t3)' }}>
+                          {prop.address}
+                        </div>
+                      )}
+                      <div className="flex flex-wrap gap-1 mt-auto">
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-[.05em]" style={{ background: 'var(--fill)', color: 'var(--t3)' }}>
+                          {prop.type || '—'}
+                        </span>
+                        {prop.default_price != null && (
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: 'var(--fill)', color: 'var(--t1)' }}>
+                            {formatCurrency(prop.default_price)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                )}
-                <div className="flex flex-wrap gap-1 mt-auto">
-                  <span className="px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-[.05em]" style={{ background: 'var(--fill)', color: 'var(--t3)' }}>
-                    {prop.type || '—'}
-                  </span>
-                  {prop.partner?.name && (
-                    <span className="px-2 py-0.5 rounded-full text-[9px] font-semibold" style={{ background: 'var(--fill)', color: 'var(--t2)' }}>
-                      {prop.partner.name}
-                    </span>
-                  )}
-                  {prop.default_price != null && (
-                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: 'var(--fill)', color: 'var(--t1)' }}>
-                      {formatCurrency(prop.default_price)}
-                    </span>
-                  )}
-                </div>
+                ))}
               </div>
             </div>
           ))}
