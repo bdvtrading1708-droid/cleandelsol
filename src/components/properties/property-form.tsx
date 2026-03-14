@@ -142,6 +142,8 @@ export function PropertyForm({ open, onClose, editProperty }: Props) {
 
     try {
       const supabase = createClient()
+      const savedImageFile = imageFile
+      const savedName = name
 
       if (isEdit && editProperty) {
         // Update existing property
@@ -150,33 +152,44 @@ export function PropertyForm({ open, onClose, editProperty }: Props) {
           .update(propertyData)
           .eq('id', editProperty.id)
 
-        if (imageFile) await uploadImage(editProperty.id)
         queryClient.invalidateQueries({ queryKey: ['properties'] })
         reset()
         onClose()
+
+        // Upload image in background
+        if (savedImageFile) {
+          uploadImage(editProperty.id).then(() => {
+            queryClient.invalidateQueries({ queryKey: ['properties'] })
+          })
+        }
       } else {
         // Create new property
         createProperty.mutate(propertyData as Parameters<typeof createProperty.mutate>[0], {
-          onSuccess: async () => {
-            if (imageFile) {
-              const { data: props } = await supabase
-                .from('properties')
-                .select('id')
-                .eq('name', name)
-                .order('created_at', { ascending: false })
-                .limit(1)
-
-              if (props && props[0]) {
-                await uploadImage(props[0].id)
-                queryClient.invalidateQueries({ queryKey: ['properties'] })
-              }
-            }
+          onSuccess: () => {
             reset()
             onClose()
+
+            // Upload image in background
+            if (savedImageFile) {
+              const uploadInBackground = async () => {
+                const { data: props } = await supabase
+                  .from('properties')
+                  .select('id')
+                  .eq('name', savedName)
+                  .order('created_at', { ascending: false })
+                  .limit(1)
+
+                if (props && props[0]) {
+                  await uploadImage(props[0].id)
+                  queryClient.invalidateQueries({ queryKey: ['properties'] })
+                }
+              }
+              uploadInBackground()
+            }
           },
           onError: () => setSaving(false),
         })
-        return // Don't reset saving here, onSuccess/onError handles it
+        return
       }
     } catch {
       setSaving(false)
