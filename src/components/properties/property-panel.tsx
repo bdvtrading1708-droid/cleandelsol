@@ -4,9 +4,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { useLocale } from '@/lib/i18n'
 import { useJobs } from '@/lib/hooks/use-jobs'
 import { formatCurrency } from '@/lib/utils'
-import { MapPin, ChevronRight, FileText, Camera } from 'lucide-react'
+import { MapPin, ChevronRight, FileText, Camera, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useQueryClient } from '@tanstack/react-query'
+import { useDeleteProperty } from '@/lib/hooks/use-properties'
 import { useRef, useState } from 'react'
 import type { Property } from '@/lib/types'
 
@@ -20,8 +21,10 @@ export function PropertyPanel({ property, open, onClose }: Props) {
   const { t } = useLocale()
   const { data: jobs = [] } = useJobs()
   const queryClient = useQueryClient()
+  const deleteProperty = useDeleteProperty()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   if (!property) return null
 
@@ -194,6 +197,47 @@ export function PropertyPanel({ property, open, onClose }: Props) {
               </span>
             </div>
           </div>
+
+          {/* Delete button */}
+          {!showDeleteConfirm ? (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="flex items-center justify-center gap-2 rounded-[14px] p-3 w-full transition-colors mt-2"
+              style={{ background: 'rgba(239,68,68,0.1)' }}
+            >
+              <Trash2 size={16} className="text-red-500" />
+              <span className="text-[13px] font-semibold text-red-500">Property verwijderen</span>
+            </button>
+          ) : (
+            <div className="rounded-[14px] p-4 mt-2" style={{ background: 'rgba(239,68,68,0.1)' }}>
+              <p className="text-[13px] font-semibold text-red-500 text-center mb-3">
+                Weet je zeker dat je &quot;{property.name}&quot; wilt verwijderen?
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 rounded-[12px] p-2.5 text-[13px] font-semibold"
+                  style={{ background: 'var(--fill)', color: 'var(--t1)' }}
+                >
+                  Annuleren
+                </button>
+                <button
+                  onClick={() => {
+                    deleteProperty.mutate(property.id, {
+                      onSuccess: () => {
+                        setShowDeleteConfirm(false)
+                        onClose()
+                      },
+                    })
+                  }}
+                  disabled={deleteProperty.isPending}
+                  className="flex-1 rounded-[12px] p-2.5 text-[13px] font-semibold bg-red-500 text-white"
+                >
+                  {deleteProperty.isPending ? 'Verwijderen...' : 'Ja, verwijderen'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>

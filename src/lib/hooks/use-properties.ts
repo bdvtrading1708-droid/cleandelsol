@@ -34,3 +34,18 @@ export function useCreateProperty() {
     },
   })
 }
+
+export function useDeleteProperty() {
+  const supabase = createClient()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('properties').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['properties'] })
+    },
+  })
+}
