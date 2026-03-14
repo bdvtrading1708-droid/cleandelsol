@@ -6,6 +6,7 @@ import { useLocale } from '@/lib/i18n'
 import { useState } from 'react'
 import { formatCurrency } from '@/lib/utils'
 import { STATUS_COLORS } from '@/lib/constants'
+import { CleanerAvatar } from '@/components/cleaners/cleaner-avatar'
 
 type Period = 'dag' | 'week' | 'maand' | 'jaar' | 'alles'
 
@@ -161,8 +162,8 @@ export default function DashboardPage() {
                 className="flex flex-col items-center gap-1 cursor-pointer shrink-0"
                 onClick={() => setSelectedCleaner(c.id)}
               >
-                <div className={`w-[38px] h-[38px] rounded-full flex items-center justify-center text-sm font-bold text-white ${selectedCleaner === c.id ? 'outline outline-[2.5px] outline-white outline-offset-2' : ''}`} style={{ background: 'rgba(255,255,255,0.14)' }}>
-                  {(c.name || '?')[0].toUpperCase()}
+                <div className={selectedCleaner === c.id ? 'outline outline-[2.5px] outline-white outline-offset-2 rounded-full' : ''}>
+                  <CleanerAvatar src={c.avatar_url} name={c.name} size={38} />
                 </div>
                 <div className="text-[9px] font-semibold max-w-[42px] text-center truncate" style={{ color: 'rgba(255,255,255,0.40)' }}>{c.name?.split(' ')[0]}</div>
               </div>
