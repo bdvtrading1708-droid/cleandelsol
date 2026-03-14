@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="nl" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Clean Del Sol</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS ─────────────────────────────────── */
+:root {
+  --font-ui:'Plus Jakarta Sans',system-ui,sans-serif;
+  --font-display:'Playfair Display',Georgia,serif;
+  --gold:#B8935A; --gold-l:#D4AF85;
+  --gold-glow:rgba(184,147,90,0.18); --gold-border:rgba(184,147,90,0.28);
+  --green:#34C759; --blue:#007AFF; --amber:#FF9500; --red:#FF3B30;
+  --blur:blur(24px); --blur-lg:blur(40px);
+  --r-sm:12px; --r-md:16px; --r-lg:20px; --r-xl:26px;
+  --safe-b:env(safe-area-inset-bottom,0px);
+  --safe-t:env(safe-area-inset-top,0px);
+  --tab-h:80px;
+}
+[data-theme="dark"] {
+  --bg:#000; --bg2:#0a0a0a; --bg3:#111;
+  --surf:rgba(28,28,30,0.95); --surf2:rgba(38,38,40,0.90);
+  --glass:rgba(255,255,255,0.06); --border:rgba(255,255,255,0.10);
+  --border2:rgba(255,255,255,0.18); --div:rgba(255,255,255,0.08);
+  --t1:#fff; --t2:rgba(255,255,255,0.65); --t3:rgba(255,255,255,0.35);
+  --fill:rgba(255,255,255,0.08); --fill2:rgba(255,255,255,0.13);
+  --tab-bg:rgba(18,18,20,0.95); --top-bg:rgba(0,0,0,0.85);
+  --shadow:0 4px 24px rgba(0,0,0,0.6),0 1px 0 rgba(255,255,255,0.06) inset;
+  --inp:rgba(255,255,255,0.07); --modal:rgba(18,18,20,0.98);
+  --sb:rgba(10,10,12,0.98);
+}
+[data-theme="light"] {
+  --bg:#F2F2F7; --bg2:#fff; --bg3:#F2F2F7;
+  --surf:rgba(255,255,255,0.92); --surf2:rgba(242,242,247,0.90);
+  --glass:rgba(0,0,0,0.04); --border:rgba(0,0,0,0.10);
+  --border2:rgba(0,0,0,0.16); --div:rgba(0,0,0,0.08);
+  --t1:#000; --t2:rgba(0,0,0,0.60); --t3:rgba(0,0,0,0.35);
+  --fill:rgba(0,0,0,0.06); --fill2:rgba(0,0,0,0.10);
+  --tab-bg:rgba(255,255,255,0.92); --top-bg:rgba(242,242,247,0.92);
+  --shadow:0 2px 16px rgba(0,0,0,0.10),0 1px 0 rgba(255,255,255,0.80) inset;
+  --inp:rgba(0,0,0,0.05); --modal:rgba(250,250,252,0.98);
+  --sb:rgba(248,248,252,0.98);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--t1);font-family:var(--font-ui);font-size:15px;line-height:1.4}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* ── LOGIN ───────────────────────────────────── */
+#login-screen{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;background:var(--bg);overflow-y:auto}
+.login-glow{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse 70% 50% at 50% 20%,var(--gold-glow),transparent)}
+.login-card{position:relative;z-index:1;width:100%;max-width:360px;background:var(--surf);border:1px solid var(--border2);border-radius:var(--r-xl);padding:32px 24px;backdrop-filter:var(--blur-lg);-webkit-backdrop-filter:var(--blur-lg);box-shadow:var(--shadow)}
+.logo-mark{width:60px;height:60px;border-radius:16px;background:var(--gold-glow);border:1.5px solid var(--gold-border);display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px}
+.brand-name{font-family:var(--font-display);font-size:24px;font-weight:500;color:var(--t1)}
+.brand-sub{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--t3);margin-top:3px}
+.lang-row{display:flex;gap:5px;flex-wrap:wrap;margin:14px 0}
+.lang-pill{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--fill);color:var(--t2);transition:all .15s}
+.lang-pill.on{background:var(--gold-glow);border-color:var(--gold-border);color:var(--gold)}
+.flabel{display:block;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
+.finput{width:100%;background:var(--inp);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--t1);font-family:var(--font-ui);font-size:15px;padding:12px 14px;outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none;margin-bottom:12px}
+.finput:focus{border-color:var(--gold-border);box-shadow:0 0 0 3px var(--gold-glow)}
+select.finput{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px;cursor:pointer}
+textarea.finput{resize:vertical;min-height:72px;line-height:1.5}
+.btn-gold{width:100%;padding:14px;border-radius:var(--r-md);background:linear-gradient(135deg,var(--gold),#8B6A3E);border:none;color:#fff;font-family:var(--font-ui);font-size:15px;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:-.1px}
+.btn-gold:hover{opacity:.9} .btn-gold:active{transform:scale(.98)}
+.btn-gold:disabled{opacity:.5;cursor:not-allowed}
+.err-box{background:rgba(255,59,48,.10);border:1px solid rgba(255,59,48,.20);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--red);margin-bottom:12px}
+.hint-box{background:var(--fill);border-radius:10px;padding:12px;font-size:11px;color:var(--t3);line-height:1.6;margin-top:14px}
+
+/* ── APP SHELL ───────────────────────────────── */
+#app{display:none;position:fixed;inset:0}
+.sb-backdrop{position:fixed;inset:0;z-index:299;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:none}
+.sb-backdrop.on{display:block}
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:248px;background:var(--sb);border-right:1px solid var(--border);backdrop-filter:var(--blur-lg);-webkit-backdrop-filter:var(--blur-lg);z-index:300;display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.sidebar.on{transform:translateX(0)}
+@media(min-width:768px){.sidebar{transform:translateX(0)}.app-main{margin-left:248px!important}.sb-backdrop{display:none!important}}
+.sb-logo{padding:18px 16px 14px;padding-top:calc(18px + var(--safe-t));border-bottom:1px solid var(--div)}
+.sb-lm{width:32px;height:32px;border-radius:9px;background:var(--gold-glow);border:1px solid var(--gold-border);display:inline-flex;align-items:center;justify-content:center;margin-bottom:9px}
+.sb-bn{font-family:var(--font-display);font-size:16px;font-weight:500;color:var(--t1)}
+.sb-bt{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--t3);margin-top:2px}
+.sb-user{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--div)}
+.sb-av{width:32px;height:32px;border-radius:50%;background:var(--gold-glow);border:1.5px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:14px;color:var(--gold);flex-shrink:0}
+.sb-un{font-size:13px;font-weight:600;color:var(--t1)}
+.sb-ur{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.1em}
+.sb-nav{flex:1;overflow-y:auto;padding:8px;scrollbar-width:none}
+.sb-nav::-webkit-scrollbar{display:none}
+.sb-sec{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--t3);padding:12px 8px 5px}
+.sb-item{display:flex;align-items:center;gap:10px;padding:10px 11px;border-radius:12px;cursor:pointer;font-size:14px;font-weight:500;color:var(--t2);transition:all .15s;border:1px solid transparent;margin-bottom:1px}
+.sb-item:hover{background:var(--fill);color:var(--t1)}
+.sb-item.on{background:var(--gold-glow);border-color:var(--gold-border);color:var(--gold)}
+.sb-icon{width:28px;height:28px;border-radius:8px;background:var(--fill);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;transition:all .15s}
+.sb-item.on .sb-icon{background:var(--gold-glow)}
+.sb-foot{padding:8px;border-top:1px solid var(--div);padding-bottom:calc(8px + var(--safe-b))}
+.sb-logout{display:flex;align-items:center;gap:10px;padding:10px 11px;border-radius:12px;cursor:pointer;font-size:13px;font-weight:500;color:var(--t3);transition:all .15s;border:none;background:none;width:100%;font-family:var(--font-ui)}
+.sb-logout:hover{background:rgba(255,59,48,.10);color:var(--red)}
+
+/* ── TOPBAR ──────────────────────────────────── */
+.topbar{position:sticky;top:0;z-index:100;height:calc(50px + var(--safe-t));padding-top:var(--safe-t);background:var(--top-bg);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-bottom:1px solid var(--div);display:flex;align-items:center;padding-left:14px;padding-right:14px;gap:10px;flex-shrink:0}
+.top-menu{width:32px;height:32px;border-radius:10px;background:var(--fill);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);flex-shrink:0}
+@media(min-width:768px){.top-menu{display:none}}
+.top-title{font-family:var(--font-display);font-size:18px;font-weight:500;color:var(--t1);flex:1;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-acts{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.lang-btn{height:30px;padding:0 10px;border-radius:20px;background:var(--fill);border:1px solid var(--border);color:var(--t2);font-family:var(--font-ui);font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all .15s}
+.lang-btn:hover{background:var(--fill2)}
+.lang-dd{position:absolute;top:calc(100% + 6px);right:0;min-width:155px;background:var(--modal);border:1px solid var(--border2);border-radius:14px;backdrop-filter:var(--blur-lg);-webkit-backdrop-filter:var(--blur-lg);box-shadow:0 8px 32px rgba(0,0,0,.25);overflow:hidden;z-index:500;display:none}
+.lang-dd.on{display:block}
+.lang-opt{display:flex;align-items:center;gap:9px;padding:10px 13px;cursor:pointer;font-size:13px;font-weight:500;color:var(--t2);transition:background .12s}
+.lang-opt:hover{background:var(--fill)}
+.lang-opt.on{color:var(--gold)}
+.theme-btn{width:30px;height:30px;border-radius:50%;background:var(--fill);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;transition:all .15s}
+.add-btn{height:30px;padding:0 12px;border-radius:20px;background:var(--gold);border:none;color:#fff;font-family:var(--font-ui);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;transition:all .2s}
+.add-btn:hover{opacity:.88}
+
+/* ── MAIN ────────────────────────────────────── */
+.app-main{position:fixed;top:0;right:0;bottom:0;left:0;display:flex;flex-direction:column;overflow:hidden}
+.pg-scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.pg{display:none;padding:14px}
+.pg.on{display:block}
+@media(max-width:767px){.pg{padding-bottom:calc(var(--tab-h) + 14px)}}
+
+/* ── TABBAR ──────────────────────────────────── */
+.tabbar{position:fixed;bottom:0;left:0;right:0;z-index:200;height:var(--tab-h);padding-bottom:var(--safe-b);background:var(--tab-bg);backdrop-filter:var(--blur-lg);-webkit-backdrop-filter:var(--blur-lg);border-top:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-around;padding-top:8px}
+@media(min-width:768px){.tabbar{display:none}}
+.tab-item{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;cursor:pointer;color:var(--t3);transition:color .15s;user-select:none;-webkit-user-select:none;padding:0 2px}
+.tab-item.on{color:var(--gold)}
+.tab-ico{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:9px;transition:all .15s;font-size:18px}
+.tab-item.on .tab-ico{background:var(--gold-glow)}
+.tab-lbl{font-size:9px;font-weight:600;letter-spacing:.02em}
+
+/* ── CARDS ───────────────────────────────────── */
+.gc{background:var(--surf);border:1px solid var(--border);border-radius:var(--r-lg);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);box-shadow:var(--shadow);overflow:hidden}
+.stat-row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+@media(min-width:600px){.stat-row{grid-template-columns:repeat(4,1fr)}}
+.stat-card{background:var(--surf);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.stat-shine{position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--border2),transparent)}
+.stat-lbl{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:7px}
+.stat-val{font-family:var(--font-display);font-size:26px;font-weight:500;line-height:1;letter-spacing:-.5px}
+.stat-sub{font-size:10px;font-weight:500;margin-top:5px;color:var(--t3)}
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin:18px 0 10px}
+.sec-title{font-size:19px;font-weight:700;letter-spacing:-.4px;color:var(--t1)}
+
+/* ── JOB CARD ────────────────────────────────── */
+.job-card{background:var(--surf);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;margin-bottom:10px;cursor:pointer;transition:all .18s;box-shadow:var(--shadow)}
+.job-card:active{transform:scale(.98)}
+.job-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:11px}
+.job-prop{font-size:15px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.job-meta{font-size:11px;color:var(--t2);margin-top:2px}
+.job-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding-top:11px;border-top:1px solid var(--div)}
+.js-lbl{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t3)}
+.js-val{font-size:13px;font-weight:700;color:var(--t1);margin-top:2px}
+
+/* ── BADGES ──────────────────────────────────── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.75}
+.b-planned{background:rgba(0,122,255,.12);color:var(--blue);border:1px solid rgba(0,122,255,.20)}
+.b-progress{background:rgba(255,149,0,.12);color:var(--amber);border:1px solid rgba(255,149,0,.20)}
+.b-done{background:rgba(52,199,89,.12);color:var(--green);border:1px solid rgba(52,199,89,.20)}
+.b-delivered{background:var(--gold-glow);color:var(--gold);border:1px solid var(--gold-border)}
+
+/* ── PROP / CLEANER GRID ─────────────────────── */
+.card-grid{display:grid;gap:11px;grid-template-columns:1fr}
+@media(min-width:460px){.card-grid{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:860px){.card-grid{grid-template-columns:repeat(3,1fr)}}
+.prop-card{background:var(--surf);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;cursor:pointer;transition:all .2s;box-shadow:var(--shadow)}
+.prop-card:active{transform:scale(.98)}
+.prop-thumb{height:80px;background:var(--fill);display:flex;align-items:center;justify-content:center;font-size:34px;border-bottom:1px solid var(--div)}
+.prop-body{padding:13px}
+.prop-name{font-size:15px;font-weight:700;color:var(--t1);margin-bottom:3px}
+.prop-addr{font-size:11px;color:var(--t2);margin-bottom:9px}
+.prop-tags{display:flex;flex-wrap:wrap;gap:5px}
+.ptag{font-size:9px;font-weight:700;padding:3px 7px;border-radius:5px;background:var(--fill);border:1px solid var(--border);color:var(--t2)}
+.ptag-g{background:rgba(52,199,89,.10);color:var(--green);border-color:rgba(52,199,89,.20)}
+.cl-card{background:var(--surf);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;cursor:pointer;transition:all .2s;box-shadow:var(--shadow)}
+.cl-card:active{transform:scale(.98)}
+.cl-av{width:44px;height:44px;border-radius:50%;background:var(--gold-glow);border:2px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:18px;color:var(--gold);margin-bottom:11px}
+.cl-name{font-size:15px;font-weight:700;color:var(--t1);margin-bottom:2px}
+.cl-info{font-size:11px;color:var(--t2);margin-bottom:1px}
+.cl-bar{height:3px;background:var(--fill2);border-radius:2px;margin:10px 0}
+.cl-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--gold),var(--gold-l))}
+
+/* ── CALENDAR ────────────────────────────────── */
+.cal-hd{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+.cal-nav{width:32px;height:32px;border-radius:50%;background:var(--fill);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);flex-shrink:0}
+.cal-mtitle{font-family:var(--font-display);font-size:19px;font-weight:500;flex:1;color:var(--t1);letter-spacing:-.3px}
+.cal-today{padding:5px 11px;border-radius:20px;background:var(--fill);border:1px solid var(--border);font-size:11px;font-weight:600;color:var(--t2);cursor:pointer}
+.cal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:3px}
+.cal-dc{text-align:center;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);padding:5px 0}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cal-day{border-radius:9px;padding:4px 3px;min-height:58px;cursor:pointer;background:var(--glass);border:1px solid transparent;transition:all .15s;overflow:hidden}
+.cal-day:hover{background:var(--fill)}
+.cal-day.today{border-color:var(--gold-border);background:var(--gold-glow)}
+.cal-day.other{opacity:.28}
+.cal-dn{font-size:11px;font-weight:600;color:var(--t2);line-height:1;margin-bottom:3px}
+.cal-day.today .cal-dn{color:var(--gold);font-weight:700}
+.cal-ev{font-size:7px;font-weight:700;padding:2px 3px;border-radius:3px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ce-p{background:rgba(0,122,255,.15);color:var(--blue)}
+.ce-g{background:rgba(255,149,0,.15);color:var(--amber)}
+.ce-d{background:rgba(52,199,89,.15);color:var(--green)}
+.ce-o{background:var(--gold-glow);color:var(--gold)}
+
+/* ── PANEL ───────────────────────────────────── */
+.panel-back{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.55);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);display:none}
+.panel-back.on{display:block}
+.slide-panel{position:fixed;top:0;right:0;bottom:0;width:100%;max-width:460px;background:var(--modal);backdrop-filter:var(--blur-lg);-webkit-backdrop-filter:var(--blur-lg);border-left:1px solid var(--border2);z-index:500;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);box-shadow:-8px 0 40px rgba(0,0,0,.3)}
+.slide-panel.on{transform:translateX(0)}
+.panel-head{padding:16px;padding-top:calc(16px + var(--safe-t));border-bottom:1px solid var(--div);flex-shrink:0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.panel-close{width:28px;height:28px;border-radius:50%;background:var(--fill);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);flex-shrink:0;font-size:13px}
+.panel-title{font-family:var(--font-display);font-size:20px;font-weight:500;color:var(--t1);margin-bottom:2px}
+.panel-sub{font-size:11px;color:var(--t3)}
+.panel-scroll{flex:1;overflow-y:auto;padding:16px;scrollbar-width:none}
+.panel-scroll::-webkit-scrollbar{display:none}
+.panel-foot{padding:13px 16px;padding-bottom:calc(13px + var(--safe-b));border-top:1px solid var(--div);flex-shrink:0;display:flex;gap:9px}
+.p-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:13px 0}
+.p-stat{background:var(--fill);border:1px solid var(--border);border-radius:var(--r-md);padding:11px;text-align:center}
+.p-sl{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--t3);margin-bottom:4px}
+.p-sv{font-family:var(--font-display);font-size:17px;font-weight:500;color:var(--t1)}
+.tl{display:flex;align-items:center;margin:14px 0}
+.tl-step{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1}
+.tl-dot{width:24px;height:24px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;background:var(--fill);z-index:1;color:var(--t3)}
+.tl-dot.done{background:rgba(52,199,89,.15);border-color:var(--green);color:var(--green)}
+.tl-dot.now{background:var(--gold-glow);border-color:var(--gold);color:var(--gold)}
+.tl-line{flex:1;height:2px;background:var(--border);margin-top:-16px;border-radius:1px}
+.tl-line.done{background:var(--green);opacity:.4}
+.tl-lbl{font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);text-align:center;line-height:1.3}
+.p-sec{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--t3);margin:14px 0 7px}
+.panel-section-divider{height:1px;background:var(--div);margin:13px 0}
+
+/* ── PHOTO UPLOAD ────────────────────────────── */
+.upload-zone{border:2px dashed var(--border2);border-radius:var(--r-md);padding:20px;text-align:center;cursor:pointer;transition:all .2s}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--gold-border);background:var(--gold-glow)}
+.upload-zone:active{transform:scale(.99)}
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}
+.photo-item{aspect-ratio:1;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--fill);cursor:pointer;position:relative}
+.photo-item img{width:100%;height:100%;object-fit:cover}
+.photo-del{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;cursor:pointer}
+
+/* ── MODALS ──────────────────────────────────── */
+.modal-overlay{position:fixed;inset:0;z-index:800;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.on{display:flex}
+@media(min-width:580px){.modal-overlay{align-items:center;padding:24px}}
+.modal-sheet{background:var(--modal);border:1px solid var(--border2);border-radius:var(--r-xl) var(--r-xl) 0 0;width:100%;max-height:92vh;overflow-y:auto;scrollbar-width:none;padding:18px;padding-bottom:calc(18px + var(--safe-b));box-shadow:0 -8px 40px rgba(0,0,0,.4)}
+.modal-sheet::-webkit-scrollbar{display:none}
+@media(min-width:580px){.modal-sheet{border-radius:var(--r-xl);max-width:500px;padding-bottom:18px}}
+.modal-handle{width:34px;height:4px;border-radius:2px;background:var(--border2);margin:0 auto 16px;cursor:pointer}
+@media(min-width:580px){.modal-handle{display:none}}
+.modal-title{font-family:var(--font-display);font-size:21px;font-weight:500;margin-bottom:16px;color:var(--t1);letter-spacing:-.3px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-acts{display:flex;gap:9px;margin-top:16px;padding-top:14px;border-top:1px solid var(--div)}
+.btn-sec{padding:12px 16px;border-radius:var(--r-sm);background:var(--fill);border:1px solid var(--border);color:var(--t2);font-family:var(--font-ui);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;flex:1}
+.btn-sec:hover{background:var(--fill2);color:var(--t1)}
+.btn-acc{padding:12px 16px;border-radius:var(--r-sm);background:var(--gold-glow);border:1px solid var(--gold-border);color:var(--gold);font-family:var(--font-ui);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;flex:1}
+.btn-acc:hover{background:rgba(184,147,90,.28)}
+.btn-acc:disabled,.btn-sec:disabled{opacity:.5;cursor:not-allowed}
+.btn-red{padding:12px 16px;border-radius:var(--r-sm);background:rgba(255,59,48,.12);border:1px solid rgba(255,59,48,.20);color:var(--red);font-family:var(--font-ui);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;flex:1}
+
+/* ── TOAST ───────────────────────────────────── */
+.toast{position:fixed;bottom:calc(var(--tab-h) + 12px);left:50%;z-index:9000;transform:translateX(-50%) translateY(20px);background:var(--surf);border:1px solid var(--border2);border-radius:20px;padding:9px 16px;display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--t1);box-shadow:0 8px 32px rgba(0,0,0,.3);opacity:0;transition:all .35s cubic-bezier(.34,1.56,.64,1);pointer-events:none;white-space:nowrap}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(min-width:768px){.toast{bottom:24px}}
+.toast-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+/* ── FIN CHART ───────────────────────────────── */
+.fin-chart{display:flex;align-items:flex-end;gap:5px;height:90px;margin-top:8px}
+.fin-bw{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.fin-bars{display:flex;gap:2px;align-items:flex-end;width:100%}
+.fin-b{flex:1;border-radius:3px 3px 0 0;min-height:3px}
+.fb-r{background:linear-gradient(180deg,var(--green),rgba(52,199,89,.3))}
+.fb-c{background:linear-gradient(180deg,var(--red),rgba(255,59,48,.3))}
+.fb-p{background:linear-gradient(180deg,var(--gold),var(--gold-glow))}
+.fin-bl{font-size:8px;font-weight:600;color:var(--t3);letter-spacing:.05em}
+.fin-leg{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap}
+.fin-li{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--t2)}
+.fin-ld{width:8px;height:8px;border-radius:2px}
+
+/* ── LOADING ─────────────────────────────────── */
+.loading{text-align:center;padding:40px;color:var(--t3);font-size:14px}
+.spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border2);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;margin-right:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── ACTIVITY ────────────────────────────────── */
+.act-item{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--div)}
+.act-item:last-child{border-bottom:none}
+.act-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.act-text{font-size:12px;font-weight:500;color:var(--t1);line-height:1.4}
+.act-time{font-size:10px;color:var(--t3);margin-top:2px}
+
+/* ── SUCCESS BOX ─────────────────────────────── */
+.success-box{background:rgba(52,199,89,.10);border:1px solid rgba(52,199,89,.20);border-radius:var(--r-md);padding:16px;text-align:center;margin-bottom:14px}
+
+/* ── LIST ROW ────────────────────────────────── */
+.list-row{display:flex;align-items:center;gap:11px;padding:12px 0;border-bottom:1px solid var(--div);cursor:pointer;transition:background .12s}
+.list-row:last-child{border-bottom:none}
+.list-row:active{background:var(--fill)}
+.lr-content{flex:1;min-width:0}
+.lr-title{font-size:14px;font-weight:500;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lr-sub{font-size:11px;color:var(--t2);margin-top:1px}
+.lr-right{display:flex;align-items:center;gap:7px;flex-shrink:0}
+
+/* ── TWO COL ─────────────────────────────────── */
+.two-col{display:grid;gap:12px}
+@media(min-width:860px){.two-col{grid-template-columns:1fr 300px}}
+
+/* ── SETTINGS PAGE ───────────────────────────── */
+.settings-group{background:var(--surf);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow);margin-bottom:14px}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--div);cursor:pointer;transition:background .12s}
+.settings-row:last-child{border-bottom:none}
+.settings-row:active{background:var(--fill)}
+.sr-label{font-size:14px;font-weight:500;color:var(--t1)}
+.sr-value{font-size:13px;color:var(--t3)}
+</style>
+</head>
+<body>
+
+<!-- ══════ LOGIN ══════ -->
+<div id="login-screen">
+  <div class="login-glow"></div>
+  <div class="login-card">
+    <div style="text-align:center;margin-bottom:22px">
+      <div class="logo-mark">
+        <svg viewBox="0 0 32 32" fill="none" width="28" height="28">
+          <circle cx="16" cy="16" r="12" stroke="#B8935A" stroke-width="1.2"/>
+          <path d="M10 16a6 6 0 0112 0" stroke="#B8935A" stroke-width="1.2" stroke-linecap="round"/>
+          <circle cx="16" cy="16" r="2" fill="#B8935A"/>
+          <line x1="16" y1="4" x2="16" y2="6.5" stroke="#B8935A" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="16" y1="25.5" x2="16" y2="28" stroke="#B8935A" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="brand-name">Clean Del Sol</div>
+      <div class="brand-sub" id="l-tagline">Management Systeem</div>
+    </div>
+    <div style="margin-bottom:14px">
+      <div class="flabel" id="l-lang-lbl">Voorkeurstaal</div>
+      <div class="lang-row">
+        <div class="lang-pill on" onclick="setLoginLang('nl',this)">🇳🇱 NL</div>
+        <div class="lang-pill" onclick="setLoginLang('en',this)">🇬🇧 EN</div>
+        <div class="lang-pill" onclick="setLoginLang('es',this)">🇪🇸 ES</div>
+        <div class="lang-pill" onclick="setLoginLang('uk',this)">🇺🇦 UA</div>
+        <div class="lang-pill" onclick="setLoginLang('ru',this)">🇷🇺 RU</div>
+      </div>
+    </div>
+    <div style="margin-bottom:12px">
+      <label class="flabel" id="l-email-lbl">E-mailadres</label>
+      <input class="finput" type="email" id="l-email" value="admin@cleandelsol.com" autocomplete="email">
+    </div>
+    <div style="margin-bottom:18px">
+      <label class="flabel" id="l-pass-lbl">Wachtwoord</label>
+      <input class="finput" type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div class="err-box" id="l-err" style="display:none"></div>
+    <button class="btn-gold" id="l-btn" onclick="doLogin()">Inloggen →</button>
+    <div class="hint-box">
+      <strong style="color:var(--t2)">Demo accounts:</strong><br>
+      Admin: admin@cleandelsol.com / Admin2025!<br>
+      Schoonmaakster: sofia@cleandelsol.com / Sofia2025!
+    </div>
+  </div>
+</div>
+
+<!-- ══════ APP ══════ -->
+<div id="app">
+  <div class="sb-backdrop" id="sb-back" onclick="closeSB()"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-lm">
+        <svg viewBox="0 0 24 24" fill="none" width="15" height="15"><circle cx="12" cy="12" r="9" stroke="#B8935A" stroke-width="1.2"/><path d="M8 12a4 4 0 018 0" stroke="#B8935A" stroke-width="1.2" stroke-linecap="round"/><circle cx="12" cy="12" r="1.8" fill="#B8935A"/></svg>
+      </div>
+      <div class="sb-bn">Clean Del Sol</div>
+      <div class="sb-bt">Costa del Sol</div>
+    </div>
+    <div class="sb-user">
+      <div class="sb-av" id="sb-av">A</div>
+      <div>
+        <div class="sb-un" id="sb-name">Admin</div>
+        <div class="sb-ur" id="sb-role">Administrator</div>
+      </div>
+    </div>
+    <nav class="sb-nav" id="sb-nav"></nav>
+    <div class="sb-foot">
+      <button class="sb-logout" onclick="doLogout()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span id="sb-logout-lbl">Uitloggen</span>
+      </button>
+    </div>
+  </aside>
+
+  <div class="app-main" id="app-main">
+    <div class="topbar">
+      <button class="top-menu" onclick="openSB()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><line x1="3" y1="7" x2="21" y2="7"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="17" x2="21" y2="17"/></svg>
+      </button>
+      <div class="top-title" id="top-title">Dashboard</div>
+      <div class="top-acts">
+        <div style="position:relative">
+          <button class="lang-btn" onclick="toggleLangDD()">
+            <span id="cur-flag">🇳🇱</span><span id="cur-code">NL</span>
+            <svg viewBox="0 0 10 6" fill="none" width="7"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
+          <div class="lang-dd" id="lang-dd">
+            <div class="lang-opt on" onclick="setLang('nl',this)"><span>🇳🇱</span>Nederlands</div>
+            <div class="lang-opt" onclick="setLang('en',this)"><span>🇬🇧</span>English</div>
+            <div class="lang-opt" onclick="setLang('es',this)"><span>🇪🇸</span>Español</div>
+            <div class="lang-opt" onclick="setLang('uk',this)"><span>🇺🇦</span>Українська</div>
+            <div class="lang-opt" onclick="setLang('ru',this)"><span>🇷🇺</span>Русский</div>
+          </div>
+        </div>
+        <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
+        <button class="add-btn" id="add-btn" onclick="topAdd()" style="display:none">+ <span id="add-lbl">Nieuw</span></button>
+      </div>
+    </div>
+
+    <div class="pg-scroll" id="pg-scroll">
+      <div class="pg" id="pg-dashboard"></div>
+      <div class="pg" id="pg-calendar"></div>
+      <div class="pg" id="pg-jobs"></div>
+      <div class="pg" id="pg-properties"></div>
+      <div class="pg" id="pg-cleaners"></div>
+      <div class="pg" id="pg-financial"></div>
+      <div class="pg" id="pg-my-jobs"></div>
+      <div class="pg" id="pg-my-earnings"></div>
+      <div class="pg" id="pg-settings"></div>
+    </div>
+  </div>
+
+  <nav class="tabbar" id="tabbar"></nav>
+</div>
+
+<!-- PANEL -->
+<div class="panel-back" id="panel-back" onclick="closePanel()"></div>
+<div class="slide-panel" id="slide-panel">
+  <div class="panel-head">
+    <div style="flex:1;min-width:0">
+      <div class="panel-title" id="panel-title">—</div>
+      <div class="panel-sub" id="panel-sub">—</div>
+    </div>
+    <div class="panel-close" onclick="closePanel()">✕</div>
+  </div>
+  <div class="panel-scroll" id="panel-body"></div>
+  <div class="panel-foot" id="panel-foot"></div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="m-job">
+  <div class="modal-sheet">
+    <div class="modal-handle" onclick="closeM('m-job')"></div>
+    <div class="modal-title" id="mj-title">Nieuwe opdracht</div>
+    <div class="form-row">
+      <div><label class="flabel" id="mj-prop-lbl">Property</label><select class="finput" id="mj-prop"></select></div>
+      <div><label class="flabel" id="mj-cl-lbl">Schoonmaakster</label><select class="finput" id="mj-cl"></select></div>
+    </div>
+    <div class="form-row">
+      <div><label class="flabel" id="mj-date-lbl">Datum</label><input type="date" class="finput" id="mj-date"></div>
+      <div><label class="flabel" id="mj-time-lbl">Tijd</label><input type="time" class="finput" id="mj-time" value="09:00"></div>
+    </div>
+    <div class="form-row">
+      <div><label class="flabel" id="mj-price-lbl">Prijs klant (€)</label><input type="number" class="finput" id="mj-price" placeholder="120"></div>
+      <div><label class="flabel" id="mj-pay-lbl">Uitbetaling (€)</label><input type="number" class="finput" id="mj-pay" placeholder="60"></div>
+    </div>
+    <div><label class="flabel">Notities</label><textarea class="finput" id="mj-notes" placeholder="Instructies..."></textarea></div>
+    <div class="modal-acts">
+      <button class="btn-sec" onclick="closeM('m-job')" id="mj-cancel">Annuleren</button>
+      <button class="btn-acc" onclick="saveJob()" id="mj-save">Aanmaken →</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="m-prop">
+  <div class="modal-sheet">
+    <div class="modal-handle" onclick="closeM('m-prop')"></div>
+    <div class="modal-title" id="mp-title">Property toevoegen</div>
+    <div class="form-row">
+      <div><label class="flabel">Naam</label><input type="text" class="finput" id="mp-name" placeholder="Villa Bella Vista"></div>
+      <div><label class="flabel">Type</label><select class="finput" id="mp-type"><option>Villa</option><option>Appartement</option><option>Airbnb</option><option>Penthouse</option><option>Finca</option></select></div>
+    </div>
+    <div><label class="flabel">Adres</label><input type="text" class="finput" id="mp-addr" placeholder="Calle del Sol 12, Marbella"></div>
+    <div class="form-row">
+      <div><label class="flabel">Eigenaar</label><input type="text" class="finput" id="mp-owner" placeholder="Naam eigenaar"></div>
+      <div><label class="flabel">Prijs (€)</label><input type="number" class="finput" id="mp-price" placeholder="120"></div>
+    </div>
+    <div><label class="flabel">Instructies</label><textarea class="finput" id="mp-notes" placeholder="Toegangscode, bijzonderheden..."></textarea></div>
+    <div class="modal-acts">
+      <button class="btn-sec" onclick="closeM('m-prop')">Annuleren</button>
+      <button class="btn-acc" onclick="saveProp()">Opslaan →</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="m-cleaner">
+  <div class="modal-sheet">
+    <div class="modal-handle" onclick="closeM('m-cleaner')"></div>
+    <div class="modal-title" id="mc-title">Schoonmaakster toevoegen</div>
+    <div class="form-row">
+      <div><label class="flabel">Voornaam</label><input type="text" class="finput" id="mc-fn" placeholder="Sofia"></div>
+      <div><label class="flabel">Achternaam</label><input type="text" class="finput" id="mc-ln" placeholder="García"></div>
+    </div>
+    <div><label class="flabel">E-mail</label><input type="email" class="finput" id="mc-email" placeholder="sofia@cleandelsol.com"></div>
+    <div class="form-row">
+      <div><label class="flabel">Telefoon</label><input type="tel" class="finput" id="mc-phone" placeholder="+34 600..."></div>
+      <div><label class="flabel">Taal</label><select class="finput" id="mc-lang"><option value="nl">🇳🇱 Nederlands</option><option value="en">🇬🇧 English</option><option value="es">🇪🇸 Español</option><option value="uk">🇺🇦 Українська</option><option value="ru">🇷🇺 Русский</option></select></div>
+    </div>
+    <div id="mc-result" style="display:none"></div>
+    <div class="modal-acts" id="mc-acts">
+      <button class="btn-sec" onclick="closeM('m-cleaner')">Annuleren</button>
+      <button class="btn-acc" onclick="saveCleaner()">Aanmaken →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><div class="toast-dot" id="toast-dot"></div><span id="toast-msg"></span></div>
+
+<script>
+// ════════════════════════════════════════════
+// CONFIG — Supabase
+// ════════════════════════════════════════════
+const SB_URL = 'https://vgzugmbqjkpesieukrnz.supabase.co'
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZnenVnbWJxamtwZXNpZXVrcm56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MTkyMTYsImV4cCI6MjA4ODk5NTIxNn0.gOGfpeskKfEJpLzFXFZfe_oejP0YdkxBojzQo4DmX4U'
+
+async function sb(path, opts={}) {
+  const r = await fetch(`${SB_URL}/rest/v1/${path}`, {
+    ...opts,
+    headers: {
+      'apikey': SB_KEY,
+      'Authorization': `Bearer ${SB_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': opts.prefer || 'return=representation',
+      ...opts.headers
+    }
+  })
+  if (!r.ok) { const e = await r.json().catch(()=>({message:r.statusText})); throw new Error(e.message||r.statusText) }
+  const txt = await r.text()
+  return txt ? JSON.parse(txt) : null
+}
+
+// ════════════════════════════════════════════
+// i18n
+// ════════════════════════════════════════════
+const LANG_META = {
+  nl:{flag:'🇳🇱',code:'NL'}, en:{flag:'🇬🇧',code:'EN'},
+  es:{flag:'🇪🇸',code:'ES'}, uk:{flag:'🇺🇦',code:'UA'}, ru:{flag:'🇷🇺',code:'RU'}
+}
+const T = {
+  nl:{ tagline:'Management Systeem', langLbl:'Voorkeurstaal', emailLbl:'E-mailadres', passLbl:'Wachtwoord', loginBtn:'Inloggen →', admin:'Admin', cleaner:'Schoonmaakster', logout:'Uitloggen', home:'Home', planning:'Planning', jobs:'Opdrachten', properties:'Properties', cleaners:'Schoonmaaksters', financial:'Financieel', myJobs:'Mijn Opdrachten', myEarnings:'Verdiensten', settings:'Instellingen', overview:'Overzicht', management:'Beheer', finances:'Financiën', myWork:'Mijn werk', today:'Vandaag', upcoming:'Aankomend', activity:'Activiteit', revenue:'Omzet', profit:'Winst', ordersM:'Opdrachten', cleanersA:'Schoonmaaksters', earned:'Verdiend', hoursW:'Uren', km:'KM', planned:'Gepland', onWay:'Onderweg', inProg:'Bezig', done:'Afgerond', delivered:'Opgeleverd', price:'Prijs', payout:'Uitbetaling', hours:'Uren', notes:'Notities', photos:'Foto\'s', delivery:'Oplevering', startTime:'Starttijd', endTime:'Eindtijd', kmDriven:'Km gereden', upload:'Foto\'s toevoegen', uploadSub:'Klik of sleep · Camera of galerij', start:'▶ Starten', deliver:'✓ Opleveren', approve:'✓ Goedkeuren', close:'Sluiten', save:'Opslaan', cancel:'Annuleren', create:'Aanmaken →', pay:'Betaal', outstanding:'Openstaand', totalEarned:'Totaal verdiend', noJobs:'Geen opdrachten', noJobsToday:'Geen opdrachten vandaag', instructions:'Instructies', recentJobs:'Recente opdrachten', paymentDone:'Betaling verwerkt', propAdded:'Property toegevoegd ✓', accountCreated:'Account aangemaakt ✓', jobCreated:'Opdracht aangemaakt ✓', deliveredMsg:'Opgeleverd! ✓', approvedMsg:'Goedgekeurd ✓', totalRev:'Totale omzet', totalCost:'Totale kosten', netProfit:'Netto winst', lastSix:'Laatste 6 maanden', perCleaner:'Per schoonmaakster', recentTx:'Recente opdrachten', loading:'Laden...', loginErr:'Ongeldig e-mailadres of wachtwoord', days:['Ma','Di','Wo','Do','Vr','Za','Zo'], months:['Januari','Februari','Maart','April','Mei','Juni','Juli','Augustus','September','Oktober','November','December'] },
+  en:{ tagline:'Management System', langLbl:'Language', emailLbl:'Email', passLbl:'Password', loginBtn:'Log in →', admin:'Admin', cleaner:'Cleaner', logout:'Log out', home:'Home', planning:'Schedule', jobs:'Jobs', properties:'Properties', cleaners:'Cleaners', financial:'Financial', myJobs:'My Jobs', myEarnings:'My Earnings', settings:'Settings', overview:'Overview', management:'Management', finances:'Finances', myWork:'My work', today:'Today', upcoming:'Upcoming', activity:'Activity', revenue:'Revenue', profit:'Profit', ordersM:'Jobs', cleanersA:'Cleaners', earned:'Earned', hoursW:'Hours', km:'KM', planned:'Planned', onWay:'On the way', inProg:'In progress', done:'Done', delivered:'Delivered', price:'Price', payout:'Payout', hours:'Hours', notes:'Notes', photos:'Photos', delivery:'Delivery', startTime:'Start time', endTime:'End time', kmDriven:'Km driven', upload:'Add photos', uploadSub:'Click or drag · Camera or gallery', start:'▶ Start', deliver:'✓ Deliver', approve:'✓ Approve', close:'Close', save:'Save', cancel:'Cancel', create:'Create →', pay:'Pay', outstanding:'Outstanding', totalEarned:'Total earned', noJobs:'No jobs', noJobsToday:'No jobs today', instructions:'Instructions', recentJobs:'Recent jobs', paymentDone:'Payment processed', propAdded:'Property added ✓', accountCreated:'Account created ✓', jobCreated:'Job created ✓', deliveredMsg:'Delivered! ✓', approvedMsg:'Approved ✓', totalRev:'Total revenue', totalCost:'Total costs', netProfit:'Net profit', lastSix:'Last 6 months', perCleaner:'Per cleaner', recentTx:'Recent jobs', loading:'Loading...', loginErr:'Invalid email or password', days:['Mo','Tu','We','Th','Fr','Sa','Su'], months:['January','February','March','April','May','June','July','August','September','October','November','December'] },
+  es:{ tagline:'Sistema de Gestión', langLbl:'Idioma', emailLbl:'Correo electrónico', passLbl:'Contraseña', loginBtn:'Entrar →', admin:'Admin', cleaner:'Limpiadora', logout:'Cerrar sesión', home:'Inicio', planning:'Agenda', jobs:'Trabajos', properties:'Propiedades', cleaners:'Limpiadoras', financial:'Finanzas', myJobs:'Mis Trabajos', myEarnings:'Mis Ganancias', settings:'Ajustes', overview:'Resumen', management:'Gestión', finances:'Finanzas', myWork:'Mi trabajo', today:'Hoy', upcoming:'Próximos', activity:'Actividad', revenue:'Ingresos', profit:'Beneficio', ordersM:'Trabajos', cleanersA:'Limpiadoras', earned:'Ganado', hoursW:'Horas', km:'KM', planned:'Planificado', onWay:'En camino', inProg:'En progreso', done:'Hecho', delivered:'Entregado', price:'Precio', payout:'Pago', hours:'Horas', notes:'Notas', photos:'Fotos', delivery:'Entrega', startTime:'Hora inicio', endTime:'Hora fin', kmDriven:'Km recorridos', upload:'Añadir fotos', uploadSub:'Clic o arrastrar · Cámara o galería', start:'▶ Iniciar', deliver:'✓ Entregar', approve:'✓ Aprobar', close:'Cerrar', save:'Guardar', cancel:'Cancelar', create:'Crear →', pay:'Pagar', outstanding:'Pendiente', totalEarned:'Total ganado', noJobs:'Sin trabajos', noJobsToday:'Sin trabajos hoy', instructions:'Instrucciones', recentJobs:'Trabajos recientes', paymentDone:'Pago procesado', propAdded:'Propiedad añadida ✓', accountCreated:'Cuenta creada ✓', jobCreated:'Trabajo creado ✓', deliveredMsg:'¡Entregado! ✓', approvedMsg:'Aprobado ✓', totalRev:'Ingresos totales', totalCost:'Costes totales', netProfit:'Beneficio neto', lastSix:'Últimos 6 meses', perCleaner:'Por limpiadora', recentTx:'Trabajos recientes', loading:'Cargando...', loginErr:'Correo o contraseña incorrectos', days:['Lu','Ma','Mi','Ju','Vi','Sá','Do'], months:['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'] },
+  uk:{ tagline:'Система управління', langLbl:'Мова', emailLbl:'Електронна пошта', passLbl:'Пароль', loginBtn:'Увійти →', admin:'Адмін', cleaner:'Прибиральниця', logout:'Вийти', home:'Головна', planning:'Розклад', jobs:'Завдання', properties:'Об\'єкти', cleaners:'Прибиральниці', financial:'Фінанси', myJobs:'Мої завдання', myEarnings:'Заробітки', settings:'Налаштування', overview:'Огляд', management:'Управління', finances:'Фінанси', myWork:'Моя робота', today:'Сьогодні', upcoming:'Наступні', activity:'Активність', revenue:'Дохід', profit:'Прибуток', ordersM:'Завдань', cleanersA:'Прибиральниць', earned:'Зароблено', hoursW:'Години', km:'КМ', planned:'Заплановано', onWay:'В дорозі', inProg:'Виконується', done:'Виконано', delivered:'Здано', price:'Ціна', payout:'Виплата', hours:'Години', notes:'Нотатки', photos:'Фото', delivery:'Здача', startTime:'Початок', endTime:'Кінець', kmDriven:'Пройдено км', upload:'Додати фото', uploadSub:'Натисніть або перетягніть', start:'▶ Почати', deliver:'✓ Здати', approve:'✓ Прийняти', close:'Закрити', save:'Зберегти', cancel:'Скасувати', create:'Створити →', pay:'Виплатити', outstanding:'До виплати', totalEarned:'Всього зароблено', noJobs:'Немає завдань', noJobsToday:'Сьогодні завдань немає', instructions:'Інструкції', recentJobs:'Останні завдання', paymentDone:'Виплату оброблено', propAdded:'Об\'єкт додано ✓', accountCreated:'Аккаунт створено ✓', jobCreated:'Завдання створено ✓', deliveredMsg:'Здано! ✓', approvedMsg:'Прийнято ✓', totalRev:'Загальний дохід', totalCost:'Загальні витрати', netProfit:'Чистий прибуток', lastSix:'Останні 6 місяців', perCleaner:'По прибиральницях', recentTx:'Останні завдання', loading:'Завантаження...', loginErr:'Невірна пошта або пароль', days:['Пн','Вт','Ср','Чт','Пт','Сб','Нд'], months:['Січень','Лютий','Березень','Квітень','Травень','Червень','Липень','Серпень','Вересень','Жовтень','Листопад','Грудень'] },
+  ru:{ tagline:'Система управления', langLbl:'Язык', emailLbl:'Электронная почта', passLbl:'Пароль', loginBtn:'Войти →', admin:'Админ', cleaner:'Уборщица', logout:'Выйти', home:'Главная', planning:'Расписание', jobs:'Задания', properties:'Объекты', cleaners:'Уборщицы', financial:'Финансы', myJobs:'Мои задания', myEarnings:'Заработки', settings:'Настройки', overview:'Обзор', management:'Управление', finances:'Финансы', myWork:'Моя работа', today:'Сегодня', upcoming:'Предстоящие', activity:'Активность', revenue:'Выручка', profit:'Прибыль', ordersM:'Заданий', cleanersA:'Уборщиц', earned:'Заработано', hoursW:'Часы', km:'КМ', planned:'Запланировано', onWay:'В пути', inProg:'Выполняется', done:'Выполнено', delivered:'Сдано', price:'Цена', payout:'Выплата', hours:'Часы', notes:'Заметки', photos:'Фото', delivery:'Сдача', startTime:'Начало', endTime:'Конец', kmDriven:'Пройдено км', upload:'Добавить фото', uploadSub:'Нажмите или перетащите', start:'▶ Начать', deliver:'✓ Сдать', approve:'✓ Принять', close:'Закрыть', save:'Сохранить', cancel:'Отмена', create:'Создать →', pay:'Выплатить', outstanding:'К выплате', totalEarned:'Всего заработано', noJobs:'Нет заданий', noJobsToday:'Сегодня заданий нет', instructions:'Инструкции', recentJobs:'Последние задания', paymentDone:'Выплата обработана', propAdded:'Объект добавлен ✓', accountCreated:'Аккаунт создан ✓', jobCreated:'Задание создано ✓', deliveredMsg:'Сдано! ✓', approvedMsg:'Принято ✓', totalRev:'Общая выручка', totalCost:'Общие расходы', netProfit:'Чистая прибыль', lastSix:'Последние 6 месяцев', perCleaner:'По уборщицам', recentTx:'Последние задания', loading:'Загрузка...', loginErr:'Неверная почта или пароль', days:['Пн','Вт','Ср','Чт','Пт','Сб','Вс'], months:['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'] }
+}
+function t(k){ return (T[LANG]||T.nl)[k]||k }
+
+// ════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════
+let LANG = localStorage.getItem('cds-lang')||'nl'
+let THEME = localStorage.getItem('cds-theme')||(window.matchMedia('(prefers-color-scheme:light)').matches?'light':'dark')
+let ROLE = 'admin'
+let USER = null
+let CUR = ''
+let calY = new Date().getFullYear(), calM = new Date().getMonth()
+let JOBS=[], PROPS=[], CLEANERS=[], PHOTOS={}
+let pJobId=null
+
+// ════════════════════════════════════════════
+// NAV CONFIG
+// ════════════════════════════════════════════
+const NAV_ADMIN = [
+  {sec:'overview'},
+  {id:'dashboard',icon:'🏠',tk:'home',add:'newJob'},
+  {id:'calendar',icon:'📅',tk:'planning',add:'newJob'},
+  {sec:'management'},
+  {id:'jobs',icon:'📋',tk:'jobs',add:'newJob'},
+  {id:'properties',icon:'🏘️',tk:'properties',add:'newProp'},
+  {id:'cleaners',icon:'✨',tk:'cleaners',add:'newCleaner'},
+  {sec:'finances'},
+  {id:'financial',icon:'💰',tk:'financial',add:null},
+  {sec:'overview'},
+  {id:'settings',icon:'⚙️',tk:'settings',add:null},
+]
+const NAV_CLEANER = [
+  {sec:'myWork'},
+  {id:'my-jobs',icon:'🏠',tk:'myJobs',add:null},
+  {id:'my-earnings',icon:'💰',tk:'myEarnings',add:null},
+  {id:'settings',icon:'⚙️',tk:'settings',add:null},
+]
+
+// ════════════════════════════════════════════
+// INIT THEME + LANG
+// ════════════════════════════════════════════
+document.documentElement.dataset.theme = THEME
+document.getElementById('theme-btn').textContent = THEME==='dark'?'🌙':'☀️'
+applyLoginLang()
+
+function applyLoginLang(){
+  document.getElementById('l-tagline').textContent = t('tagline')
+  document.getElementById('l-lang-lbl').textContent = t('langLbl')
+  document.getElementById('l-email-lbl').textContent = t('emailLbl')
+  document.getElementById('l-pass-lbl').textContent = t('passLbl')
+  document.getElementById('l-btn').textContent = t('loginBtn')
+}
+function setLoginLang(lang, el){
+  LANG = lang
+  localStorage.setItem('cds-lang', lang)
+  document.querySelectorAll('.login-card .lang-pill').forEach(p=>p.classList.remove('on'))
+  el.classList.add('on')
+  applyLoginLang()
+}
+
+// ════════════════════════════════════════════
+// AUTH — Supabase
+// ════════════════════════════════════════════
+async function doLogin(){
+  const email = document.getElementById('l-email').value.trim()
+  const pass  = document.getElementById('l-pass').value
+  const btn   = document.getElementById('l-btn')
+  const err   = document.getElementById('l-err')
+  if(!email||!pass){ showErr(t('loginErr')); return }
+  btn.disabled = true; btn.textContent = '...'
+  err.style.display = 'none'
+  try {
+    // Supabase Auth signin
+    const res = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, {
+      method:'POST',
+      headers:{'apikey':SB_KEY,'Content-Type':'application/json'},
+      body: JSON.stringify({email, password:pass})
+    })
+    const data = await res.json()
+    if(!res.ok||data.error){ showErr(t('loginErr')); return }
+    // Store session
+    localStorage.setItem('cds-token', data.access_token)
+    localStorage.setItem('cds-uid', data.user.id)
+    // Get user profile
+    const users = await sb(`users?id=eq.${data.user.id}&select=*`)
+    if(users&&users.length){
+      USER = users[0]
+      ROLE = USER.role
+      LANG = USER.language||LANG
+      localStorage.setItem('cds-lang', LANG)
+    } else {
+      // Fallback: detect role from email
+      USER = {id:data.user.id, email, name:email.split('@')[0], role:'admin', language:LANG}
+      ROLE = 'admin'
+    }
+    bootApp()
+  } catch(e){
+    showErr(t('loginErr'))
+  } finally {
+    btn.disabled=false; btn.textContent=t('loginBtn')
+  }
+}
+function showErr(msg){
+  const e=document.getElementById('l-err')
+  e.textContent=msg; e.style.display='block'
+}
+
+// Allow Enter key on login
+document.getElementById('l-pass').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin() })
+
+function doLogout(){
+  localStorage.removeItem('cds-token')
+  localStorage.removeItem('cds-uid')
+  USER=null; JOBS=[]; PROPS=[]; CLEANERS=[]
+  document.getElementById('app').style.display='none'
+  document.getElementById('login-screen').style.display='flex'
+  closePanel(); closeSB()
+}
+
+// ════════════════════════════════════════════
+// BOOT APP
+// ════════════════════════════════════════════
+function bootApp(){
+  document.getElementById('login-screen').style.display='none'
+  document.getElementById('app').style.display='block'
+  document.getElementById('sb-av').textContent = (USER.name||'?')[0].toUpperCase()
+  document.getElementById('sb-name').textContent = USER.name
+  document.getElementById('sb-role').textContent = t(ROLE==='admin'?'admin':'cleaner')
+  document.getElementById('sb-logout-lbl').textContent = t('logout')
+  const lm = LANG_META[LANG]
+  document.getElementById('cur-flag').textContent = lm.flag
+  document.getElementById('cur-code').textContent = lm.code
+  document.querySelectorAll('.lang-opt').forEach(o=>o.classList.toggle('on', o.dataset.lang===LANG||o.onclick?.toString().includes(`'${LANG}'`)))
+  const nav = ROLE==='admin'?NAV_ADMIN:NAV_CLEANER
+  buildNav(nav)
+  buildTabBar(nav)
+  loadAllData().then(()=>{
+    goTo(ROLE==='admin'?'dashboard':'my-jobs')
+  })
+}
+
+// ════════════════════════════════════════════
+// DATA LOADING
+// ════════════════════════════════════════════
+async function loadAllData(){
+  try {
+    if(ROLE==='admin'){
+      const [j,p,c] = await Promise.all([
+        sb('jobs?select=*,property:properties(*),cleaner:users!jobs_cleaner_id_fkey(id,name,email,phone)&order=date.desc'),
+        sb('properties?select=*&order=name'),
+        sb('users?select=id,name,email,phone,role,language&eq.role=cleaner&order=name').catch(()=>
+          sb('users?role=eq.cleaner&select=id,name,email,phone,role,language&order=name')
+        )
+      ])
+      JOBS = j||[]; PROPS = p||[]; CLEANERS = c||[]
+    } else {
+      const [j,p] = await Promise.all([
+        sb(`jobs?cleaner_id=eq.${USER.id}&select=*,property:properties(*),cleaner:users!jobs_cleaner_id_fkey(id,name)&order=date.desc`),
+        sb('properties?select=*&order=name')
+      ])
+      JOBS = j||[]; PROPS = p||[]
+    }
+  } catch(e){ console.warn('Data load error:', e) }
+}
+
+async function refreshJobs(){
+  try {
+    if(ROLE==='admin'){
+      JOBS = await sb('jobs?select=*,property:properties(*),cleaner:users!jobs_cleaner_id_fkey(id,name,email,phone)&order=date.desc')||[]
+    } else {
+      JOBS = await sb(`jobs?cleaner_id=eq.${USER.id}&select=*,property:properties(*),cleaner:users!jobs_cleaner_id_fkey(id,name)&order=date.desc`)||[]
+    }
+  } catch(e){ console.warn(e) }
+}
+
+// ════════════════════════════════════════════
+// NAV BUILD
+// ════════════════════════════════════════════
+function buildNav(nav){
+  const sb = document.getElementById('sb-nav')
+  sb.innerHTML = nav.map(n=>{
+    if(n.sec) return `<div class="sb-sec">${t(n.sec)}</div>`
+    return `<div class="sb-item" id="sbi-${n.id}" onclick="goTo('${n.id}')"><div class="sb-icon">${n.icon}</div><span>${t(n.tk)}</span></div>`
+  }).join('')
+}
+function buildTabBar(nav){
+  const items = nav.filter(n=>!n.sec)
+  const tb = document.getElementById('tabbar')
+  tb.innerHTML = items.map(n=>`
+    <div class="tab-item" id="tab-${n.id}" onclick="goTo('${n.id}')">
+      <div class="tab-ico">${n.icon}</div>
+      <span class="tab-lbl">${t(n.tk)}</span>
+    </div>`).join('')
+}
+
+// ════════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════════
+function goTo(id){
+  CUR = id
+  const nav = [...NAV_ADMIN,...NAV_CLEANER].find(n=>n.id===id)
+  // Active states
+  document.querySelectorAll('.sb-item,.tab-item').forEach(el=>el.classList.remove('on'))
+  document.getElementById('sbi-'+id)?.classList.add('on')
+  document.getElementById('tab-'+id)?.classList.add('on')
+  // Pages
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'))
+  document.getElementById('pg-'+id)?.classList.add('on')
+  // Scroll top
+  document.getElementById('pg-scroll').scrollTop = 0
+  // Title
+  document.getElementById('top-title').textContent = t(nav?.tk||'home')
+  // Add button
+  const addBtn = document.getElementById('add-btn')
+  if(nav?.add){ addBtn.style.display='flex'; document.getElementById('add-lbl').textContent=t(nav.add==='newJob'?'jobs':nav.add==='newProp'?'properties':'cleaners').slice(0,8) }
+  else addBtn.style.display='none'
+  closeSB()
+  renderPage(id)
+}
+function topAdd(){
+  const nav = [...NAV_ADMIN,...NAV_CLEANER].find(n=>n.id===CUR)
+  if(!nav?.add) return
+  if(nav.add==='newJob') openNewJob()
+  else if(nav.add==='newProp') openM('m-prop')
+  else openM('m-cleaner')
+}
+
+// ════════════════════════════════════════════
+// RENDER PAGES
+// ════════════════════════════════════════════
+function renderPage(id){
+  const map={
+    dashboard:renderDash, calendar:renderCal,
+    jobs:renderJobs, properties:renderProps, cleaners:renderCleaners,
+    financial:renderFin, 'my-jobs':renderMyJobs, 'my-earnings':renderMyEarnings,
+    settings:renderSettings
+  }
+  if(map[id]) map[id]()
+}
+
+// ── DASHBOARD ────────────────────────────────
+function renderDash(){
+  const pg = document.getElementById('pg-dashboard')
+  const isA = ROLE==='admin'
+  const today = new Date().toISOString().split('T')[0]
+  const todayJobs = JOBS.filter(j=>j.date===today)
+  const rev = JOBS.reduce((s,j)=>s+(j.client_price||0),0)
+  const costs = JOBS.reduce((s,j)=>s+(j.cleaner_payout||0),0)
+
+  let stats = ''
+  if(isA){
+    stats=`
+      <div class="stat-card"><div class="stat-shine"></div><div class="stat-lbl">${t('revenue')}</div><div class="stat-val" style="color:var(--green)">€${Math.round(rev).toLocaleString('nl')}</div></div>
+      <div class="stat-card"><div class="stat-shine"></div><div class="stat-lbl">${t('profit')}</div><div class="stat-val" style="color:var(--gold)">€${Math.round(rev-costs).toLocaleString('nl')}</div></div>
+      <div class="stat-card"><div class="stat-shine"></div><div class="stat-lbl">${t('ordersM')}</div><div class="stat-val">${JOBS.length}</div></div>
+      <div class="stat-card"><div class="stat-shine"></div><div class="stat-lbl">${t('cleanersA')}</div><div class="stat-val">${CLEANERS.length}</div></div>`
+  } else {
+    const myJ=JOBS.filter(j=>j.cleaner_id===USER.id)
+    const myE=myJ.reduce((s,j)=>s+(j.cleaner_payout||0),0)
+    stats=`
+      <div class="stat-card"><div class="stat-shine"></div><div class="stat-lbl">${t('earned')}</div><div class="stat-val" style="color:var(--gold)">€${myE}</div></div>
+      <div class="stat-card"><div class="stat-shine"></div><div class="stat-lbl">${t('ordersM')}</div><div class="stat-val">${myJ.length}</div></div>
+      <div class="stat-card"><div class="stat-shine"></div><div class="stat-lbl">${t('hoursW')}</div><div class="stat-val">${myJ.reduce((s,j)=>s+(j.hours_worked||0),0).toFixed(1)}u</div></div>
+      <div class="stat-card"><div class="stat-shine"></div><div class="stat-lbl">${t('km')}</div><div class="stat-val">${myJ.reduce((s,j)=>s+(j.km_driven||0),0)}</div></div>`
+  }
+
+  const todayHtml = todayJobs.length
+    ? todayJobs.map(j=>jobCardHTML(j)).join('')
+    : `<div class="gc" style="padding:28px;text-align:center;color:var(--t3)">${t('noJobsToday')}</div>`
+
+  const actHtml = isA ? `
+    <div class="gc" style="padding:14px">
+      ${JOBS.slice(0,5).map(j=>`
+        <div class="act-item">
+          <div class="act-dot" style="background:${j.status==='delivered'?'var(--green)':j.status==='progress'?'var(--amber)':'var(--blue)'}"></div>
+          <div><div class="act-text">${j.property?.name||'—'} — ${j.cleaner?.name||'—'}</div><div class="act-time">${fmtDate(j.date)} · ${j.start_time||''}</div></div>
+        </div>`).join('')}
+    </div>` : ''
+
+  pg.innerHTML = `
+    <div class="stat-row">${stats}</div>
+    <div class="two-col">
+      <div>
+        <div class="sec-hd"><div class="sec-title">${t('today')}</div></div>
+        ${todayHtml}
+      </div>
+      <div>
+        ${isA?`<div class="sec-hd"><div class="sec-title">${t('activity')}</div></div>${actHtml}`:''}
+        ${isA?`
+        <div class="sec-hd" style="margin-top:12px"><div class="sec-title">${t('cleaners')}</div></div>
+        <div class="gc" style="padding:14px">
+          ${CLEANERS.map(c=>{
+            const cJ=JOBS.filter(j=>j.cleaner_id===c.id)
+            const pen=cJ.filter(j=>j.status!=='done').reduce((s,j)=>s+(j.cleaner_payout||0),0)
+            return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--div)">
+              <div style="width:30px;height:30px;border-radius:50%;background:var(--gold-glow);border:1.5px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:13px;color:var(--gold);flex-shrink:0">${(c.name||'?')[0]}</div>
+              <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">${c.name}</div><div style="font-size:10px;color:var(--t3)">${cJ.length} ${t('jobs')}</div></div>
+              ${pen>0?`<div style="text-align:right"><div style="font-family:var(--font-display);font-size:14px;color:var(--red)">€${pen}</div><div style="font-size:9px;color:var(--t3)">${t('outstanding')}</div></div>`:''}
+            </div>`
+          }).join('')}
+        </div>`:''}
+      </div>
+    </div>`
+}
+
+// ── CALENDAR ─────────────────────────────────
+function renderCal(){
+  const pg = document.getElementById('pg-calendar')
+  const months=t('months'), days=t('days')
+  const first=new Date(calY,calM,1).getDay(), off=first===0?6:first-1
+  const dim=new Date(calY,calM+1,0).getDate(), prev=new Date(calY,calM,0).getDate()
+  const todayStr = new Date().toISOString().split('T')[0]
+
+  let cells=''
+  for(let i=0;i<off;i++) cells+=calCell(prev-off+1+i,true,[],false)
+  for(let d=1;d<=dim;d++){
+    const ds=`${calY}-${String(calM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+    const dj=JOBS.filter(j=>j.date===ds)
+    const isT=(ds===todayStr)
+    cells+=calCell(d,false,dj,isT,ds)
+  }
+  const rem=42-off-dim; for(let d=1;d<=rem;d++) cells+=calCell(d,true,[],false)
+
+  const upcoming=JOBS.filter(j=>j.date>=todayStr).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,6)
+
+  pg.innerHTML=`
+    <div class="gc" style="padding:14px">
+      <div class="cal-hd">
+        <div class="cal-nav" onclick="shiftM(-1)">‹</div>
+        <div class="cal-mtitle">${months[calM]} ${calY}</div>
+        <div class="cal-nav" onclick="shiftM(1)">›</div>
+        <div class="cal-today" onclick="goToday2()">${t('today')}</div>
+      </div>
+      <div class="cal-dow">${days.map(d=>`<div class="cal-dc">${d}</div>`).join('')}</div>
+      <div class="cal-grid">${cells}</div>
+    </div>
+    <div class="sec-hd" style="margin-top:18px"><div class="sec-title">${t('upcoming')}</div></div>
+    ${upcoming.map(j=>jobCardHTML(j)).join('')||`<div class="gc" style="padding:24px;text-align:center;color:var(--t3)">${t('noJobs')}</div>`}`
+}
+function calCell(d,other,jobs,isT,ds=''){
+  const ec={planned:'ce-p',progress:'ce-g',done:'ce-d',delivered:'ce-o'}
+  const click=ds?`onclick="openJobsForDate('${ds}')"`:''
+  return `<div class="cal-day${other?' other':''}${isT?' today':''}" ${click}>
+    <div class="cal-dn">${d}</div>
+    ${jobs.slice(0,2).map(j=>`<div class="cal-ev ${ec[j.status]||'ce-p'}" onclick="event.stopPropagation();openJobPanel(${j.id})">${(j.property?.name||'').split(' ')[0]}</div>`).join('')}
+    ${jobs.length>2?`<div style="font-size:7px;color:var(--t3)">+${jobs.length-2}</div>`:''}
+  </div>`
+}
+function shiftM(d){ calM+=d; if(calM>11){calM=0;calY++} if(calM<0){calM=11;calY--} renderCal() }
+function goToday2(){ const n=new Date(); calY=n.getFullYear(); calM=n.getMonth(); renderCal() }
+function openJobsForDate(ds){ const j=JOBS.find(j=>j.date===ds); if(j) openJobPanel(j.id) }
+
+// ── JOBS ─────────────────────────────────────
+function renderJobs(){
+  const pg=document.getElementById('pg-jobs')
+  pg.innerHTML = JOBS.length
+    ? JOBS.map(j=>jobCardHTML(j)).join('')
+    : `<div class="gc" style="padding:32px;text-align:center;color:var(--t3)">${t('noJobs')}</div>`
+}
+
+// ── PROPERTIES ───────────────────────────────
+function renderProps(){
+  const icons={Villa:'🏡',Appartement:'🏢',Airbnb:'🔑',Penthouse:'🌆',Finca:'🌿'}
+  document.getElementById('pg-properties').innerHTML=`
+    <div class="card-grid">
+      ${PROPS.map(p=>`
+        <div class="prop-card" onclick="openPropPanel('${p.id}')">
+          <div class="prop-thumb">${p.icon||icons[p.type]||'🏠'}</div>
+          <div class="prop-body">
+            <div class="prop-name">${p.name}</div>
+            <div class="prop-addr">${p.address||''}</div>
+            <div class="prop-tags">
+              <span class="ptag">${p.type||'—'}</span>
+              <span class="ptag ptag-g">€${p.default_price||0}</span>
+              <span class="ptag">${p.owner_name||''}</span>
+            </div>
+          </div>
+        </div>`).join('')}
+    </div>`
+}
+
+// ── CLEANERS ─────────────────────────────────
+function renderCleaners(){
+  document.getElementById('pg-cleaners').innerHTML=`
+    <div class="card-grid">
+      ${CLEANERS.map(c=>{
+        const cJ=JOBS.filter(j=>j.cleaner_id===c.id)
+        const earned=cJ.reduce((s,j)=>s+(j.cleaner_payout||0),0)
+        const pending=cJ.filter(j=>j.status!=='done').reduce((s,j)=>s+(j.cleaner_payout||0),0)
+        return `<div class="cl-card" onclick="openCleanerPanel('${c.id}')">
+          <div class="cl-av">${(c.name||'?')[0]}</div>
+          <div class="cl-name">${c.name}</div>
+          <div class="cl-info">${c.email}</div>
+          <div class="cl-info">${c.phone||''}</div>
+          <div class="cl-bar"><div class="cl-fill" style="width:${Math.min(100,earned/30)}%"></div></div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--t3)">${t('totalEarned')}</div><div style="font-family:var(--font-display);font-size:19px;color:var(--gold)">€${earned}</div></div>
+            ${pending>0?`<div style="text-align:right"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--t3)">${t('outstanding')}</div><div style="font-family:var(--font-display);font-size:16px;color:var(--red)">€${pending}</div></div>`:''}
+          </div>
+        </div>`
+      }).join('')}
+    </div>`
+}
+
+// ── FINANCIAL ────────────────────────────────
+function renderFin(){
+  const rev=JOBS.reduce((s,j)=>s+(j.client_price||0),0)
+  const costs=JOBS.reduce((s,j)=>s+(j.cleaner_payout||0),0)
+  const profit=rev-costs
+  const margin=rev>0?Math.round((profit/rev)*100):0
+  const months6=['Okt','Nov','Dec','Jan','Feb','Mrt']
+  const maxR=4500
+  const finData=[3200,3800,4100,3600,3900,Math.round(rev)]
+  const costData=[1200,1400,1600,1300,1480,Math.round(costs)]
+
+  document.getElementById('pg-financial').innerHTML=`
+    <div class="stat-row" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat-card"><div class="stat-shine"></div><div class="stat-lbl">${t('totalRev')}</div><div class="stat-val" style="color:var(--green);font-size:22px">€${Math.round(rev).toLocaleString('nl')}</div></div>
+      <div class="stat-card"><div class="stat-shine"></div><div class="stat-lbl">${t('totalCost')}</div><div class="stat-val" style="color:var(--red);font-size:22px">€${Math.round(costs).toLocaleString('nl')}</div></div>
+      <div class="stat-card"><div class="stat-shine"></div><div class="stat-lbl">${t('netProfit')}</div><div class="stat-val" style="color:var(--gold);font-size:22px">€${Math.round(profit).toLocaleString('nl')}</div><div class="stat-sub" style="color:var(--green)">↑ ${margin}% marge</div></div>
+    </div>
+    <div class="two-col">
+      <div class="gc" style="padding:16px">
+        <div style="font-size:15px;font-weight:700;margin-bottom:4px">${t('lastSix')}</div>
+        <div class="fin-chart">
+          ${finData.map((r,i)=>{
+            const rH=Math.round(r/maxR*88), cH=Math.round(costData[i]/maxR*88), pH=Math.round((r-costData[i])/maxR*88)
+            return `<div class="fin-bw"><div class="fin-bars" style="height:88px"><div class="fin-b fb-r" style="height:${rH}px"></div><div class="fin-b fb-c" style="height:${cH}px"></div><div class="fin-b fb-p" style="height:${Math.max(2,pH)}px"></div></div><div class="fin-bl">${months6[i]}</div></div>`
+          }).join('')}
+        </div>
+        <div class="fin-leg">
+          <div class="fin-li"><div class="fin-ld" style="background:var(--green)"></div>${t('revenue')}</div>
+          <div class="fin-li"><div class="fin-ld" style="background:var(--red)"></div>${t('totalCost')}</div>
+          <div class="fin-li"><div class="fin-ld" style="background:var(--gold)"></div>${t('profit')}</div>
+        </div>
+      </div>
+      <div class="gc" style="padding:16px">
+        <div style="font-size:15px;font-weight:700;margin-bottom:12px">${t('perCleaner')}</div>
+        ${CLEANERS.map(c=>{
+          const cJ=JOBS.filter(j=>j.cleaner_id===c.id)
+          const earned=cJ.reduce((s,j)=>s+(j.cleaner_payout||0),0)
+          const pending=cJ.filter(j=>j.status!=='done').reduce((s,j)=>s+(j.cleaner_payout||0),0)
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--div)">
+            <div><div style="font-size:13px;font-weight:600">${c.name}</div><div style="font-size:10px;color:var(--t3)">${cJ.length} ${t('jobs')}</div></div>
+            <div style="text-align:right;display:flex;align-items:center;gap:10px">
+              <div><div style="font-family:var(--font-display);font-size:17px;color:var(--gold)">€${earned}</div>${pending>0?`<div style="font-size:10px;color:var(--red)">€${pending} open</div>`:''}</div>
+              ${pending>0?`<button class="btn-acc" style="padding:7px 11px;font-size:11px" onclick="payOut('${c.id}')">${t('pay')}</button>`:''}
+            </div>
+          </div>`
+        }).join('')}
+      </div>
+    </div>`
+}
+
+// ── MY JOBS ───────────────────────────────────
+function renderMyJobs(){
+  const myJ = JOBS.filter(j=>j.cleaner_id===USER.id)
+  document.getElementById('pg-my-jobs').innerHTML = myJ.length
+    ? myJ.map(j=>jobCardHTML(j,true)).join('')
+    : `<div class="gc" style="padding:32px;text-align:center;color:var(--t3)">${t('noJobs')}</div>`
+}
+
+// ── MY EARNINGS ──────────────────────────────
+function renderMyEarnings(){
+  const myJ=JOBS.filter(j=>j.cleaner_id===USER.id)
+  const earned=myJ.reduce((s,j)=>s+(j.cleaner_payout||0),0)
+  const hours=myJ.reduce((s,j)=>s+(j.hours_worked||0),0)
+  const km=myJ.reduce((s,j)=>s+(j.km_driven||0),0)
+  const pending=myJ.filter(j=>j.status!=='done').reduce((s,j)=>s+(j.cleaner_payout||0),0)
+  document.getElementById('pg-my-earnings').innerHTML=`
+    <div class="stat-row" style="grid-template-columns:repeat(2,1fr)">
+      <div class="stat-card"><div class="stat-shine"></div><div class="stat-lbl">${t('totalEarned')}</div><div class="stat-val" style="color:var(--gold)">€${earned}</div></div>
+      <div class="stat-card"><div class="stat-shine"></div><div class="stat-lbl">${t('outstanding')}</div><div class="stat-val" style="color:var(--red)">€${pending}</div></div>
+      <div class="stat-card"><div class="stat-shine"></div><div class="stat-lbl">${t('hoursW')}</div><div class="stat-val">${hours.toFixed(1)}u</div></div>
+      <div class="stat-card"><div class="stat-shine"></div><div class="stat-lbl">${t('km')}</div><div class="stat-val">${km}km</div></div>
+    </div>
+    <div class="sec-hd"><div class="sec-title">${t('recentJobs')}</div></div>
+    ${myJ.map(j=>`
+      <div class="gc" style="padding:13px;margin-bottom:9px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="openJobPanel(${j.id},true)">
+        <div style="width:34px;height:34px;border-radius:9px;background:var(--fill);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${j.property?.icon||'🏠'}</div>
+        <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${j.property?.name||'—'}</div><div style="font-size:10px;color:var(--t3)">${fmtDate(j.date)} · ${j.hours_worked?j.hours_worked+'u':'—'} · ${j.km_driven?j.km_driven+'km':'—'}</div></div>
+        <div style="text-align:right;flex-shrink:0"><div style="font-size:15px;font-weight:700;color:var(--gold)">€${j.cleaner_payout}</div>${badge(j.status)}</div>
+      </div>`).join('')}`
+}
+
+// ── SETTINGS ─────────────────────────────────
+function renderSettings(){
+  const pg=document.getElementById('pg-settings')
+  const langs=[{c:'nl',f:'🇳🇱',n:'Nederlands'},{c:'en',f:'🇬🇧',n:'English'},{c:'es',f:'🇪🇸',n:'Español'},{c:'uk',f:'🇺🇦',n:'Українська'},{c:'ru',f:'🇷🇺',n:'Русский'}]
+  const curL=langs.find(l=>l.c===LANG)||langs[0]
+  pg.innerHTML=`
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--t3);margin-bottom:8px;padding:0 4px">Account</div>
+    <div class="settings-group">
+      <div class="settings-row"><span class="sr-label">Naam</span><span class="sr-value">${USER?.name||'—'}</span></div>
+      <div class="settings-row"><span class="sr-label">Email</span><span class="sr-value" style="font-size:11px">${USER?.email||'—'}</span></div>
+      <div class="settings-row"><span class="sr-label">Rol</span><span class="sr-value">${t(ROLE==='admin'?'admin':'cleaner')}</span></div>
+    </div>
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--t3);margin-bottom:8px;padding:0 4px">Weergave</div>
+    <div class="settings-group">
+      <div class="settings-row" onclick="toggleTheme()"><span class="sr-label">Thema</span><span class="sr-value">${THEME==='dark'?'🌙 Donker':'☀️ Licht'}</span></div>
+      <div class="settings-row" onclick="openLangSettings()"><span class="sr-label">Taal</span><span class="sr-value">${curL.f} ${curL.n}</span></div>
+    </div>
+    <div id="lang-picker" style="display:none" class="settings-group">
+      ${langs.map(l=>`<div class="settings-row" onclick="setLangFromSettings('${l.c}')"><span class="sr-label">${l.f} ${l.n}</span>${LANG===l.c?'<span style="color:var(--gold)">✓</span>':''}</div>`).join('')}
+    </div>
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--t3);margin-bottom:8px;margin-top:16px;padding:0 4px">Database</div>
+    <div class="settings-group">
+      <div class="settings-row" onclick="syncData()"><span class="sr-label">🔄 Synchroniseren</span><span class="sr-value" id="sync-status">Tap om te vernieuwen</span></div>
+    </div>
+    <div style="margin-top:20px">
+      <button class="btn-red" style="width:100%" onclick="doLogout()">${t('logout')}</button>
+    </div>`
+}
+function openLangSettings(){
+  const p=document.getElementById('lang-picker')
+  p.style.display=p.style.display==='none'?'block':'none'
+}
+function setLangFromSettings(lang){
+  setLang(lang, null)
+  renderSettings()
+}
+async function syncData(){
+  document.getElementById('sync-status').textContent='Laden...'
+  await loadAllData()
+  renderPage(CUR)
+  document.getElementById('sync-status').textContent='✓ Bijgewerkt'
+  setTimeout(()=>{ const el=document.getElementById('sync-status'); if(el) el.textContent='Tap om te vernieuwen' },2000)
+}
+
+// ════════════════════════════════════════════
+// JOB CARD HTML
+// ════════════════════════════════════════════
+function jobCardHTML(j, cm=false){
+  return `<div class="job-card" onclick="openJobPanel(${j.id},${cm||(ROLE==='cleaner')})">
+    <div class="job-top">
+      <div style="min-width:0;flex:1">
+        <div class="job-prop">${j.property?.icon||'🏠'} ${j.property?.name||'—'}</div>
+        <div class="job-meta">${fmtDate(j.date)} · ${j.start_time||''}${!cm&&ROLE==='admin'?' · '+(j.cleaner?.name||'—'):''}</div>
+      </div>
+      ${badge(j.status)}
+    </div>
+    <div class="job-stats">
+      <div style="text-align:center"><div class="js-lbl">${t('price')}</div><div class="js-val" style="color:var(--green)">€${j.client_price||0}</div></div>
+      <div style="text-align:center"><div class="js-lbl">${t('payout')}</div><div class="js-val" style="color:var(--gold)">€${j.cleaner_payout||0}</div></div>
+      <div style="text-align:center"><div class="js-lbl">${t('hours')}</div><div class="js-val">${j.hours_worked?j.hours_worked+'u':'—'}</div></div>
+      <div style="text-align:center"><div class="js-lbl">${t('km')}</div><div class="js-val">${j.km_driven||'—'}</div></div>
+    </div>
+  </div>`
+}
+
+// ════════════════════════════════════════════
+// PANELS
+// ════════════════════════════════════════════
+function openJobPanel(id, cm=false){
+  const j=JOBS.find(j=>j.id==id); if(!j) return
+  pJobId=id
+  const isCleaner = cm||(ROLE==='cleaner')
+  const canOpl = isCleaner && j.status!=='done' && j.status!=='delivered'
+  const steps=['planned','progress','done','delivered']
+  const sLabels=[t('planned'),t('onWay'),t('inProg'),t('delivered')]
+  const cur=steps.indexOf(j.status)
+  document.getElementById('panel-title').textContent=(j.property?.icon||'')+ ' '+(j.property?.name||'—')
+  document.getElementById('panel-sub').textContent=`${fmtDate(j.date)} · ${j.start_time||''} · ${j.cleaner?.name||''}`
+
+  const photosHtml = j.photos?.length
+    ? `<div class="p-sec">${t('photos')} (${j.photos.length})</div>
+       <div class="photo-grid">${j.photos.map(p=>`<div class="photo-item"><img src="${p.url}" loading="lazy" onclick="window.open('${p.url}','_blank')"></div>`).join('')}</div>`
+    : ''
+
+  document.getElementById('panel-body').innerHTML=`
+    <div style="margin-bottom:12px">${badge(j.status)}</div>
+    <div class="tl">
+      ${steps.map((s,i)=>{
+        const done=i<cur, now=i===cur
+        return `<div class="tl-step"><div class="tl-dot ${done?'done':now?'now':''}">${done?'✓':i+1}</div><div class="tl-lbl">${sLabels[i]}</div></div>${i<3?`<div class="tl-line ${done||now?'done':''}"></div>`:''}`
+      }).join('')}
+    </div>
+    <div class="p-stats">
+      <div class="p-stat"><div class="p-sl">${t('price')}</div><div class="p-sv" style="color:var(--green)">€${j.client_price||0}</div></div>
+      <div class="p-stat"><div class="p-sl">${t('payout')}</div><div class="p-sv" style="color:var(--gold)">€${j.cleaner_payout||0}</div></div>
+      <div class="p-stat"><div class="p-sl">${t('hours')}</div><div class="p-sv">${j.hours_worked?j.hours_worked+'u':'—'}</div></div>
+    </div>
+    <div class="p-stats">
+      <div class="p-stat"><div class="p-sl">${t('km')}</div><div class="p-sv">${j.km_driven||'—'}</div></div>
+      <div class="p-stat" style="grid-column:2/4"><div class="p-sl">${t('notes')}</div><div style="font-size:12px;color:var(--t2);margin-top:3px">${j.notes||'—'}</div></div>
+    </div>
+    ${photosHtml}
+    ${canOpl?`
+      <div class="panel-section-divider"></div>
+      <div class="p-sec">${t('delivery')}</div>
+      <div class="form-row">
+        <div><label class="flabel">${t('startTime')}</label><input type="time" class="finput" id="opl-s" value="${j.start_time||'09:00'}"></div>
+        <div><label class="flabel">${t('endTime')}</label><input type="time" class="finput" id="opl-e" value="12:00"></div>
+      </div>
+      <div class="form-row">
+        <div><label class="flabel">${t('kmDriven')}</label><input type="number" class="finput" id="opl-km" placeholder="12" value="${j.km_driven||''}"></div>
+        <div><label class="flabel">${t('hours')}</label><input type="number" class="finput" id="opl-h" placeholder="3" step="0.5" value="${j.hours_worked||''}"></div>
+      </div>
+      <div><label class="flabel">${t('notes')}</label><textarea class="finput" id="opl-n" placeholder="...">${j.notes||''}</textarea></div>
+      <div class="p-sec">${t('photos')}</div>
+      <div class="upload-zone" id="upload-zone" onclick="triggerPhoto()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handlePhotoDrop(event)">
+        <div style="font-size:28px;margin-bottom:6px">📷</div>
+        <div style="font-size:13px;font-weight:600;color:var(--t2)">${t('upload')}</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:3px">${t('uploadSub')}</div>
+      </div>
+      <input type="file" id="photo-input" accept="image/*" multiple capture="environment" style="display:none" onchange="handlePhotoFiles(this.files)">
+      <div class="photo-grid" id="opl-photos">
+        ${j.photos?.map(p=>`<div class="photo-item"><img src="${p.url}" loading="lazy"></div>`).join('')||''}
+      </div>
+    `:''}
+  `
+
+  let footHTML = ''
+  if(canOpl){
+    footHTML = `<button class="btn-sec" style="flex:1" onclick="updStatus(${j.id},'progress')">${t('start')}</button><button class="btn-acc" style="flex:1" onclick="doOplever(${j.id})">${t('deliver')}</button>`
+  } else if(!isCleaner && j.status==='delivered'){
+    footHTML = `<button class="btn-sec" style="flex:1" onclick="closePanel()">${t('close')}</button><button class="btn-acc" style="flex:1" onclick="updStatus(${j.id},'done');showToast('${t('approvedMsg')}','var(--green)')">${t('approve')}</button>`
+  } else {
+    footHTML = `<button class="btn-sec" style="flex:1" onclick="closePanel()">${t('close')}</button>`
+  }
+  document.getElementById('panel-foot').innerHTML = footHTML
+  openPanel()
+}
+
+function openPropPanel(id){
+  const p=PROPS.find(p=>p.id==id); if(!p) return
+  const pj=JOBS.filter(j=>j.property_id==id)
+  document.getElementById('panel-title').textContent=`${p.icon||'🏠'} ${p.name}`
+  document.getElementById('panel-sub').textContent=`${p.address||''} · ${p.owner_name||''}`
+  document.getElementById('panel-body').innerHTML=`
+    <div class="p-stats">
+      <div class="p-stat"><div class="p-sl">Type</div><div class="p-sv" style="font-size:18px">${p.icon||'🏠'}</div></div>
+      <div class="p-stat"><div class="p-sl">${t('price')}</div><div class="p-sv" style="color:var(--green)">€${p.default_price||0}</div></div>
+      <div class="p-stat"><div class="p-sl">${t('jobs')}</div><div class="p-sv">${pj.length}</div></div>
+    </div>
+    ${p.notes?`<div class="p-sec">${t('instructions')}</div><div style="background:var(--fill);border:1px solid var(--border);border-radius:11px;padding:12px;font-size:13px;line-height:1.6;color:var(--t2)">${p.notes}</div>`:''}
+    <div class="p-sec">${t('recentJobs')}</div>
+    ${pj.slice(0,5).map(j=>`
+      <div class="list-row" onclick="openJobPanel(${j.id})">
+        <div class="lr-content"><div class="lr-title">${fmtDate(j.date)} · ${j.start_time||''}</div><div class="lr-sub">${j.cleaner?.name||''}</div></div>
+        <div class="lr-right">${badge(j.status)}</div>
+      </div>`).join('')||`<div style="color:var(--t3);font-size:13px;padding:12px 0">${t('noJobs')}</div>`}`
+  document.getElementById('panel-foot').innerHTML=`<button class="btn-sec" style="flex:1" onclick="closePanel()">${t('close')}</button>`
+  openPanel()
+}
+
+function openCleanerPanel(id){
+  const c=CLEANERS.find(c=>c.id==id); if(!c) return
+  const cJ=JOBS.filter(j=>j.cleaner_id==id)
+  const earned=cJ.reduce((s,j)=>s+(j.cleaner_payout||0),0)
+  const pending=cJ.filter(j=>j.status!=='done').reduce((s,j)=>s+(j.cleaner_payout||0),0)
+  const hours=cJ.reduce((s,j)=>s+(j.hours_worked||0),0)
+  const km=cJ.reduce((s,j)=>s+(j.km_driven||0),0)
+  document.getElementById('panel-title').textContent=c.name
+  document.getElementById('panel-sub').textContent=`${c.email||''} · ${c.phone||''}`
+  document.getElementById('panel-body').innerHTML=`
+    <div class="p-stats">
+      <div class="p-stat"><div class="p-sl">${t('jobs')}</div><div class="p-sv">${cJ.length}</div></div>
+      <div class="p-stat"><div class="p-sl">${t('hours')}</div><div class="p-sv">${hours.toFixed(1)}u</div></div>
+      <div class="p-stat"><div class="p-sl">${t('km')}</div><div class="p-sv">${km}</div></div>
+    </div>
+    <div class="p-stats">
+      <div class="p-stat" style="grid-column:1/3"><div class="p-sl">${t('totalEarned')}</div><div class="p-sv" style="color:var(--gold)">€${earned}</div></div>
+      <div class="p-stat"><div class="p-sl">${t('outstanding')}</div><div class="p-sv" style="color:var(--red)">€${pending}</div></div>
+    </div>
+    <div class="p-sec">${t('recentJobs')}</div>
+    ${cJ.slice(0,6).map(j=>`
+      <div class="list-row" onclick="openJobPanel(${j.id})">
+        <div class="lr-content"><div class="lr-title">${j.property?.name||'—'}</div><div class="lr-sub">${fmtDate(j.date)}</div></div>
+        <div class="lr-right">${badge(j.status)}<span style="font-family:var(--font-display);font-size:14px;color:var(--gold)">€${j.cleaner_payout}</span></div>
+      </div>`).join('')}`
+  document.getElementById('panel-foot').innerHTML=`
+    <button class="btn-sec" style="flex:1" onclick="closePanel()">${t('close')}</button>
+    ${pending>0?`<button class="btn-acc" style="flex:1" onclick="payOut('${c.id}')">${t('pay')} €${pending}</button>`:''}`
+  openPanel()
+}
+
+function openPanel(){ document.getElementById('slide-panel').classList.add('on'); document.getElementById('panel-back').classList.add('on') }
+function closePanel(){ document.getElementById('slide-panel').classList.remove('on'); document.getElementById('panel-back').classList.remove('on') }
+
+// ════════════════════════════════════════════
+// JOB ACTIONS
+// ════════════════════════════════════════════
+async function updStatus(id, status){
+  try {
+    await sb(`jobs?id=eq.${id}`, {method:'PATCH', body:JSON.stringify({status})})
+    const j=JOBS.find(j=>j.id==id); if(j) j.status=status
+    openJobPanel(id, ROLE==='cleaner')
+    renderPage(CUR)
+  } catch(e){ showToast('Fout: '+e.message,'var(--red)') }
+}
+
+async function doOplever(id){
+  const j=JOBS.find(j=>j.id==id); if(!j) return
+  const km=parseFloat(document.getElementById('opl-km')?.value)||null
+  const hours=parseFloat(document.getElementById('opl-h')?.value)||null
+  const notes=document.getElementById('opl-n')?.value||''
+  try {
+    await sb(`jobs?id=eq.${id}`, {method:'PATCH', body:JSON.stringify({status:'delivered',km_driven:km,hours_worked:hours,notes})})
+    j.status='delivered'; j.km_driven=km; j.hours_worked=hours; j.notes=notes
+    closePanel()
+    showToast(t('deliveredMsg'),'var(--green)')
+    await refreshJobs()
+    renderPage(CUR)
+  } catch(e){ showToast('Fout: '+e.message,'var(--red)') }
+}
+
+async function payOut(cid){
+  // Mark all delivered jobs as done
+  const pending=JOBS.filter(j=>j.cleaner_id==cid&&j.status!=='done')
+  try {
+    for(const j of pending){
+      await sb(`jobs?id=eq.${j.id}`, {method:'PATCH', body:JSON.stringify({status:'done'})})
+      j.status='done'
+    }
+    showToast(t('paymentDone'),'var(--green)')
+    closePanel()
+    renderPage(CUR)
+  } catch(e){ showToast('Fout: '+e.message,'var(--red)') }
+}
+
+// ════════════════════════════════════════════
+// PHOTO UPLOAD
+// ════════════════════════════════════════════
+function triggerPhoto(){ document.getElementById('photo-input').click() }
+
+async function handlePhotoFiles(files){
+  if(!files||!files.length) return
+  const zone=document.getElementById('upload-zone')
+  if(zone) zone.innerHTML='<div style="font-size:24px">⏳</div><div style="font-size:12px;color:var(--t2)">Uploaden...</div>'
+  for(const file of Array.from(files)){
+    await uploadOnePhoto(file)
+  }
+  if(zone){ zone.innerHTML=`<div style="font-size:24px">📷</div><div style="font-size:13px;font-weight:600;color:var(--t2)">${t('upload')}</div><div style="font-size:10px;color:var(--t3);margin-top:3px">${t('uploadSub')}</div>` }
+}
+
+async function handlePhotoDrop(e){
+  e.preventDefault()
+  document.getElementById('upload-zone')?.classList.remove('drag')
+  await handlePhotoFiles(e.dataTransfer.files)
+}
+
+async function uploadOnePhoto(file){
+  // Convert to base64 and store via Supabase Storage
+  return new Promise((resolve)=>{
+    const reader=new FileReader()
+    reader.onload=async(ev)=>{
+      try {
+        const base64=ev.target.result
+        const ext=file.name.split('.').pop()||'jpg'
+        const fname=`job_${pJobId}_${Date.now()}.${ext}`
+        // Upload to Supabase Storage
+        const uploadRes=await fetch(`${SB_URL}/storage/v1/object/photos/${fname}`,{
+          method:'POST',
+          headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Content-Type':file.type,'x-upsert':'true'},
+          body:file
+        })
+        let url=''
+        if(uploadRes.ok){
+          url=`${SB_URL}/storage/v1/object/public/photos/${fname}`
+        } else {
+          // Fallback: store base64 as data URL (works without storage bucket)
+          url=base64
+        }
+        // Save photo record
+        const record=await sb('job_photos',{method:'POST',body:JSON.stringify({job_id:pJobId,url})}).catch(()=>null)
+        // Add to UI
+        const grid=document.getElementById('opl-photos')
+        if(grid){
+          const div=document.createElement('div')
+          div.className='photo-item'
+          div.innerHTML=`<img src="${url}" style="width:100%;height:100%;object-fit:cover">`
+          grid.appendChild(div)
+        }
+        // Update local job
+        const j=JOBS.find(j=>j.id==pJobId)
+        if(j){ if(!j.photos) j.photos=[]; j.photos.push({id:Date.now(),url,uploaded_at:new Date().toISOString()}) }
+        showToast('📷 Foto toegevoegd','var(--blue)')
+        resolve()
+      } catch(err){ console.warn(err); resolve() }
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
+// ════════════════════════════════════════════
+// SAVE — NEW JOB
+// ════════════════════════════════════════════
+function openNewJob(){
+  // Fill selects
+  const pSel=document.getElementById('mj-prop')
+  const cSel=document.getElementById('mj-cl')
+  pSel.innerHTML=PROPS.map(p=>`<option value="${p.id}">${p.name}</option>`).join('')
+  cSel.innerHTML=CLEANERS.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')
+  const today=new Date().toISOString().split('T')[0]
+  document.getElementById('mj-date').value=today
+  openM('m-job')
+}
+
+async function saveJob(){
+  const btn=document.getElementById('mj-save')
+  btn.disabled=true; btn.textContent='...'
+  try {
+    const job=await sb('jobs',{
+      method:'POST',
+      body:JSON.stringify({
+        property_id:document.getElementById('mj-prop').value,
+        cleaner_id:document.getElementById('mj-cl').value,
+        date:document.getElementById('mj-date').value,
+        start_time:document.getElementById('mj-time').value,
+        client_price:parseFloat(document.getElementById('mj-price').value)||0,
+        cleaner_payout:parseFloat(document.getElementById('mj-pay').value)||0,
+        notes:document.getElementById('mj-notes').value,
+        status:'planned'
+      })
+    })
+    if(job&&job[0]){
+      // Add joined data for display
+      const prop=PROPS.find(p=>p.id===job[0].property_id)
+      const cleaner=CLEANERS.find(c=>c.id===job[0].cleaner_id)
+      JOBS.unshift({...job[0], property:prop, cleaner:cleaner})
+    }
+    closeM('m-job')
+    showToast(t('jobCreated'),'var(--green)')
+    renderPage(CUR)
+  } catch(e){ showToast('Fout: '+e.message,'var(--red)') }
+  finally{ btn.disabled=false; btn.textContent=t('create') }
+}
+
+async function saveProp(){
+  const icons={Villa:'🏡',Appartement:'🏢',Airbnb:'🔑',Penthouse:'🌆',Finca:'🌿'}
+  const type=document.getElementById('mp-type').value
+  try {
+    const p=await sb('properties',{
+      method:'POST',
+      body:JSON.stringify({
+        name:document.getElementById('mp-name').value,
+        type,
+        address:document.getElementById('mp-addr').value,
+        owner_name:document.getElementById('mp-owner').value,
+        default_price:parseFloat(document.getElementById('mp-price').value)||0,
+        notes:document.getElementById('mp-notes').value,
+        icon:icons[type]||'🏠'
+      })
+    })
+    if(p&&p[0]) PROPS.push(p[0])
+    closeM('m-prop')
+    showToast(t('propAdded'),'var(--green)')
+    renderProps()
+  } catch(e){ showToast('Fout: '+e.message,'var(--red)') }
+}
+
+async function saveCleaner(){
+  const fn=document.getElementById('mc-fn').value
+  const ln=document.getElementById('mc-ln').value
+  const email=document.getElementById('mc-email').value
+  const phone=document.getElementById('mc-phone').value
+  const lang=document.getElementById('mc-lang').value
+  if(!fn||!email){ showToast('Vul alle velden in','var(--red)'); return }
+  const btn=document.querySelector('#mc-acts .btn-acc')
+  if(btn){ btn.disabled=true; btn.textContent='...' }
+  try {
+    // Create auth user via Supabase Admin (needs service key - here we just create the profile)
+    const tmpPass=`CDS${Math.random().toString(36).slice(2,8).toUpperCase()}!`
+    // Try to sign up via auth
+    const authRes=await fetch(`${SB_URL}/auth/v1/signup`,{
+      method:'POST',
+      headers:{'apikey':SB_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({email, password:tmpPass})
+    })
+    const authData=await authRes.json()
+    const uid=authData.user?.id||authData.id
+    // Insert user profile
+    if(uid){
+      await sb('users',{
+        method:'POST',
+        body:JSON.stringify({id:uid,name:`${fn} ${ln}`,email,phone,role:'cleaner',language:lang})
+      }).catch(()=>{})
+      CLEANERS.push({id:uid,name:`${fn} ${ln}`,email,phone,role:'cleaner',language:lang})
+    }
+    // Show success with temp password
+    document.getElementById('mc-result').style.display='block'
+    document.getElementById('mc-result').innerHTML=`
+      <div class="success-box">
+        <div style="font-size:24px;margin-bottom:6px">✅</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:8px">${t('accountCreated')}</div>
+        <div style="font-size:12px;line-height:1.7;text-align:left;background:var(--fill);border-radius:8px;padding:10px">
+          <strong>Email:</strong> ${email}<br>
+          <strong>Tijdelijk wachtwoord:</strong> ${tmpPass}<br>
+          <span style="font-size:10px;color:var(--t3)">Deel dit met de schoonmaakster</span>
+        </div>
+      </div>`
+    document.getElementById('mc-acts').innerHTML=`<button class="btn-acc" style="flex:1" onclick="closeM('m-cleaner');renderCleaners()">${t('close')}</button>`
+    showToast(t('accountCreated'),'var(--green)')
+  } catch(e){
+    showToast('Fout: '+e.message,'var(--red)')
+    if(btn){ btn.disabled=false; btn.textContent=t('create') }
+  }
+}
+
+// ════════════════════════════════════════════
+// MODALS
+// ════════════════════════════════════════════
+function openM(id){ document.getElementById(id).classList.add('on') }
+function closeM(id){ document.getElementById(id).classList.remove('on') }
+document.querySelectorAll('.modal-overlay').forEach(o=>{
+  o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('on') })
+})
+
+// ════════════════════════════════════════════
+// SIDEBAR
+// ════════════════════════════════════════════
+function openSB(){ document.getElementById('sidebar').classList.add('on'); document.getElementById('sb-back').classList.add('on') }
+function closeSB(){ document.getElementById('sidebar').classList.remove('on'); document.getElementById('sb-back').classList.remove('on') }
+
+// ════════════════════════════════════════════
+// LANG + THEME
+// ════════════════════════════════════════════
+function toggleLangDD(){ document.getElementById('lang-dd').classList.toggle('on') }
+document.addEventListener('click',e=>{ if(!e.target.closest('.lang-btn')&&!e.target.closest('#lang-dd')) document.getElementById('lang-dd').classList.remove('on') })
+
+function setLang(lang, el){
+  LANG=lang
+  localStorage.setItem('cds-lang',lang)
+  document.querySelectorAll('.lang-opt').forEach(o=>o.classList.remove('on'))
+  if(el) el.classList.add('on')
+  document.querySelectorAll('.login-card .lang-pill').forEach(p=>p.classList.toggle('on',p.onclick?.toString().includes(`'${lang}'`)))
+  const m=LANG_META[lang]
+  document.getElementById('cur-flag').textContent=m.flag
+  document.getElementById('cur-code').textContent=m.code
+  document.getElementById('lang-dd').classList.remove('on')
+  // Re-render everything
+  document.getElementById('sb-role').textContent=t(ROLE==='admin'?'admin':'cleaner')
+  document.getElementById('sb-logout-lbl').textContent=t('logout')
+  const nav=ROLE==='admin'?NAV_ADMIN:NAV_CLEANER
+  buildNav(nav); buildTabBar(nav)
+  // Re-activate current
+  document.getElementById('sbi-'+CUR)?.classList.add('on')
+  document.getElementById('tab-'+CUR)?.classList.add('on')
+  document.getElementById('top-title').textContent=t(nav.find(n=>n.id===CUR)?.tk||'home')
+  renderPage(CUR)
+}
+
+function toggleTheme(){
+  THEME=THEME==='dark'?'light':'dark'
+  document.documentElement.dataset.theme=THEME
+  localStorage.setItem('cds-theme',THEME)
+  document.getElementById('theme-btn').textContent=THEME==='dark'?'🌙':'☀️'
+  if(CUR==='settings') renderSettings()
+}
+
+// ════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════
+function badge(s){
+  const m={planned:`b-planned`,progress:`b-progress`,done:`b-done`,delivered:`b-delivered`}
+  const l={planned:t('planned'),progress:t('onWay'),done:t('done'),delivered:t('delivered')}
+  return `<span class="badge ${m[s]||'b-planned'}">${l[s]||s}</span>`
+}
+
+function fmtDate(d){
+  if(!d) return '—'
+  const [y,mo,dd]=d.split('-')
+  return `${parseInt(dd)} ${t('months')[parseInt(mo)-1]?.slice(0,3)||mo}`
+}
+
+let _toast
+function showToast(msg,color='var(--gold)'){
+  clearTimeout(_toast)
+  const t=document.getElementById('toast')
+  document.getElementById('toast-dot').style.background=color
+  document.getElementById('toast-msg').textContent=msg
+  t.classList.add('on')
+  _toast=setTimeout(()=>t.classList.remove('on'),3200)
+}
+
+// ════════════════════════════════════════════
+// CHECK SESSION ON LOAD
+// ════════════════════════════════════════════
+;(async function init(){
+  // Detect system theme
+  if(!localStorage.getItem('cds-theme')){
+    THEME = window.matchMedia('(prefers-color-scheme:light)').matches ? 'light' : 'dark'
+    document.documentElement.dataset.theme = THEME
+    document.getElementById('theme-btn').textContent = THEME==='dark'?'🌙':'☀️'
+  }
+  const token=localStorage.getItem('cds-token')
+  const uid=localStorage.getItem('cds-uid')
+  if(!token||!uid) return
+  // Validate token
+  try {
+    const res=await fetch(`${SB_URL}/auth/v1/user`,{headers:{'apikey':SB_KEY,'Authorization':`Bearer ${token}`}})
+    if(!res.ok) return
+    const users=await sb(`users?id=eq.${uid}&select=*`)
+    if(users&&users.length){
+      USER=users[0]; ROLE=USER.role
+      LANG=USER.language||localStorage.getItem('cds-lang')||'nl'
+      localStorage.setItem('cds-lang',LANG)
+    } else {
+      const udata=await res.json()
+      USER={id:uid,email:udata.email,name:udata.email?.split('@')[0]||'User',role:'admin',language:LANG}
+    }
+    // Sync lang pill
+    const lm=LANG_META[LANG]
+    document.getElementById('cur-flag').textContent=lm.flag
+    document.getElementById('cur-code').textContent=lm.code
+    document.querySelectorAll('.login-card .lang-pill').forEach(p=>{
+      p.classList.toggle('on',p.getAttribute('onclick')?.includes(`'${LANG}'`))
+    })
+    bootApp()
+  } catch(e){ /* session expired, show login */ }
+})()
+</script>
+</body>
+</html>
