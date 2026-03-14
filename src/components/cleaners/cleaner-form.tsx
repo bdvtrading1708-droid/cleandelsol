@@ -2,19 +2,23 @@
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useLocale } from '@/lib/i18n'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { Camera } from 'lucide-react'
+import type { User } from '@/lib/types'
 
 interface Props {
   open: boolean
   onClose: () => void
+  editCleaner?: User | null
 }
 
-export function CleanerForm({ open, onClose }: Props) {
+export function CleanerForm({ open, onClose, editCleaner }: Props) {
   const { t } = useLocale()
   const queryClient = useQueryClient()
+
+  const isEdit = !!editCleaner
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -24,6 +28,19 @@ export function CleanerForm({ open, onClose }: Props) {
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Populate fields when editing
+  useEffect(() => {
+    if (editCleaner) {
+      setName(editCleaner.name || '')
+      setEmail(editCleaner.email || '')
+      setPhone(editCleaner.phone || '')
+      setHourlyRate(editCleaner.hourly_rate?.toString() || '')
+      setPaymentNotes(editCleaner.payment_notes || '')
+      setAvatarPreview(editCleaner.avatar_url || null)
+      setAvatarFile(null)
+    }
+  }, [editCleaner])
 
   const reset = () => {
     setName('')
@@ -44,46 +61,82 @@ export function CleanerForm({ open, onClose }: Props) {
     reader.readAsDataURL(file)
   }
 
-  const createCleaner = useMutation({
+  const saveCleaner = useMutation({
     mutationFn: async () => {
-      // Create cleaner via API route (needs service role key)
-      const res = await fetch('/api/cleaners', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          email,
-          phone: phone || undefined,
-          hourly_rate: hourlyRate ? parseFloat(hourlyRate) : undefined,
-          payment_notes: paymentNotes || undefined,
-        }),
-      })
-      if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.error || 'Failed to create cleaner')
-      }
-      const data = await res.json()
+      const supabase = createClient()
 
-      // Upload avatar if selected
-      if (avatarFile && data.id) {
-        const supabase = createClient()
-        const ext = avatarFile.name.split('.').pop() || 'jpg'
-        const path = `avatars/${data.id}.${ext}`
+      if (isEdit && editCleaner) {
+        // UPDATE existing cleaner
+        const { error } = await supabase
+          .from('users')
+          .update({
+            name,
+            phone: phone || null,
+            hourly_rate: hourlyRate ? parseFloat(hourlyRate) : null,
+            payment_notes: paymentNotes || null,
+          })
+          .eq('id', editCleaner.id)
 
-        const { error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(path, avatarFile, { upsert: true })
+        if (error) throw new Error(error.message)
 
-        if (!uploadError) {
-          const { data: urlData } = supabase.storage
+        // Upload avatar if new file selected
+        if (avatarFile) {
+          const ext = avatarFile.name.split('.').pop() || 'jpg'
+          const path = `avatars/${editCleaner.id}.${ext}`
+
+          const { error: uploadError } = await supabase.storage
             .from('avatars')
-            .getPublicUrl(path)
+            .upload(path, avatarFile, { upsert: true })
 
-          // Update user with avatar URL
-          await supabase
-            .from('users')
-            .update({ avatar_url: urlData.publicUrl })
-            .eq('id', data.id)
+          if (!uploadError) {
+            const { data: urlData } = supabase.storage
+              .from('avatars')
+              .getPublicUrl(path)
+
+            await supabase
+              .from('users')
+              .update({ avatar_url: `${urlData.publicUrl}?t=${Date.now()}` })
+              .eq('id', editCleaner.id)
+          }
+        }
+      } else {
+        // CREATE new cleaner via API route (needs service role key)
+        const res = await fetch('/api/cleaners', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            email,
+            phone: phone || undefined,
+            hourly_rate: hourlyRate ? parseFloat(hourlyRate) : undefined,
+            payment_notes: paymentNotes || undefined,
+          }),
+        })
+        if (!res.ok) {
+          const err = await res.json()
+          throw new Error(err.error || 'Failed to create cleaner')
+        }
+        const data = await res.json()
+
+        // Upload avatar if selected
+        if (avatarFile && data.id) {
+          const ext = avatarFile.name.split('.').pop() || 'jpg'
+          const path = `avatars/${data.id}.${ext}`
+
+          const { error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(path, avatarFile, { upsert: true })
+
+          if (!uploadError) {
+            const { data: urlData } = supabase.storage
+              .from('avatars')
+              .getPublicUrl(path)
+
+            await supabase
+              .from('users')
+              .update({ avatar_url: urlData.publicUrl })
+              .eq('id', data.id)
+          }
         }
       }
     },
@@ -105,7 +158,7 @@ export function CleanerForm({ open, onClose }: Props) {
       >
         <SheetHeader className="px-5 pt-5 pb-0">
           <SheetTitle className="text-[20px] font-bold tracking-[-0.5px] text-left" style={{ color: 'var(--t1)' }}>
-            {t('create')} schoonmaakster
+            {isEdit ? 'Wijzig schoonmaakster' : `${t('create')} schoonmaakster`}
           </SheetTitle>
         </SheetHeader>
 
@@ -157,20 +210,22 @@ export function CleanerForm({ open, onClose }: Props) {
             />
           </div>
 
-          {/* Email */}
-          <div>
-            <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
-              E-mail
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
-              style={inputStyle}
-              placeholder="email@voorbeeld.com"
-            />
-          </div>
+          {/* Email (only for new cleaners) */}
+          {!isEdit && (
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+                E-mail
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
+                style={inputStyle}
+                placeholder="email@voorbeeld.com"
+              />
+            </div>
+          )}
 
           {/* Phone */}
           <div>
@@ -218,9 +273,16 @@ export function CleanerForm({ open, onClose }: Props) {
             />
           </div>
 
-          {createCleaner.isError && (
+          {/* Email (read-only when editing) */}
+          {isEdit && (
+            <div className="text-[11px] font-medium px-1" style={{ color: 'var(--t3)' }}>
+              E-mail: {editCleaner?.email}
+            </div>
+          )}
+
+          {saveCleaner.isError && (
             <div className="text-[13px] font-medium px-1" style={{ color: 'var(--red, #ef4444)' }}>
-              {createCleaner.error.message}
+              {saveCleaner.error.message}
             </div>
           )}
 
@@ -234,16 +296,16 @@ export function CleanerForm({ open, onClose }: Props) {
               {t('cancel')}
             </button>
             <button
-              onClick={() => createCleaner.mutate()}
-              disabled={!name || !email || createCleaner.isPending}
+              onClick={() => saveCleaner.mutate()}
+              disabled={!name || (!isEdit && !email) || saveCleaner.isPending}
               className="flex-1 h-[50px] rounded-[16px] text-[15px] font-bold transition-all"
               style={{
                 background: 'var(--t1)',
                 color: 'var(--bg)',
-                opacity: (!name || !email || createCleaner.isPending) ? 0.4 : 1,
+                opacity: (!name || (!isEdit && !email) || saveCleaner.isPending) ? 0.4 : 1,
               }}
             >
-              {createCleaner.isPending ? t('loading') : t('create')}
+              {saveCleaner.isPending ? t('loading') : isEdit ? 'Opslaan' : t('create')}
             </button>
           </div>
         </div>

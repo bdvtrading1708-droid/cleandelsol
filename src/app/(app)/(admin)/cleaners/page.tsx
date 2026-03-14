@@ -17,6 +17,7 @@ export default function CleanersPage() {
   const { t } = useLocale()
   const [selectedCleaner, setSelectedCleaner] = useState<User | null>(null)
   const [showForm, setShowForm] = useState(false)
+  const [editCleaner, setEditCleaner] = useState<User | null>(null)
 
   if (isLoading) {
     return <div className="flex items-center justify-center py-20" style={{ color: 'var(--t3)' }}>{t('loading')}</div>
@@ -104,11 +105,16 @@ export default function CleanersPage() {
         cleaner={selectedCleaner}
         open={!!selectedCleaner}
         onClose={() => setSelectedCleaner(null)}
+        onEdit={(c) => {
+          setSelectedCleaner(null)
+          setTimeout(() => setEditCleaner(c), 300)
+        }}
       />
 
       <CleanerForm
-        open={showForm}
-        onClose={() => setShowForm(false)}
+        open={showForm || !!editCleaner}
+        onClose={() => { setShowForm(false); setEditCleaner(null) }}
+        editCleaner={editCleaner}
       />
     </>
   )

@@ -4,7 +4,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { useLocale } from '@/lib/i18n'
 import { useJobs } from '@/lib/hooks/use-jobs'
 import { formatCurrency } from '@/lib/utils'
-import { Phone, Mail, Camera } from 'lucide-react'
+import { Phone, Mail, Camera, Pencil } from 'lucide-react'
 import { CleanerAvatar } from '@/components/cleaners/cleaner-avatar'
 import { createClient } from '@/lib/supabase/client'
 import { useQueryClient } from '@tanstack/react-query'
@@ -15,9 +15,10 @@ interface Props {
   cleaner: User | null
   open: boolean
   onClose: () => void
+  onEdit?: (cleaner: User) => void
 }
 
-export function CleanerPanel({ cleaner, open, onClose }: Props) {
+export function CleanerPanel({ cleaner, open, onClose, onEdit }: Props) {
   const { t } = useLocale()
   const { data: jobs = [] } = useJobs()
   const queryClient = useQueryClient()
@@ -117,6 +118,15 @@ export function CleanerPanel({ cleaner, open, onClose }: Props) {
                 </div>
               )}
             </div>
+            {onEdit && (
+              <button
+                onClick={() => onEdit(cleaner)}
+                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                style={{ background: 'var(--fill)' }}
+              >
+                <Pencil size={16} style={{ color: 'var(--t2)' }} />
+              </button>
+            )}
           </div>
         </SheetHeader>
 
