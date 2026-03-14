@@ -2,9 +2,10 @@
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useLocale } from '@/lib/i18n'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
+import { Camera } from 'lucide-react'
 
 interface Props {
   open: boolean
@@ -20,6 +21,9 @@ export function CleanerForm({ open, onClose }: Props) {
   const [phone, setPhone] = useState('')
   const [hourlyRate, setHourlyRate] = useState('')
   const [paymentNotes, setPaymentNotes] = useState('')
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const reset = () => {
     setName('')
@@ -27,6 +31,17 @@ export function CleanerForm({ open, onClose }: Props) {
     setPhone('')
     setHourlyRate('')
     setPaymentNotes('')
+    setAvatarFile(null)
+    setAvatarPreview(null)
+  }
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAvatarFile(file)
+    const reader = new FileReader()
+    reader.onloadend = () => setAvatarPreview(reader.result as string)
+    reader.readAsDataURL(file)
   }
 
   const createCleaner = useMutation({
@@ -46,6 +61,30 @@ export function CleanerForm({ open, onClose }: Props) {
       if (!res.ok) {
         const err = await res.json()
         throw new Error(err.error || 'Failed to create cleaner')
+      }
+      const data = await res.json()
+
+      // Upload avatar if selected
+      if (avatarFile && data.id) {
+        const supabase = createClient()
+        const ext = avatarFile.name.split('.').pop() || 'jpg'
+        const path = `avatars/${data.id}.${ext}`
+
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(path, avatarFile, { upsert: true })
+
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(path)
+
+          // Update user with avatar URL
+          await supabase
+            .from('users')
+            .update({ avatar_url: urlData.publicUrl })
+            .eq('id', data.id)
+        }
       }
     },
     onSuccess: () => {
@@ -71,6 +110,38 @@ export function CleanerForm({ open, onClose }: Props) {
         </SheetHeader>
 
         <div className="px-5 pb-5 mt-4 flex flex-col gap-3">
+          {/* Avatar upload */}
+          <div className="flex justify-center mb-1">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="relative w-[80px] h-[80px] rounded-full overflow-hidden group transition-all"
+              style={{ background: 'var(--fill)' }}
+            >
+              {avatarPreview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarPreview} alt="Preview" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-1">
+                  <Camera size={24} style={{ color: 'var(--t3)' }} />
+                  <span className="text-[10px] font-semibold" style={{ color: 'var(--t3)' }}>Foto</span>
+                </div>
+              )}
+              {avatarPreview && (
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Camera size={20} className="text-white" />
+                </div>
+              )}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              className="hidden"
+            />
+          </div>
+
           {/* Name */}
           <div>
             <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>

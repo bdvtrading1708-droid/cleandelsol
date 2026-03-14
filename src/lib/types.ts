@@ -9,6 +9,7 @@ export interface User {
   language?: string
   hourly_rate?: number
   payment_notes?: string
+  avatar_url?: string
 }
 
 export interface Property {

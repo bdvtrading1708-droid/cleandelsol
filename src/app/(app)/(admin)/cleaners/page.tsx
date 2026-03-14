@@ -8,6 +8,7 @@ import { formatCurrency } from '@/lib/utils'
 import { Plus } from 'lucide-react'
 import { CleanerPanel } from '@/components/cleaners/cleaner-panel'
 import { CleanerForm } from '@/components/cleaners/cleaner-form'
+import { CleanerAvatar } from '@/components/cleaners/cleaner-avatar'
 import type { User } from '@/lib/types'
 
 export default function CleanersPage() {
@@ -60,12 +61,12 @@ export default function CleanersPage() {
                 style={{ background: 'var(--card)', boxShadow: 'var(--shadow)' }}
                 onClick={() => setSelectedCleaner(cleaner)}
               >
-                <div
-                  className="w-[44px] h-[44px] rounded-full flex items-center justify-center text-lg font-bold text-white mb-3"
-                  style={{ background: 'var(--hero-bg)' }}
-                >
-                  {(cleaner.name || '?')[0].toUpperCase()}
-                </div>
+                <CleanerAvatar
+                  src={cleaner.avatar_url}
+                  name={cleaner.name}
+                  size={44}
+                  className="mb-3"
+                />
                 <div className="text-[14px] font-bold tracking-[-0.2px] truncate mb-0.5" style={{ color: 'var(--t1)' }}>
                   {cleaner.name}
                 </div>

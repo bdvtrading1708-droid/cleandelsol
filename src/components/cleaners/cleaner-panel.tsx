@@ -4,7 +4,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { useLocale } from '@/lib/i18n'
 import { useJobs } from '@/lib/hooks/use-jobs'
 import { formatCurrency } from '@/lib/utils'
-import { Phone, Mail } from 'lucide-react'
+import { Phone, Mail, Camera } from 'lucide-react'
+import { CleanerAvatar } from '@/components/cleaners/cleaner-avatar'
+import { createClient } from '@/lib/supabase/client'
+import { useQueryClient } from '@tanstack/react-query'
+import { useRef, useState } from 'react'
 import type { User } from '@/lib/types'
 
 interface Props {
@@ -16,6 +20,9 @@ interface Props {
 export function CleanerPanel({ cleaner, open, onClose }: Props) {
   const { t } = useLocale()
   const { data: jobs = [] } = useJobs()
+  const queryClient = useQueryClient()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
 
   if (!cleaner) return null
 
@@ -27,7 +34,42 @@ export function CleanerPanel({ cleaner, open, onClose }: Props) {
     .filter(j => j.status === 'delivered')
     .reduce((s, j) => s + (j.cleaner_payout || 0), 0)
   const totalHours = cleanerJobs.reduce((s, j) => s + (j.hours_worked || 0), 0)
-  const totalKm = cleanerJobs.reduce((s, j) => s + (j.km_driven || 0), 0)
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !cleaner) return
+
+    setUploading(true)
+    try {
+      const supabase = createClient()
+      const ext = file.name.split('.').pop() || 'jpg'
+      const path = `avatars/${cleaner.id}.${ext}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(path, file, { upsert: true })
+
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(path)
+
+        // Add cache-buster to force refresh
+        const avatarUrl = `${urlData.publicUrl}?t=${Date.now()}`
+
+        await supabase
+          .from('users')
+          .update({ avatar_url: avatarUrl })
+          .eq('id', cleaner.id)
+
+        queryClient.invalidateQueries({ queryKey: ['cleaners'] })
+      }
+    } finally {
+      setUploading(false)
+      // Reset input so same file can be re-selected
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
 
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
@@ -38,12 +80,33 @@ export function CleanerPanel({ cleaner, open, onClose }: Props) {
       >
         <SheetHeader className="px-5 pt-5 pb-0">
           <div className="flex items-center gap-3">
-            <div
-              className="w-[52px] h-[52px] rounded-full flex items-center justify-center text-xl font-bold text-white shrink-0"
-              style={{ background: 'var(--hero-bg)' }}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="relative group"
+              disabled={uploading}
             >
-              {(cleaner.name || '?')[0].toUpperCase()}
-            </div>
+              <CleanerAvatar
+                src={cleaner.avatar_url}
+                name={cleaner.name}
+                size={52}
+              />
+              <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Camera size={18} className="text-white" />
+              </div>
+              {uploading && (
+                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              className="hidden"
+            />
             <div className="flex-1 min-w-0">
               <SheetTitle className="text-[20px] font-bold tracking-[-0.5px] text-left" style={{ color: 'var(--t1)' }}>
                 {cleaner.name}

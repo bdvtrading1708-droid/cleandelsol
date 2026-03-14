@@ -12,7 +12,7 @@ export function useCleaners() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('users')
-        .select('id, name, email, phone, role, language, hourly_rate, payment_notes')
+        .select('id, name, email, phone, role, language, hourly_rate, payment_notes, avatar_url')
         .eq('role', 'cleaner')
         .order('name')
       if (error) throw error
