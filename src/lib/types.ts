@@ -33,6 +33,7 @@ export interface Property {
   icon?: string
   bedrooms?: number
   bathrooms?: number
+  terraces?: number
   pricing_type?: 'hourly' | 'fixed'
   fixed_price?: number
   image_url?: string

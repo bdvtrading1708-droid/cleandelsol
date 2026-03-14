@@ -204,21 +204,19 @@ export function PropertyPanel({ property, open, onClose, onEdit }: Props) {
             </div>
           </div>
 
-          {/* Bedrooms / Bathrooms */}
-          {(property.bedrooms || property.bathrooms) ? (
-            <div className="grid grid-cols-2 gap-2">
-              {property.bedrooms ? (
-                <div className="rounded-[14px] p-3 text-center" style={{ background: 'var(--fill)' }}>
-                  <div className="text-[10px] font-semibold uppercase tracking-[.08em] mb-0.5" style={{ color: 'var(--t3)' }}>🛏️ Slaapkamers</div>
-                  <div className="text-[16px] font-bold" style={{ color: 'var(--t1)' }}>{property.bedrooms}</div>
+          {/* Bedrooms / Bathrooms / Terraces */}
+          {(property.bedrooms || property.bathrooms || property.terraces) ? (
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { icon: '🛏️', label: 'Slaapkamers', value: property.bedrooms },
+                { icon: '🚿', label: 'Badkamers', value: property.bathrooms },
+                { icon: '☀️', label: 'Terrassen', value: property.terraces },
+              ].filter(item => item.value).map(item => (
+                <div key={item.label} className="rounded-[14px] p-3 text-center" style={{ background: 'var(--fill)' }}>
+                  <div className="text-[10px] font-semibold uppercase tracking-[.08em] mb-0.5" style={{ color: 'var(--t3)' }}>{item.icon} {item.label}</div>
+                  <div className="text-[16px] font-bold" style={{ color: 'var(--t1)' }}>{item.value}</div>
                 </div>
-              ) : null}
-              {property.bathrooms ? (
-                <div className="rounded-[14px] p-3 text-center" style={{ background: 'var(--fill)' }}>
-                  <div className="text-[10px] font-semibold uppercase tracking-[.08em] mb-0.5" style={{ color: 'var(--t3)' }}>🚿 Badkamers</div>
-                  <div className="text-[16px] font-bold" style={{ color: 'var(--t1)' }}>{property.bathrooms}</div>
-                </div>
-              ) : null}
+              ))}
             </div>
           ) : null}
 

@@ -42,6 +42,7 @@ export function PropertyForm({ open, onClose, editProperty }: Props) {
   const [pricingType, setPricingType] = useState<'hourly' | 'fixed'>('hourly')
   const [bedrooms, setBedrooms] = useState(0)
   const [bathrooms, setBathrooms] = useState(0)
+  const [terraces, setTerraces] = useState(0)
   const [notes, setNotes] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -63,6 +64,7 @@ export function PropertyForm({ open, onClose, editProperty }: Props) {
       setPricingType(editProperty.pricing_type || 'hourly')
       setBedrooms(editProperty.bedrooms || 0)
       setBathrooms(editProperty.bathrooms || 0)
+      setTerraces(editProperty.terraces || 0)
       setNotes(editProperty.notes || '')
       setImagePreview(editProperty.image_url || null)
       setImageFile(null)
@@ -80,6 +82,7 @@ export function PropertyForm({ open, onClose, editProperty }: Props) {
     setPricingType('hourly')
     setBedrooms(0)
     setBathrooms(0)
+    setTerraces(0)
     setNotes('')
     setImageFile(null)
     setImagePreview(null)
@@ -132,6 +135,7 @@ export function PropertyForm({ open, onClose, editProperty }: Props) {
       pricing_type: pricingType,
       bedrooms: bedrooms || 0,
       bathrooms: bathrooms || 0,
+      terraces: terraces || 0,
       notes: notes || undefined,
       icon: TYPE_ICONS[type] || '🏠',
     }
@@ -264,60 +268,40 @@ export function PropertyForm({ open, onClose, editProperty }: Props) {
             </div>
           </div>
 
-          {/* Bedrooms & Bathrooms */}
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
-                🛏️ Slaapkamers
-              </label>
-              <div className="flex items-center gap-2 h-[46px] rounded-[14px] px-2" style={inputStyle}>
-                <button
-                  type="button"
-                  onClick={() => setBedrooms(Math.max(0, bedrooms - 1))}
-                  className="w-8 h-8 rounded-full flex items-center justify-center"
-                  style={{ background: 'var(--fill)' }}
-                >
-                  <Minus size={14} style={{ color: 'var(--t2)' }} />
-                </button>
-                <span className="flex-1 text-center text-[16px] font-bold" style={{ color: 'var(--t1)' }}>
-                  {bedrooms}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setBedrooms(bedrooms + 1)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center"
-                  style={{ background: 'var(--fill)' }}
-                >
-                  <Plus size={14} style={{ color: 'var(--t2)' }} />
-                </button>
+          {/* Bedrooms, Bathrooms & Terraces */}
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: '🛏️ Slaapkamers', value: bedrooms, set: setBedrooms },
+              { label: '🚿 Badkamers', value: bathrooms, set: setBathrooms },
+              { label: '☀️ Terrassen', value: terraces, set: setTerraces },
+            ].map(({ label, value, set }) => (
+              <div key={label}>
+                <label className="text-[10px] font-semibold uppercase tracking-[.06em] mb-1 block" style={{ color: 'var(--t3)' }}>
+                  {label}
+                </label>
+                <div className="flex items-center gap-1 h-[46px] rounded-[14px] px-1.5" style={inputStyle}>
+                  <button
+                    type="button"
+                    onClick={() => set(Math.max(0, value - 1))}
+                    className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
+                    style={{ background: 'var(--fill)' }}
+                  >
+                    <Minus size={12} style={{ color: 'var(--t2)' }} />
+                  </button>
+                  <span className="flex-1 text-center text-[16px] font-bold" style={{ color: 'var(--t1)' }}>
+                    {value}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => set(value + 1)}
+                    className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
+                    style={{ background: 'var(--fill)' }}
+                  >
+                    <Plus size={12} style={{ color: 'var(--t2)' }} />
+                  </button>
+                </div>
               </div>
-            </div>
-            <div>
-              <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
-                🚿 Badkamers
-              </label>
-              <div className="flex items-center gap-2 h-[46px] rounded-[14px] px-2" style={inputStyle}>
-                <button
-                  type="button"
-                  onClick={() => setBathrooms(Math.max(0, bathrooms - 1))}
-                  className="w-8 h-8 rounded-full flex items-center justify-center"
-                  style={{ background: 'var(--fill)' }}
-                >
-                  <Minus size={14} style={{ color: 'var(--t2)' }} />
-                </button>
-                <span className="flex-1 text-center text-[16px] font-bold" style={{ color: 'var(--t1)' }}>
-                  {bathrooms}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setBathrooms(bathrooms + 1)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center"
-                  style={{ background: 'var(--fill)' }}
-                >
-                  <Plus size={14} style={{ color: 'var(--t2)' }} />
-                </button>
-              </div>
-            </div>
+            ))}
           </div>
 
           {/* Address */}

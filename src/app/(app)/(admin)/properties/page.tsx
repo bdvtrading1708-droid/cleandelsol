@@ -146,42 +146,39 @@ export default function PropertiesPage() {
               )}
 
               {/* Property cards grid */}
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-3 gap-2">
                 {group.properties.map(prop => (
                   <div
                     key={prop.id}
-                    className="rounded-[18px] overflow-hidden flex flex-col transition-all cursor-pointer active:scale-[0.98]"
+                    className="rounded-[14px] overflow-hidden flex flex-col transition-all cursor-pointer active:scale-[0.98]"
                     style={{ background: 'var(--card)', boxShadow: 'var(--shadow)' }}
                     onClick={() => setSelectedProperty(prop)}
                   >
                     {prop.image_url ? (
-                      <div className="w-full h-[100px] overflow-hidden">
+                      <div className="w-full aspect-square overflow-hidden">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={prop.image_url} alt={prop.name} className="w-full h-full object-cover" />
                       </div>
                     ) : (
-                      <div className="pt-4 px-4 text-[28px]">
+                      <div className="w-full aspect-square flex items-center justify-center text-[32px]" style={{ background: 'var(--fill)' }}>
                         {prop.icon || PROPERTY_ICONS[prop.type] || '🏠'}
                       </div>
                     )}
-                    <div className={prop.image_url ? 'p-3 pt-2 flex flex-col flex-1' : 'px-4 pb-4 flex flex-col flex-1'}>
-                      <div className="text-[14px] font-bold tracking-[-0.2px] truncate mb-0.5" style={{ color: 'var(--t1)' }}>
+                    <div className="p-2 flex flex-col flex-1">
+                      <div className="text-[12px] font-bold tracking-[-0.2px] line-clamp-2 leading-tight mb-1" style={{ color: 'var(--t1)' }}>
                         {prop.name}
                       </div>
-                      {prop.address && (
-                        <div className="text-[11px] leading-snug mb-2.5 line-clamp-2" style={{ color: 'var(--t3)' }}>
-                          {prop.address}
-                        </div>
-                      )}
-                      <div className="flex flex-wrap gap-1 mt-auto">
-                        <span className="px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-[.05em]" style={{ background: 'var(--fill)', color: 'var(--t3)' }}>
-                          {prop.type || '—'}
-                        </span>
+                      <div className="flex flex-wrap gap-0.5 mt-auto">
                         {prop.default_price != null && (
-                          <span className="px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: 'var(--fill)', color: 'var(--t1)' }}>
+                          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold" style={{ background: 'var(--fill)', color: 'var(--t1)' }}>
                             {formatCurrency(prop.default_price)}
                           </span>
                         )}
+                        {(prop.bedrooms || prop.bathrooms) ? (
+                          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-medium" style={{ background: 'var(--fill)', color: 'var(--t3)' }}>
+                            {prop.bedrooms ? `${prop.bedrooms}🛏` : ''}{prop.bathrooms ? ` ${prop.bathrooms}🚿` : ''}{prop.terraces ? ` ${prop.terraces}☀️` : ''}
+                          </span>
+                        ) : null}
                       </div>
                     </div>
                   </div>
