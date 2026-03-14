@@ -4,14 +4,16 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { useLocale } from '@/lib/i18n'
 import { useCreateProperty } from '@/lib/hooks/use-properties'
 import { usePartners } from '@/lib/hooks/use-partners'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useQueryClient } from '@tanstack/react-query'
-import { Camera, MapPin } from 'lucide-react'
+import { Camera, MapPin, Minus, Plus } from 'lucide-react'
+import type { Property } from '@/lib/types'
 
 interface Props {
   open: boolean
   onClose: () => void
+  editProperty?: Property | null
 }
 
 const PROPERTY_TYPES = ['apartment', 'house', 'villa', 'office', 'hotel', 'airbnb']
@@ -24,7 +26,7 @@ const TYPE_ICONS: Record<string, string> = {
   airbnb: '🛏️',
 }
 
-export function PropertyForm({ open, onClose }: Props) {
+export function PropertyForm({ open, onClose, editProperty }: Props) {
   const { t } = useLocale()
   const createProperty = useCreateProperty()
   const { data: partners = [] } = usePartners()
@@ -38,10 +40,34 @@ export function PropertyForm({ open, onClose }: Props) {
   const [ownerName, setOwnerName] = useState('')
   const [defaultPrice, setDefaultPrice] = useState('')
   const [pricingType, setPricingType] = useState<'hourly' | 'fixed'>('hourly')
+  const [bedrooms, setBedrooms] = useState(0)
+  const [bathrooms, setBathrooms] = useState(0)
   const [notes, setNotes] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const isEdit = !!editProperty
+
+  // Populate form when editing
+  useEffect(() => {
+    if (editProperty && open) {
+      setName(editProperty.name || '')
+      setType(editProperty.type || 'house')
+      setAddress(editProperty.address || '')
+      setMapsUrl(editProperty.maps_url || '')
+      setPartnerId(editProperty.partner_id || '')
+      setOwnerName(editProperty.owner_name || '')
+      setDefaultPrice(editProperty.default_price?.toString() || '')
+      setPricingType(editProperty.pricing_type || 'hourly')
+      setBedrooms(editProperty.bedrooms || 0)
+      setBathrooms(editProperty.bathrooms || 0)
+      setNotes(editProperty.notes || '')
+      setImagePreview(editProperty.image_url || null)
+      setImageFile(null)
+    }
+  }, [editProperty, open])
 
   const reset = () => {
     setName('')
@@ -52,9 +78,12 @@ export function PropertyForm({ open, onClose }: Props) {
     setOwnerName('')
     setDefaultPrice('')
     setPricingType('hourly')
+    setBedrooms(0)
+    setBathrooms(0)
     setNotes('')
     setImageFile(null)
     setImagePreview(null)
+    setSaving(false)
   }
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,60 +95,88 @@ export function PropertyForm({ open, onClose }: Props) {
     reader.readAsDataURL(file)
   }
 
-  const handleSubmit = () => {
-    if (!name) return
+  const uploadImage = async (propId: string) => {
+    if (!imageFile) return
+    const supabase = createClient()
+    const ext = imageFile.name.split('.').pop() || 'jpg'
+    const path = `properties/${propId}.${ext}`
 
-    createProperty.mutate({
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(path, imageFile, { upsert: true })
+
+    if (!uploadError) {
+      const { data: urlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(path)
+
+      await supabase
+        .from('properties')
+        .update({ image_url: `${urlData.publicUrl}?t=${Date.now()}` })
+        .eq('id', propId)
+    }
+  }
+
+  const handleSubmit = async () => {
+    if (!name) return
+    setSaving(true)
+
+    const propertyData = {
       name,
       type,
       address: address || undefined,
       maps_url: mapsUrl || undefined,
-      partner_id: partnerId || undefined,
+      partner_id: partnerId || null,
       owner_name: ownerName || undefined,
       default_price: defaultPrice ? parseFloat(defaultPrice) : undefined,
       pricing_type: pricingType,
+      bedrooms: bedrooms || 0,
+      bathrooms: bathrooms || 0,
       notes: notes || undefined,
       icon: TYPE_ICONS[type] || '🏠',
-    } as Parameters<typeof createProperty.mutate>[0], {
-      onSuccess: async () => {
-        // Upload image if selected
-        if (imageFile) {
-          const supabase = createClient()
-          // Get the newly created property
-          const { data: props } = await supabase
-            .from('properties')
-            .select('id')
-            .eq('name', name)
-            .order('created_at', { ascending: false })
-            .limit(1)
+    }
 
-          if (props && props[0]) {
-            const propId = props[0].id
-            const ext = imageFile.name.split('.').pop() || 'jpg'
-            const path = `properties/${propId}.${ext}`
+    try {
+      const supabase = createClient()
 
-            const { error: uploadError } = await supabase.storage
-              .from('avatars')
-              .upload(path, imageFile, { upsert: true })
+      if (isEdit && editProperty) {
+        // Update existing property
+        await supabase
+          .from('properties')
+          .update(propertyData)
+          .eq('id', editProperty.id)
 
-            if (!uploadError) {
-              const { data: urlData } = supabase.storage
-                .from('avatars')
-                .getPublicUrl(path)
-
-              await supabase
-                .from('properties')
-                .update({ image_url: urlData.publicUrl })
-                .eq('id', propId)
-
-              queryClient.invalidateQueries({ queryKey: ['properties'] })
-            }
-          }
-        }
+        if (imageFile) await uploadImage(editProperty.id)
+        queryClient.invalidateQueries({ queryKey: ['properties'] })
         reset()
         onClose()
-      },
-    })
+      } else {
+        // Create new property
+        createProperty.mutate(propertyData as Parameters<typeof createProperty.mutate>[0], {
+          onSuccess: async () => {
+            if (imageFile) {
+              const { data: props } = await supabase
+                .from('properties')
+                .select('id')
+                .eq('name', name)
+                .order('created_at', { ascending: false })
+                .limit(1)
+
+              if (props && props[0]) {
+                await uploadImage(props[0].id)
+                queryClient.invalidateQueries({ queryKey: ['properties'] })
+              }
+            }
+            reset()
+            onClose()
+          },
+          onError: () => setSaving(false),
+        })
+        return // Don't reset saving here, onSuccess/onError handles it
+      }
+    } catch {
+      setSaving(false)
+    }
   }
 
   const inputStyle = { background: 'var(--inp)', color: 'var(--t1)' }
@@ -133,7 +190,7 @@ export function PropertyForm({ open, onClose }: Props) {
       >
         <SheetHeader className="px-5 pt-5 pb-0">
           <SheetTitle className="text-[20px] font-bold tracking-[-0.5px] text-left" style={{ color: 'var(--t1)' }}>
-            {t('create')} property
+            {isEdit ? 'Wijzig property' : `${t('create')} property`}
           </SheetTitle>
         </SheetHeader>
 
@@ -191,19 +248,75 @@ export function PropertyForm({ open, onClose }: Props) {
               Type
             </label>
             <div className="flex gap-1.5 flex-wrap">
-              {PROPERTY_TYPES.map(t => (
+              {PROPERTY_TYPES.map(pt => (
                 <button
-                  key={t}
-                  onClick={() => setType(t)}
+                  key={pt}
+                  onClick={() => setType(pt)}
                   className="px-3 py-2 rounded-[12px] text-[13px] font-medium transition-all"
                   style={{
-                    background: type === t ? 'var(--t1)' : 'var(--fill)',
-                    color: type === t ? 'var(--bg)' : 'var(--t3)',
+                    background: type === pt ? 'var(--t1)' : 'var(--fill)',
+                    color: type === pt ? 'var(--bg)' : 'var(--t3)',
                   }}
                 >
-                  {TYPE_ICONS[t]} {t}
+                  {TYPE_ICONS[pt]} {pt}
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Bedrooms & Bathrooms */}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+                🛏️ Slaapkamers
+              </label>
+              <div className="flex items-center gap-2 h-[46px] rounded-[14px] px-2" style={inputStyle}>
+                <button
+                  type="button"
+                  onClick={() => setBedrooms(Math.max(0, bedrooms - 1))}
+                  className="w-8 h-8 rounded-full flex items-center justify-center"
+                  style={{ background: 'var(--fill)' }}
+                >
+                  <Minus size={14} style={{ color: 'var(--t2)' }} />
+                </button>
+                <span className="flex-1 text-center text-[16px] font-bold" style={{ color: 'var(--t1)' }}>
+                  {bedrooms}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setBedrooms(bedrooms + 1)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center"
+                  style={{ background: 'var(--fill)' }}
+                >
+                  <Plus size={14} style={{ color: 'var(--t2)' }} />
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+                🚿 Badkamers
+              </label>
+              <div className="flex items-center gap-2 h-[46px] rounded-[14px] px-2" style={inputStyle}>
+                <button
+                  type="button"
+                  onClick={() => setBathrooms(Math.max(0, bathrooms - 1))}
+                  className="w-8 h-8 rounded-full flex items-center justify-center"
+                  style={{ background: 'var(--fill)' }}
+                >
+                  <Minus size={14} style={{ color: 'var(--t2)' }} />
+                </button>
+                <span className="flex-1 text-center text-[16px] font-bold" style={{ color: 'var(--t1)' }}>
+                  {bathrooms}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setBathrooms(bathrooms + 1)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center"
+                  style={{ background: 'var(--fill)' }}
+                >
+                  <Plus size={14} style={{ color: 'var(--t2)' }} />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -246,7 +359,6 @@ export function PropertyForm({ open, onClose }: Props) {
               value={partnerId}
               onChange={(e) => {
                 setPartnerId(e.target.value)
-                // Auto-fill owner name from partner
                 const p = partners.find(p => p.id === e.target.value)
                 if (p) setOwnerName(p.name)
               }}
@@ -260,7 +372,7 @@ export function PropertyForm({ open, onClose }: Props) {
             </select>
           </div>
 
-          {/* Owner (manual override) */}
+          {/* Owner */}
           <div>
             <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
               Eigenaar
@@ -332,15 +444,15 @@ export function PropertyForm({ open, onClose }: Props) {
             </button>
             <button
               onClick={handleSubmit}
-              disabled={!name || createProperty.isPending}
+              disabled={!name || saving || createProperty.isPending}
               className="flex-1 h-[50px] rounded-[16px] text-[15px] font-bold transition-all"
               style={{
                 background: 'var(--t1)',
                 color: 'var(--bg)',
-                opacity: (!name || createProperty.isPending) ? 0.4 : 1,
+                opacity: (!name || saving || createProperty.isPending) ? 0.4 : 1,
               }}
             >
-              {createProperty.isPending ? t('loading') : t('create')}
+              {saving || createProperty.isPending ? t('loading') : isEdit ? 'Opslaan' : t('create')}
             </button>
           </div>
         </div>

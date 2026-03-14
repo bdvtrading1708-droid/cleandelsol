@@ -4,7 +4,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { useLocale } from '@/lib/i18n'
 import { useJobs } from '@/lib/hooks/use-jobs'
 import { formatCurrency } from '@/lib/utils'
-import { MapPin, ChevronRight, FileText, Camera, Trash2 } from 'lucide-react'
+import { MapPin, ChevronRight, FileText, Camera, Trash2, Pencil } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useQueryClient } from '@tanstack/react-query'
 import { useDeleteProperty } from '@/lib/hooks/use-properties'
@@ -15,9 +15,10 @@ interface Props {
   property: Property | null
   open: boolean
   onClose: () => void
+  onEdit?: (property: Property) => void
 }
 
-export function PropertyPanel({ property, open, onClose }: Props) {
+export function PropertyPanel({ property, open, onClose, onEdit }: Props) {
   const { t } = useLocale()
   const { data: jobs = [] } = useJobs()
   const queryClient = useQueryClient()
@@ -202,6 +203,36 @@ export function PropertyPanel({ property, open, onClose }: Props) {
               </span>
             </div>
           </div>
+
+          {/* Bedrooms / Bathrooms */}
+          {(property.bedrooms || property.bathrooms) ? (
+            <div className="grid grid-cols-2 gap-2">
+              {property.bedrooms ? (
+                <div className="rounded-[14px] p-3 text-center" style={{ background: 'var(--fill)' }}>
+                  <div className="text-[10px] font-semibold uppercase tracking-[.08em] mb-0.5" style={{ color: 'var(--t3)' }}>🛏️ Slaapkamers</div>
+                  <div className="text-[16px] font-bold" style={{ color: 'var(--t1)' }}>{property.bedrooms}</div>
+                </div>
+              ) : null}
+              {property.bathrooms ? (
+                <div className="rounded-[14px] p-3 text-center" style={{ background: 'var(--fill)' }}>
+                  <div className="text-[10px] font-semibold uppercase tracking-[.08em] mb-0.5" style={{ color: 'var(--t3)' }}>🚿 Badkamers</div>
+                  <div className="text-[16px] font-bold" style={{ color: 'var(--t1)' }}>{property.bathrooms}</div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {/* Edit button */}
+          {onEdit && (
+            <button
+              onClick={() => { onEdit(property); onClose() }}
+              className="flex items-center justify-center gap-2 rounded-[14px] p-3 w-full transition-colors mt-1"
+              style={{ background: 'var(--fill)' }}
+            >
+              <Pencil size={16} style={{ color: 'var(--t1)' }} />
+              <span className="text-[13px] font-semibold" style={{ color: 'var(--t1)' }}>Property wijzigen</span>
+            </button>
+          )}
 
           {/* Delete button */}
           {!showDeleteConfirm ? (

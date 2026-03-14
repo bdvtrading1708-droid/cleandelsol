@@ -23,6 +23,7 @@ export default function PropertiesPage() {
   const { t } = useLocale()
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
   const [showForm, setShowForm] = useState(false)
+  const [editProperty, setEditProperty] = useState<Property | null>(null)
   const [filter, setFilter] = useState<string>('all')
 
   // Group properties by partner, sorted by count (most properties first)
@@ -195,11 +196,16 @@ export default function PropertiesPage() {
         property={selectedProperty}
         open={!!selectedProperty}
         onClose={() => setSelectedProperty(null)}
+        onEdit={(prop) => {
+          setSelectedProperty(null)
+          setTimeout(() => setEditProperty(prop), 300)
+        }}
       />
 
       <PropertyForm
-        open={showForm}
-        onClose={() => setShowForm(false)}
+        open={showForm || !!editProperty}
+        onClose={() => { setShowForm(false); setEditProperty(null) }}
+        editProperty={editProperty}
       />
     </>
   )

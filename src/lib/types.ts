@@ -31,6 +31,8 @@ export interface Property {
   default_price?: number
   notes?: string
   icon?: string
+  bedrooms?: number
+  bathrooms?: number
   pricing_type?: 'hourly' | 'fixed'
   fixed_price?: number
   image_url?: string
