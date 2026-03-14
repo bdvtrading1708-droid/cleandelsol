@@ -4,7 +4,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { useLocale } from '@/lib/i18n'
 import { useJobs } from '@/lib/hooks/use-jobs'
 import { formatCurrency } from '@/lib/utils'
-import { MapPin, ChevronRight, FileText } from 'lucide-react'
+import { MapPin, ChevronRight, FileText, Camera } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { useQueryClient } from '@tanstack/react-query'
+import { useRef, useState } from 'react'
 import type { Property } from '@/lib/types'
 
 interface Props {
@@ -16,6 +19,9 @@ interface Props {
 export function PropertyPanel({ property, open, onClose }: Props) {
   const { t } = useLocale()
   const { data: jobs = [] } = useJobs()
+  const queryClient = useQueryClient()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
 
   if (!property) return null
 
@@ -30,6 +36,40 @@ export function PropertyPanel({ property, open, onClose }: Props) {
     window.open(isIOS ? `maps://maps.apple.com/?q=${q}` : `https://www.google.com/maps/search/?api=1&query=${q}`, '_blank')
   }
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !property) return
+
+    setUploading(true)
+    try {
+      const supabase = createClient()
+      const ext = file.name.split('.').pop() || 'jpg'
+      const path = `properties/${property.id}.${ext}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(path, file, { upsert: true })
+
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(path)
+
+        const imageUrl = `${urlData.publicUrl}?t=${Date.now()}`
+
+        await supabase
+          .from('properties')
+          .update({ image_url: imageUrl })
+          .eq('id', property.id)
+
+        queryClient.invalidateQueries({ queryKey: ['properties'] })
+      }
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
       <SheetContent
@@ -37,7 +77,45 @@ export function PropertyPanel({ property, open, onClose }: Props) {
         className="rounded-t-[24px] p-0 max-h-[85vh] overflow-y-auto border-0"
         style={{ background: 'var(--bg2)' }}
       >
-        <SheetHeader className="px-5 pt-5 pb-0">
+        {/* Header image or icon */}
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="relative w-full group"
+          disabled={uploading}
+        >
+          {property.image_url ? (
+            <div className="w-full h-[160px] overflow-hidden rounded-t-[24px]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={property.image_url} alt={property.name} className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-t-[24px]">
+                <Camera size={24} className="text-white" />
+              </div>
+            </div>
+          ) : (
+            <div
+              className="w-full h-[120px] rounded-t-[24px] flex flex-col items-center justify-center gap-1.5"
+              style={{ background: 'var(--fill)' }}
+            >
+              <Camera size={28} style={{ color: 'var(--t3)' }} />
+              <span className="text-[12px] font-semibold" style={{ color: 'var(--t3)' }}>Foto toevoegen</span>
+            </div>
+          )}
+          {uploading && (
+            <div className="absolute inset-0 bg-black/50 rounded-t-[24px] flex items-center justify-center">
+              <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+          className="hidden"
+        />
+
+        <SheetHeader className="px-5 pt-4 pb-0">
           <div className="flex items-start gap-3">
             <div className="text-[32px]">{property.icon || '🏠'}</div>
             <div className="flex-1 min-w-0">

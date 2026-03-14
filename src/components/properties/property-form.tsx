@@ -3,7 +3,10 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useLocale } from '@/lib/i18n'
 import { useCreateProperty } from '@/lib/hooks/use-properties'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { useQueryClient } from '@tanstack/react-query'
+import { Camera } from 'lucide-react'
 
 interface Props {
   open: boolean
@@ -23,6 +26,7 @@ const TYPE_ICONS: Record<string, string> = {
 export function PropertyForm({ open, onClose }: Props) {
   const { t } = useLocale()
   const createProperty = useCreateProperty()
+  const queryClient = useQueryClient()
 
   const [name, setName] = useState('')
   const [type, setType] = useState('house')
@@ -31,6 +35,9 @@ export function PropertyForm({ open, onClose }: Props) {
   const [defaultPrice, setDefaultPrice] = useState('')
   const [pricingType, setPricingType] = useState<'hourly' | 'fixed'>('hourly')
   const [notes, setNotes] = useState('')
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const reset = () => {
     setName('')
@@ -40,6 +47,17 @@ export function PropertyForm({ open, onClose }: Props) {
     setDefaultPrice('')
     setPricingType('hourly')
     setNotes('')
+    setImageFile(null)
+    setImagePreview(null)
+  }
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImageFile(file)
+    const reader = new FileReader()
+    reader.onloadend = () => setImagePreview(reader.result as string)
+    reader.readAsDataURL(file)
   }
 
   const handleSubmit = () => {
@@ -55,7 +73,41 @@ export function PropertyForm({ open, onClose }: Props) {
       notes: notes || undefined,
       icon: TYPE_ICONS[type] || '🏠',
     } as Parameters<typeof createProperty.mutate>[0], {
-      onSuccess: () => {
+      onSuccess: async () => {
+        // Upload image if selected
+        if (imageFile) {
+          const supabase = createClient()
+          // Get the newly created property
+          const { data: props } = await supabase
+            .from('properties')
+            .select('id')
+            .eq('name', name)
+            .order('created_at', { ascending: false })
+            .limit(1)
+
+          if (props && props[0]) {
+            const propId = props[0].id
+            const ext = imageFile.name.split('.').pop() || 'jpg'
+            const path = `properties/${propId}.${ext}`
+
+            const { error: uploadError } = await supabase.storage
+              .from('avatars')
+              .upload(path, imageFile, { upsert: true })
+
+            if (!uploadError) {
+              const { data: urlData } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(path)
+
+              await supabase
+                .from('properties')
+                .update({ image_url: urlData.publicUrl })
+                .eq('id', propId)
+
+              queryClient.invalidateQueries({ queryKey: ['properties'] })
+            }
+          }
+        }
         reset()
         onClose()
       },
@@ -78,6 +130,38 @@ export function PropertyForm({ open, onClose }: Props) {
         </SheetHeader>
 
         <div className="px-5 pb-5 mt-4 flex flex-col gap-3">
+          {/* Photo upload */}
+          <div className="flex justify-center mb-1">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="relative w-full h-[140px] rounded-[16px] overflow-hidden group transition-all"
+              style={{ background: 'var(--fill)' }}
+            >
+              {imagePreview ? (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Camera size={24} className="text-white" />
+                  </div>
+                </>
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-1.5">
+                  <Camera size={28} style={{ color: 'var(--t3)' }} />
+                  <span className="text-[12px] font-semibold" style={{ color: 'var(--t3)' }}>Foto toevoegen</span>
+                </div>
+              )}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="hidden"
+            />
+          </div>
+
           {/* Name */}
           <div>
             <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>

@@ -23,6 +23,7 @@ export interface Property {
   icon?: string
   pricing_type?: 'hourly' | 'fixed'
   fixed_price?: number
+  image_url?: string
 }
 
 export type JobStatus = 'planned' | 'progress' | 'delivered' | 'done'
