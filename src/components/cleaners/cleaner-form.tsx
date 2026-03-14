@@ -84,19 +84,28 @@ export function CleanerForm({ open, onClose, editCleaner }: Props) {
           const ext = avatarFile.name.split('.').pop() || 'jpg'
           const path = `avatars/${editCleaner.id}.${ext}`
 
+          // Try to remove old file first (ignore errors)
+          await supabase.storage.from('avatars').remove([path])
+
           const { error: uploadError } = await supabase.storage
             .from('avatars')
             .upload(path, avatarFile, { upsert: true })
 
-          if (!uploadError) {
-            const { data: urlData } = supabase.storage
-              .from('avatars')
-              .getPublicUrl(path)
+          if (uploadError) {
+            throw new Error(`Upload mislukt: ${uploadError.message}`)
+          }
 
-            await supabase
-              .from('users')
-              .update({ avatar_url: `${urlData.publicUrl}?t=${Date.now()}` })
-              .eq('id', editCleaner.id)
+          const { data: urlData } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(path)
+
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({ avatar_url: `${urlData.publicUrl}?t=${Date.now()}` })
+            .eq('id', editCleaner.id)
+
+          if (updateError) {
+            throw new Error(`Avatar URL opslaan mislukt: ${updateError.message}`)
           }
         }
       } else {
