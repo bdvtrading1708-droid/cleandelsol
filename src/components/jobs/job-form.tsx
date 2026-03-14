@@ -1,0 +1,231 @@
+'use client'
+
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { useLocale } from '@/lib/i18n'
+import { useCreateJob } from '@/lib/hooks/use-jobs'
+import { useProperties } from '@/lib/hooks/use-properties'
+import { useCleaners } from '@/lib/hooks/use-cleaners'
+import { useState } from 'react'
+
+interface Props {
+  open: boolean
+  onClose: () => void
+}
+
+export function JobForm({ open, onClose }: Props) {
+  const { t } = useLocale()
+  const createJob = useCreateJob()
+  const { data: properties = [] } = useProperties()
+  const { data: cleaners = [] } = useCleaners()
+
+  const [propertyId, setPropertyId] = useState('')
+  const [cleanerId, setCleanerId] = useState('')
+  const [date, setDate] = useState('')
+  const [startTime, setStartTime] = useState('')
+  const [clientPrice, setClientPrice] = useState('')
+  const [cleanerPayout, setCleanerPayout] = useState('')
+  const [notes, setNotes] = useState('')
+
+  const reset = () => {
+    setPropertyId('')
+    setCleanerId('')
+    setDate('')
+    setStartTime('')
+    setClientPrice('')
+    setCleanerPayout('')
+    setNotes('')
+  }
+
+  const handleSubmit = () => {
+    if (!propertyId || !cleanerId || !date) return
+
+    createJob.mutate({
+      property_id: propertyId,
+      cleaner_id: cleanerId,
+      date,
+      start_time: startTime || undefined,
+      client_price: clientPrice ? parseFloat(clientPrice) : undefined,
+      cleaner_payout: cleanerPayout ? parseFloat(cleanerPayout) : undefined,
+      notes: notes || undefined,
+    }, {
+      onSuccess: () => {
+        reset()
+        onClose()
+      },
+    })
+  }
+
+  // Auto-fill price when property selected
+  const handlePropertyChange = (id: string) => {
+    setPropertyId(id)
+    const prop = properties.find(p => p.id === id)
+    if (prop?.default_price && !clientPrice) {
+      setClientPrice(prop.default_price.toString())
+    }
+    if (prop?.fixed_price && !clientPrice) {
+      setClientPrice(prop.fixed_price.toString())
+    }
+  }
+
+  // Auto-fill payout when cleaner selected
+  const handleCleanerChange = (id: string) => {
+    setCleanerId(id)
+    const cl = cleaners.find(c => c.id === id)
+    if (cl?.hourly_rate && !cleanerPayout) {
+      setCleanerPayout(cl.hourly_rate.toString())
+    }
+  }
+
+  const inputStyle = { background: 'var(--inp)', color: 'var(--t1)' }
+
+  return (
+    <Sheet open={open} onOpenChange={(o) => { if (!o) { reset(); onClose() } }}>
+      <SheetContent
+        side="bottom"
+        className="rounded-t-[24px] p-0 max-h-[85vh] overflow-y-auto border-0"
+        style={{ background: 'var(--bg2)' }}
+      >
+        <SheetHeader className="px-5 pt-5 pb-0">
+          <SheetTitle className="text-[20px] font-bold tracking-[-0.5px] text-left" style={{ color: 'var(--t1)' }}>
+            {t('create')} {t('jobs').toLowerCase()}
+          </SheetTitle>
+        </SheetHeader>
+
+        <div className="px-5 pb-5 mt-4 flex flex-col gap-3">
+          {/* Property */}
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+              {t('props')}
+            </label>
+            <select
+              value={propertyId}
+              onChange={(e) => handlePropertyChange(e.target.value)}
+              className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none appearance-none"
+              style={inputStyle}
+            >
+              <option value="">—</option>
+              {properties.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Cleaner */}
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+              {t('cleaners')}
+            </label>
+            <select
+              value={cleanerId}
+              onChange={(e) => handleCleanerChange(e.target.value)}
+              className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none appearance-none"
+              style={inputStyle}
+            >
+              <option value="">—</option>
+              {cleaners.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Date + Time row */}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+                Datum
+              </label>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+                {t('startT')}
+              </label>
+              <input
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
+                style={inputStyle}
+              />
+            </div>
+          </div>
+
+          {/* Price + Payout row */}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+                {t('price')} (€)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={clientPrice}
+                onChange={(e) => setClientPrice(e.target.value)}
+                className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
+                style={inputStyle}
+                placeholder="0"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+                {t('payout')} (€)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={cleanerPayout}
+                onChange={(e) => setCleanerPayout(e.target.value)}
+                className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
+                style={inputStyle}
+                placeholder="0"
+              />
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+              {t('notes')}
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+              className="w-full rounded-[14px] px-3.5 py-3 text-[15px] font-medium border-0 outline-none resize-none"
+              style={inputStyle}
+            />
+          </div>
+
+          {/* Buttons */}
+          <div className="flex gap-2 mt-1">
+            <button
+              onClick={() => { reset(); onClose() }}
+              className="flex-1 h-[50px] rounded-[16px] text-[15px] font-bold"
+              style={{ background: 'var(--fill)', color: 'var(--t2)' }}
+            >
+              {t('cancel')}
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={!propertyId || !cleanerId || !date || createJob.isPending}
+              className="flex-1 h-[50px] rounded-[16px] text-[15px] font-bold transition-all"
+              style={{
+                background: 'var(--t1)',
+                color: 'var(--bg)',
+                opacity: (!propertyId || !cleanerId || !date || createJob.isPending) ? 0.4 : 1,
+              }}
+            >
+              {createJob.isPending ? t('loading') : t('create')}
+            </button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
+}

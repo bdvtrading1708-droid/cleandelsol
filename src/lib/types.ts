@@ -1,0 +1,50 @@
+export type UserRole = 'admin' | 'cleaner'
+
+export interface User {
+  id: string
+  name: string
+  email: string
+  phone?: string
+  role: UserRole
+  language?: string
+  hourly_rate?: number
+  payment_notes?: string
+}
+
+export interface Property {
+  id: string
+  name: string
+  type: string
+  address?: string
+  owner_name?: string
+  default_price?: number
+  notes?: string
+  icon?: string
+  pricing_type?: 'hourly' | 'fixed'
+  fixed_price?: number
+}
+
+export type JobStatus = 'planned' | 'progress' | 'delivered' | 'done'
+
+export interface Job {
+  id: number
+  property_id: string
+  cleaner_id: string
+  date: string
+  start_time?: string
+  client_price?: number
+  cleaner_payout?: number
+  status: JobStatus
+  hours_worked?: number
+  km_driven?: number
+  notes?: string
+  property?: Property
+  cleaner?: Pick<User, 'id' | 'name' | 'email' | 'phone'>
+  photos?: JobPhoto[]
+}
+
+export interface JobPhoto {
+  id: number
+  job_id: number
+  url: string
+}
