@@ -78,6 +78,8 @@
   "partnerRevenue": "Ingresos de socios",
   "noPartnerData": "Sin datos de socios",
   "ofTotal": "del total",
+  "repeatJob": "Repetir",
+  "repeatDays": "días",
   "openRoute": "Navegar",
   "allCl": "Todos",
   "days": ["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"],

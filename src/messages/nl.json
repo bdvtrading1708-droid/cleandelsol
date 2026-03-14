@@ -78,6 +78,8 @@
   "partnerRevenue": "Partner omzet",
   "noPartnerData": "Geen partnerdata",
   "ofTotal": "van totaal",
+  "repeatJob": "Herhalen",
+  "repeatDays": "dagen",
   "openRoute": "Navigeer",
   "allCl": "Iedereen",
   "days": ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"],

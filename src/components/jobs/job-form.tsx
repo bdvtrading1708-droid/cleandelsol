@@ -6,6 +6,8 @@ import { useCreateJob } from '@/lib/hooks/use-jobs'
 import { useProperties } from '@/lib/hooks/use-properties'
 import { useCleaners } from '@/lib/hooks/use-cleaners'
 import { useState } from 'react'
+import { addDays, format } from 'date-fns'
+import { Copy } from 'lucide-react'
 
 interface Props {
   open: boolean
@@ -27,6 +29,7 @@ export function JobForm({ open, onClose }: Props) {
   const [cleanerPayout, setCleanerPayout] = useState('')
   const [kmDriven, setKmDriven] = useState('')
   const [notes, setNotes] = useState('')
+  const [repeatDays, setRepeatDays] = useState(1)
 
   const reset = () => {
     setPropertyId('')
@@ -38,12 +41,13 @@ export function JobForm({ open, onClose }: Props) {
     setCleanerPayout('')
     setKmDriven('')
     setNotes('')
+    setRepeatDays(1)
   }
 
   const handleSubmit = () => {
     if (!propertyId || !cleanerId || !date) return
 
-    createJob.mutate({
+    const baseJob = {
       property_id: propertyId,
       cleaner_id: cleanerId,
       date,
@@ -53,12 +57,22 @@ export function JobForm({ open, onClose }: Props) {
       cleaner_payout: cleanerPayout ? parseFloat(cleanerPayout) : undefined,
       km_driven: kmDriven ? parseFloat(kmDriven) : undefined,
       notes: notes || undefined,
-    }, {
-      onSuccess: () => {
-        reset()
-        onClose()
-      },
-    })
+    }
+
+    if (repeatDays <= 1) {
+      createJob.mutate(baseJob, {
+        onSuccess: () => { reset(); onClose() },
+      })
+    } else {
+      const baseDate = new Date(date + 'T00:00:00')
+      const jobs = Array.from({ length: repeatDays }, (_, i) => ({
+        ...baseJob,
+        date: format(addDays(baseDate, i), 'yyyy-MM-dd'),
+      }))
+      createJob.mutate(jobs, {
+        onSuccess: () => { reset(); onClose() },
+      })
+    }
   }
 
   // Auto-fill price when property selected
@@ -222,6 +236,38 @@ export function JobForm({ open, onClose }: Props) {
               style={inputStyle}
               placeholder="0"
             />
+          </div>
+
+          {/* Repeat days */}
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+              <Copy size={11} className="inline mr-1" style={{ verticalAlign: 'middle' }} />
+              {t('repeatJob')}
+            </label>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setRepeatDays(Math.max(1, repeatDays - 1))}
+                className="w-[46px] h-[46px] rounded-[14px] text-[18px] font-bold flex items-center justify-center"
+                style={{ background: 'var(--inp)', color: 'var(--t2)' }}
+              >
+                −
+              </button>
+              <div
+                className="flex-1 h-[46px] rounded-[14px] flex items-center justify-center text-[15px] font-bold"
+                style={{ background: 'var(--inp)', color: 'var(--t1)' }}
+              >
+                {repeatDays} {repeatDays === 1 ? t('dag').toLowerCase() : t('repeatDays')}
+              </div>
+              <button
+                type="button"
+                onClick={() => setRepeatDays(Math.min(30, repeatDays + 1))}
+                className="w-[46px] h-[46px] rounded-[14px] text-[18px] font-bold flex items-center justify-center"
+                style={{ background: 'var(--inp)', color: 'var(--t2)' }}
+              >
+                +
+              </button>
+            </div>
           </div>
 
           {/* Notes */}

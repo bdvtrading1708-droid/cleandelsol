@@ -78,6 +78,8 @@
   "partnerRevenue": "Partner revenue",
   "noPartnerData": "No partner data",
   "ofTotal": "of total",
+  "repeatJob": "Repeat",
+  "repeatDays": "days",
   "openRoute": "Navigate",
   "allCl": "Everyone",
   "days": ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
