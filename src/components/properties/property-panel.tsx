@@ -33,6 +33,11 @@ export function PropertyPanel({ property, open, onClose }: Props) {
   const completedJobs = propJobs.filter(j => j.status === 'done').length
 
   const openMaps = () => {
+    // Use explicit maps URL if available, otherwise search by address
+    if (property.maps_url) {
+      window.open(property.maps_url, '_blank')
+      return
+    }
     if (!property.address) return
     const q = encodeURIComponent(property.address)
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)

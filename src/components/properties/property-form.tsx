@@ -7,7 +7,7 @@ import { usePartners } from '@/lib/hooks/use-partners'
 import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useQueryClient } from '@tanstack/react-query'
-import { Camera } from 'lucide-react'
+import { Camera, MapPin } from 'lucide-react'
 
 interface Props {
   open: boolean
@@ -33,6 +33,7 @@ export function PropertyForm({ open, onClose }: Props) {
   const [name, setName] = useState('')
   const [type, setType] = useState('house')
   const [address, setAddress] = useState('')
+  const [mapsUrl, setMapsUrl] = useState('')
   const [partnerId, setPartnerId] = useState('')
   const [ownerName, setOwnerName] = useState('')
   const [defaultPrice, setDefaultPrice] = useState('')
@@ -46,6 +47,7 @@ export function PropertyForm({ open, onClose }: Props) {
     setName('')
     setType('house')
     setAddress('')
+    setMapsUrl('')
     setPartnerId('')
     setOwnerName('')
     setDefaultPrice('')
@@ -71,6 +73,7 @@ export function PropertyForm({ open, onClose }: Props) {
       name,
       type,
       address: address || undefined,
+      maps_url: mapsUrl || undefined,
       partner_id: partnerId || undefined,
       owner_name: ownerName || undefined,
       default_price: defaultPrice ? parseFloat(defaultPrice) : undefined,
@@ -216,6 +219,21 @@ export function PropertyForm({ open, onClose }: Props) {
               className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
               style={inputStyle}
               placeholder="Straat, stad"
+            />
+          </div>
+
+          {/* Google Maps link */}
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+              <span className="flex items-center gap-1"><MapPin size={12} /> Google Maps Link</span>
+            </label>
+            <input
+              type="url"
+              value={mapsUrl}
+              onChange={(e) => setMapsUrl(e.target.value)}
+              className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
+              style={inputStyle}
+              placeholder="https://maps.google.com/..."
             />
           </div>
 

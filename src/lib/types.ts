@@ -26,6 +26,7 @@ export interface Property {
   name: string
   type: string
   address?: string
+  maps_url?: string
   owner_name?: string
   default_price?: number
   notes?: string
