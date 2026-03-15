@@ -27,6 +27,7 @@ export function JobDeliveryForm({ job, open, onClose, onSuccess }: Props) {
   const myAssignment = (job.cleaners || []).find(jc => jc.cleaner_id === user?.id)
   const myStartTime = myAssignment?.start_time || job.start_time
 
+  const [hoursWorked, setHoursWorked] = useState(myAssignment?.hours_worked?.toString() || '')
   const [endTime, setEndTime] = useState(myAssignment?.end_time?.slice(0, 5) || job.end_time?.slice(0, 5) || '')
   const [km, setKm] = useState(myAssignment?.km_driven?.toString() || '')
   const [extraCosts, setExtraCosts] = useState(myAssignment?.extra_costs?.toString() || '')
@@ -36,6 +37,7 @@ export function JobDeliveryForm({ job, open, onClose, onSuccess }: Props) {
   const [uploading, setUploading] = useState(false)
   const [tried, setTried] = useState(false)
 
+  const hoursInvalid = !hoursWorked || parseFloat(hoursWorked) <= 0
   const endTimeInvalid = !endTime
   const kmInvalid = !km || parseFloat(km) < 0
 
@@ -51,7 +53,7 @@ export function JobDeliveryForm({ job, open, onClose, onSuccess }: Props) {
 
   const handleSubmit = async () => {
     setTried(true)
-    if (endTimeInvalid || kmInvalid) return
+    if (hoursInvalid || endTimeInvalid || kmInvalid) return
 
     setUploading(true)
     try {
@@ -68,22 +70,13 @@ export function JobDeliveryForm({ job, open, onClose, onSuccess }: Props) {
         await supabase.from('job_photos').insert({ job_id: job.id, url: publicUrl })
       }
 
-      // Calculate hours from start_time and end_time
-      let hours_worked: number | undefined
-      if (myStartTime && endTime) {
-        const [sh, sm] = myStartTime.split(':').map(Number)
-        const [eh, em] = endTime.split(':').map(Number)
-        const diff = (eh * 60 + em) - (sh * 60 + sm)
-        hours_worked = diff > 0 ? diff / 60 : undefined
-      }
-
       // Update the cleaner's assignment (including per-cleaner extra costs)
       if (myAssignment) {
         await new Promise<void>((resolve, reject) => {
           updateCleaner.mutate({
             id: myAssignment.id,
             end_time: endTime,
-            hours_worked,
+            hours_worked: parseFloat(hoursWorked),
             km_driven: parseFloat(km),
             extra_costs: extraCosts ? parseFloat(extraCosts) : 0,
           }, {
@@ -126,6 +119,35 @@ export function JobDeliveryForm({ job, open, onClose, onSuccess }: Props) {
         </SheetHeader>
 
         <div className="px-5 pb-5 mt-4 flex flex-col gap-3">
+          {/* Hours Worked - REQUIRED */}
+          <div>
+            <label
+              className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block"
+              style={{ color: tried && hoursInvalid ? '#ef4444' : 'var(--t3)' }}
+            >
+              Uren gewerkt *
+            </label>
+            <input
+              type="number"
+              step="0.5"
+              min="0"
+              value={hoursWorked}
+              onChange={(e) => setHoursWorked(e.target.value)}
+              className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
+              style={{
+                background: 'var(--inp)',
+                color: 'var(--t1)',
+                border: tried && hoursInvalid ? '2px solid #ef4444' : 'none',
+              }}
+              placeholder="Bv. 4.5"
+            />
+            {tried && hoursInvalid && (
+              <div className="text-[11px] mt-1 font-medium" style={{ color: '#ef4444' }}>
+                Vul het aantal uren in
+              </div>
+            )}
+          </div>
+
           {/* End Time - REQUIRED */}
           <div>
             <label
@@ -283,15 +305,9 @@ export function JobDeliveryForm({ job, open, onClose, onSuccess }: Props) {
           </div>
 
           {/* Live calculation summary */}
-          {endTime && km && (() => {
+          {hoursWorked && km && (() => {
             const uurtarief = myAssignment?.cleaner_payout || 0
-            let calcHours = 0
-            if (myStartTime && endTime) {
-              const [sh, sm] = myStartTime.split(':').map(Number)
-              const [eh, em] = endTime.split(':').map(Number)
-              const diff = (eh * 60 + em) - (sh * 60 + sm)
-              calcHours = diff > 0 ? diff / 60 : 0
-            }
+            const calcHours = parseFloat(hoursWorked) || 0
             const basePayout = uurtarief * (calcHours > 0 ? calcHours : 1)
             const kmVal = parseFloat(km) || 0
             const kmCost = kmVal * 0.10
