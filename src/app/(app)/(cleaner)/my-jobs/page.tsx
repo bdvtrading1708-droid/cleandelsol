@@ -5,7 +5,7 @@ import { useJobs } from '@/lib/hooks/use-jobs'
 import { useAuth } from '@/providers/auth-provider'
 import { useLocale } from '@/lib/i18n'
 import { STATUS_COLORS } from '@/lib/constants'
-import { formatCurrency, formatDate, getCleanerTotalPayout, getCleanerHours } from '@/lib/utils'
+import { formatCurrency, formatDate, getCleanerTotalPayout } from '@/lib/utils'
 import { JobPanel } from '@/components/jobs/job-panel'
 import type { Job } from '@/lib/types'
 
@@ -23,48 +23,13 @@ export default function MyJobsPage() {
   const getMyAssignment = (job: typeof jobs[0]) =>
     (job.cleaners || []).find(jc => jc.cleaner_id === user?.id)
 
-  const totalEarned = jobs.filter(j => j.status === 'done').reduce((s, j) => {
-    const my = getMyAssignment(j)
-    return s + (my ? getCleanerTotalPayout(my) : 0)
-  }, 0)
-  const totalHours = jobs.reduce((s, j) => {
-    const my = getMyAssignment(j)
-    return s + (my ? getCleanerHours(my) : 0)
-  }, 0)
-  const totalKm = jobs.reduce((s, j) => {
-    const my = getMyAssignment(j)
-    return s + (my?.km_driven || 0)
-  }, 0)
-
   const upcoming = jobs.filter(j => j.status === 'planned' || j.status === 'progress')
     .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
 
   return (
     <>
-      {/* Hero */}
-      <div className="rounded-[22px] p-[22px] mt-3.5 relative overflow-hidden" style={{ background: 'var(--hero-bg)', boxShadow: 'var(--shadow-md)' }}>
-        <div className="text-[11px] font-medium mb-1" style={{ color: 'rgba(255,255,255,0.45)' }}>
-          {t('myJobs')}
-        </div>
-        <div className="text-[44px] font-bold tracking-[-2px] leading-none mb-0.5 text-white">
-          {formatCurrency(totalEarned)}
-        </div>
-        <div className="text-xs mb-4" style={{ color: 'rgba(255,255,255,0.40)' }}>{t('earned').toLowerCase()}</div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-[18px] p-3" style={{ background: 'rgba(255,255,255,0.09)' }}>
-            <div className="text-[9px] font-semibold tracking-[.1em] uppercase mb-1" style={{ color: 'rgba(255,255,255,0.40)' }}>{t('hours')}</div>
-            <div className="text-[20px] font-bold tracking-[-0.5px] leading-none text-white">{totalHours}</div>
-          </div>
-          <div className="rounded-[18px] p-3" style={{ background: 'rgba(255,255,255,0.09)' }}>
-            <div className="text-[9px] font-semibold tracking-[.1em] uppercase mb-1" style={{ color: 'rgba(255,255,255,0.40)' }}>{t('km')}</div>
-            <div className="text-[20px] font-bold tracking-[-0.5px] leading-none text-white">{totalKm}</div>
-          </div>
-        </div>
-      </div>
-
       {/* Upcoming jobs */}
-      <div className="flex items-center justify-between mt-5 mb-3">
+      <div className="flex items-center justify-between mt-3.5 mb-3">
         <div className="text-xl font-bold tracking-[-0.5px]" style={{ color: 'var(--t1)' }}>{t('upcoming')}</div>
         <div className="text-sm font-semibold" style={{ color: 'var(--t3)' }}>{upcoming.length}</div>
       </div>
