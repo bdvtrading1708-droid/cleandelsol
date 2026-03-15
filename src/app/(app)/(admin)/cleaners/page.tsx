@@ -77,9 +77,9 @@ export default function CleanersPage() {
             const stats = cleanerStats.find(s => s.cleanerId === cleaner.id)
             const totalEarned = stats?.earned || 0
             const outstanding = stats?.outstanding || 0
+            const totalPayout = stats?.totalPayout || 0
             const jobCount = stats?.jobCount || 0
-            const revenue = stats?.revenue || 0
-            const earnedPct = revenue > 0 ? Math.round((totalEarned / (totalEarned + outstanding)) * 100) : 0
+            const earnedPct = totalPayout > 0 ? Math.round((totalEarned / totalPayout) * 100) : 0
 
             return (
               <div
@@ -118,8 +118,8 @@ export default function CleanersPage() {
                   </div>
                 </div>
                 <div className="flex justify-between items-baseline mt-1">
-                  <div className="text-[10px] font-semibold" style={{ color: 'var(--t3)' }}>{t('revenue')}</div>
-                  <div className="text-[12px] font-bold" style={{ color: 'var(--t1)' }}>{formatCurrency(revenue)}</div>
+                  <div className="text-[10px] font-semibold" style={{ color: 'var(--t3)' }}>Totaal</div>
+                  <div className="text-[12px] font-bold" style={{ color: 'var(--t1)' }}>{formatCurrency(totalPayout)}</div>
                 </div>
                 <div className="flex justify-between items-baseline mt-1">
                   <div className="text-[10px] font-semibold" style={{ color: 'var(--t3)' }}>{t('jobs')}</div>

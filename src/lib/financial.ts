@@ -145,6 +145,7 @@ export interface CleanerFinancials extends FinancialSummary {
   cleanerId: string
   outstanding: number       // payout for delivered (not yet paid) jobs
   earned: number            // payout for done (paid) jobs
+  totalPayout: number       // total payout across ALL statuses
 }
 
 /** Break down financials per cleaner (supports multi-cleaner jobs) */
@@ -169,6 +170,7 @@ export function aggregateByCleaners(
     let hours = 0
     let outstanding = 0
     let earned = 0
+    let totalPayout = 0
 
     for (const job of cleanerJobs) {
       // Revenue: full job revenue attributed to this cleaner's job
@@ -186,6 +188,7 @@ export function aggregateByCleaners(
           kmCost += jcKmCost
           extraCosts += jcExtraCosts
           hours += cleanerHours
+          totalPayout += cleanerTotalWithCosts
 
           if (job.status === 'delivered') outstanding += cleanerTotalWithCosts
           if (job.status === 'done') earned += cleanerTotalWithCosts
@@ -198,6 +201,7 @@ export function aggregateByCleaners(
         payout += jobPayout
         kmCost += legacyKmCost
         hours += getJobHours(job)
+        totalPayout += legacyTotalWithCosts
 
         if (job.status === 'delivered') outstanding += legacyTotalWithCosts
         if (job.status === 'done') earned += legacyTotalWithCosts
@@ -210,7 +214,7 @@ export function aggregateByCleaners(
     const profit = revenue - totalCost
     const margin = revenue > 0 ? Math.round((profit / revenue) * 100) : 0
 
-    return { revenue, payout, kmCost, extraCosts, totalCost, profit, margin, jobCount: cleanerJobs.length, hours, cleanerId, outstanding, earned }
+    return { revenue, payout, kmCost, extraCosts, totalCost, profit, margin, jobCount: cleanerJobs.length, hours, cleanerId, outstanding, earned, totalPayout }
   })
 }
 

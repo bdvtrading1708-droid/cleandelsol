@@ -7,6 +7,7 @@ import { useAuth } from '@/providers/auth-provider'
 import { useState, useRef } from 'react'
 import { Camera, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { toast } from 'sonner'
 import type { Job } from '@/lib/types'
 
 interface Props {
@@ -87,15 +88,22 @@ export function JobDeliveryForm({ job, open, onClose, onSuccess }: Props) {
       }
 
       // Update job status to delivered
-      updateStatus.mutate({
-        id: job.id,
-        status: 'delivered',
-        payment_method: paymentMethod,
-        notes: notes || undefined,
-      }, {
-        onSuccess,
+      await new Promise<void>((resolve, reject) => {
+        updateStatus.mutate({
+          id: job.id,
+          status: 'delivered',
+          payment_method: paymentMethod,
+          notes: notes || undefined,
+        }, {
+          onSuccess: () => resolve(),
+          onError: (err) => reject(err),
+        })
       })
-    } catch {
+
+      onSuccess()
+    } catch (err) {
+      toast.error('Er ging iets mis bij het opleveren. Probeer opnieuw.')
+      console.error('Delivery error:', err)
       setUploading(false)
     }
   }
