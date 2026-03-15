@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
-import type { Job, JobStatus } from '@/lib/types'
+import type { Job, JobStatus, JobCleaner } from '@/lib/types'
 
 export function useJobs(cleanerId?: string) {
   const supabase = createClient()
@@ -12,16 +12,40 @@ export function useJobs(cleanerId?: string) {
     queryFn: async () => {
       let query = supabase
         .from('jobs')
-        .select('*, property:properties(*), cleaner:users!jobs_cleaner_id_fkey(id, name, email, phone, avatar_url)')
+        .select('*, property:properties(*), job_cleaners(*, cleaner:users!job_cleaners_cleaner_id_fkey(id, name, email, phone, avatar_url))')
         .order('date', { ascending: false })
 
       if (cleanerId) {
-        query = query.eq('cleaner_id', cleanerId)
+        // Filter jobs that have this cleaner assigned
+        query = query.filter('job_cleaners.cleaner_id', 'eq', cleanerId)
       }
 
       const { data, error } = await query
       if (error) throw error
-      return (data || []) as Job[]
+
+      // Map job_cleaners to cleaners field
+      const jobs = (data || []).map((row: Record<string, unknown>) => {
+        const jobCleaners = (row.job_cleaners as JobCleaner[]) || []
+        // For backward compat: set first cleaner as legacy cleaner fields
+        const firstCleaner = jobCleaners[0]
+        return {
+          ...row,
+          cleaners: jobCleaners,
+          // Legacy compat
+          cleaner_id: firstCleaner?.cleaner_id,
+          cleaner: firstCleaner?.cleaner,
+          cleaner_payout: firstCleaner?.cleaner_payout,
+          km_driven: jobCleaners.reduce((s: number, jc: JobCleaner) => s + (jc.km_driven || 0), 0),
+          hours_worked: firstCleaner?.hours_worked,
+        } as Job
+      })
+
+      // If filtering by cleanerId, only return jobs that actually have that cleaner
+      if (cleanerId) {
+        return jobs.filter(j => j.cleaners.some(jc => jc.cleaner_id === cleanerId))
+      }
+
+      return jobs
     },
   })
 }
@@ -31,18 +55,34 @@ export function useUpdateJobStatus() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ id, status, hours_worked, km_driven, notes, end_time, client_price, cleaner_payout, extra_costs, payment_method }: { id: number; status: JobStatus; hours_worked?: number; km_driven?: number; notes?: string; end_time?: string; client_price?: number; cleaner_payout?: number; extra_costs?: number; payment_method?: string }) => {
+    mutationFn: async ({ id, status, notes, extra_costs, payment_method }: { id: number; status: JobStatus; notes?: string; extra_costs?: number; payment_method?: string }) => {
       const update: Record<string, unknown> = { status }
-      if (hours_worked !== undefined) update.hours_worked = hours_worked
-      if (km_driven !== undefined) update.km_driven = km_driven
       if (notes !== undefined) update.notes = notes
-      if (end_time !== undefined) update.end_time = end_time
-      if (client_price !== undefined) update.client_price = client_price
-      if (cleaner_payout !== undefined) update.cleaner_payout = cleaner_payout
       if (extra_costs !== undefined) update.extra_costs = extra_costs
       if (payment_method !== undefined) update.payment_method = payment_method
 
       const { error } = await supabase.from('jobs').update(update).eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] })
+    },
+  })
+}
+
+export function useUpdateJobCleaner() {
+  const supabase = createClient()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, end_time, hours_worked, km_driven, cleaner_payout }: { id: number; end_time?: string; hours_worked?: number; km_driven?: number; cleaner_payout?: number }) => {
+      const update: Record<string, unknown> = {}
+      if (end_time !== undefined) update.end_time = end_time
+      if (hours_worked !== undefined) update.hours_worked = hours_worked
+      if (km_driven !== undefined) update.km_driven = km_driven
+      if (cleaner_payout !== undefined) update.cleaner_payout = cleaner_payout
+
+      const { error } = await supabase.from('job_cleaners').update(update).eq('id', id)
       if (error) throw error
     },
     onSuccess: () => {
@@ -66,15 +106,63 @@ export function useDeleteJob() {
   })
 }
 
+interface CreateJobInput {
+  property_id: string
+  date: string
+  start_time?: string
+  end_time?: string
+  client_price?: number
+  notes?: string
+  cleaners: {
+    cleaner_id: string
+    cleaner_payout?: number
+    start_time?: string
+    end_time?: string
+    hours_worked?: number
+    km_driven?: number
+  }[]
+}
+
 export function useCreateJob() {
   const supabase = createClient()
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (jobs: { property_id: string; cleaner_id: string; date: string; start_time?: string; end_time?: string; client_price?: number; cleaner_payout?: number; hours_worked?: number; km_driven?: number; notes?: string } | { property_id: string; cleaner_id: string; date: string; start_time?: string; end_time?: string; client_price?: number; cleaner_payout?: number; hours_worked?: number; km_driven?: number; notes?: string }[]) => {
-      const rows = (Array.isArray(jobs) ? jobs : [jobs]).map(j => ({ ...j, status: 'planned' as const }))
-      const { error } = await supabase.from('jobs').insert(rows)
-      if (error) throw error
+    mutationFn: async (input: CreateJobInput | CreateJobInput[]) => {
+      const inputs = Array.isArray(input) ? input : [input]
+
+      for (const job of inputs) {
+        // Insert the job first
+        const { data: newJob, error: jobError } = await supabase
+          .from('jobs')
+          .insert({
+            property_id: job.property_id,
+            date: job.date,
+            start_time: job.start_time,
+            end_time: job.end_time,
+            client_price: job.client_price,
+            notes: job.notes,
+            status: 'planned' as const,
+          })
+          .select('id')
+          .single()
+
+        if (jobError) throw jobError
+
+        // Insert job_cleaners
+        const cleanerRows = job.cleaners.map(c => ({
+          job_id: newJob.id,
+          cleaner_id: c.cleaner_id,
+          cleaner_payout: c.cleaner_payout,
+          start_time: c.start_time || job.start_time,
+          end_time: c.end_time || job.end_time,
+          hours_worked: c.hours_worked,
+          km_driven: c.km_driven,
+        }))
+
+        const { error: cleanerError } = await supabase.from('job_cleaners').insert(cleanerRows)
+        if (cleanerError) throw cleanerError
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['jobs'] })

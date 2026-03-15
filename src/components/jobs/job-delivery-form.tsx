@@ -2,7 +2,8 @@
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useLocale } from '@/lib/i18n'
-import { useUpdateJobStatus } from '@/lib/hooks/use-jobs'
+import { useUpdateJobStatus, useUpdateJobCleaner } from '@/lib/hooks/use-jobs'
+import { useAuth } from '@/providers/auth-provider'
 import { useState, useRef } from 'react'
 import { Camera, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -17,11 +18,17 @@ interface Props {
 
 export function JobDeliveryForm({ job, open, onClose, onSuccess }: Props) {
   const { t } = useLocale()
+  const { user } = useAuth()
   const updateStatus = useUpdateJobStatus()
+  const updateCleaner = useUpdateJobCleaner()
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const [endTime, setEndTime] = useState(job.end_time?.slice(0, 5) || '')
-  const [km, setKm] = useState(job.km_driven?.toString() || '')
+  // Find this cleaner's assignment
+  const myAssignment = (job.cleaners || []).find(jc => jc.cleaner_id === user?.id)
+  const myStartTime = myAssignment?.start_time || job.start_time
+
+  const [endTime, setEndTime] = useState(myAssignment?.end_time?.slice(0, 5) || job.end_time?.slice(0, 5) || '')
+  const [km, setKm] = useState(myAssignment?.km_driven?.toString() || '')
   const [extraCosts, setExtraCosts] = useState(job.extra_costs?.toString() || '')
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bank'>(job.payment_method || 'bank')
   const [notes, setNotes] = useState(job.notes || '')
@@ -63,20 +70,32 @@ export function JobDeliveryForm({ job, open, onClose, onSuccess }: Props) {
 
       // Calculate hours from start_time and end_time
       let hours_worked: number | undefined
-      if (job.start_time && endTime) {
-        const [sh, sm] = job.start_time.split(':').map(Number)
+      if (myStartTime && endTime) {
+        const [sh, sm] = myStartTime.split(':').map(Number)
         const [eh, em] = endTime.split(':').map(Number)
         const diff = (eh * 60 + em) - (sh * 60 + sm)
         hours_worked = diff > 0 ? diff / 60 : undefined
       }
 
-      // Update status to delivered
+      // Update the cleaner's assignment
+      if (myAssignment) {
+        await new Promise<void>((resolve, reject) => {
+          updateCleaner.mutate({
+            id: myAssignment.id,
+            end_time: endTime,
+            hours_worked,
+            km_driven: parseFloat(km),
+          }, {
+            onSuccess: () => resolve(),
+            onError: (err) => reject(err),
+          })
+        })
+      }
+
+      // Update job status to delivered
       updateStatus.mutate({
         id: job.id,
         status: 'delivered',
-        end_time: endTime,
-        hours_worked,
-        km_driven: parseFloat(km),
         extra_costs: extraCosts ? parseFloat(extraCosts) : 0,
         payment_method: paymentMethod,
         notes: notes || undefined,
@@ -99,9 +118,9 @@ export function JobDeliveryForm({ job, open, onClose, onSuccess }: Props) {
           <SheetTitle className="text-[20px] font-bold tracking-[-0.5px] text-left" style={{ color: 'var(--t1)' }}>
             {t('delivery')}
           </SheetTitle>
-          {job.start_time && (
+          {myStartTime && (
             <div className="text-[13px] mt-1" style={{ color: 'var(--t3)' }}>
-              {t('start')}: {job.start_time.slice(0, 5)}
+              {t('start')}: {myStartTime.slice(0, 5)}
             </div>
           )}
         </SheetHeader>

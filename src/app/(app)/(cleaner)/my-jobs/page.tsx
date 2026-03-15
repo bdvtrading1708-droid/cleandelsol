@@ -5,7 +5,7 @@ import { useJobs } from '@/lib/hooks/use-jobs'
 import { useAuth } from '@/providers/auth-provider'
 import { useLocale } from '@/lib/i18n'
 import { STATUS_COLORS } from '@/lib/constants'
-import { formatCurrency, formatDate, getJobPayout } from '@/lib/utils'
+import { formatCurrency, formatDate, getCleanerPayout, getCleanerHours } from '@/lib/utils'
 import { JobPanel } from '@/components/jobs/job-panel'
 import type { Job } from '@/lib/types'
 
@@ -19,9 +19,22 @@ export default function MyJobsPage() {
     return <div className="flex items-center justify-center py-20" style={{ color: 'var(--t3)' }}>{t('loading')}</div>
   }
 
-  const totalEarned = jobs.filter(j => j.status === 'done').reduce((s, j) => s + getJobPayout(j), 0)
-  const totalHours = jobs.reduce((s, j) => s + (j.hours_worked || 0), 0)
-  const totalKm = jobs.reduce((s, j) => s + (j.km_driven || 0), 0)
+  // Get this cleaner's specific data from each job
+  const getMyAssignment = (job: typeof jobs[0]) =>
+    (job.cleaners || []).find(jc => jc.cleaner_id === user?.id)
+
+  const totalEarned = jobs.filter(j => j.status === 'done').reduce((s, j) => {
+    const my = getMyAssignment(j)
+    return s + (my ? getCleanerPayout(my) : 0)
+  }, 0)
+  const totalHours = jobs.reduce((s, j) => {
+    const my = getMyAssignment(j)
+    return s + (my ? getCleanerHours(my) : 0)
+  }, 0)
+  const totalKm = jobs.reduce((s, j) => {
+    const my = getMyAssignment(j)
+    return s + (my?.km_driven || 0)
+  }, 0)
 
   const upcoming = jobs.filter(j => j.status === 'planned' || j.status === 'progress')
     .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
@@ -90,7 +103,7 @@ export default function MyJobsPage() {
               {/* Payout + status */}
               <div className="text-right shrink-0">
                 <div className="text-[15px] font-bold tracking-[-0.3px]" style={{ color: 'var(--t1)' }}>
-                  {formatCurrency(getJobPayout(job))}
+                  {formatCurrency(getMyAssignment(job) ? getCleanerPayout(getMyAssignment(job)!) : 0)}
                 </div>
                 <div
                   className="text-[9px] font-bold uppercase tracking-[.05em] mt-0.5"

@@ -23,7 +23,9 @@ export default function FinancialPage() {
   }
 
   // Filter by cleaner, then by period
-  const cleanerJobs = selectedCleaner ? jobs.filter(j => j.cleaner_id === selectedCleaner) : jobs
+  const cleanerJobs = selectedCleaner
+    ? jobs.filter(j => (j.cleaners || []).some(jc => jc.cleaner_id === selectedCleaner) || j.cleaner_id === selectedCleaner)
+    : jobs
   const filtered = filterByPeriod(cleanerJobs, period)
   const { revenue: totalRev, totalCost, profit: netProfit, margin } = aggregateFinancials(filtered)
 

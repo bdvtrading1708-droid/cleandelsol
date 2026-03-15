@@ -3,7 +3,7 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useLocale } from '@/lib/i18n'
 import { useJobs } from '@/lib/hooks/use-jobs'
-import { formatCurrency, getJobPayout, getJobHours } from '@/lib/utils'
+import { formatCurrency, getCleanerPayout, getCleanerHours } from '@/lib/utils'
 import { Phone, Mail, Camera, Pencil } from 'lucide-react'
 import { CleanerAvatar } from '@/components/cleaners/cleaner-avatar'
 import { createClient } from '@/lib/supabase/client'
@@ -27,14 +27,19 @@ export function CleanerPanel({ cleaner, open, onClose, onEdit }: Props) {
 
   if (!cleaner) return null
 
-  const cleanerJobs = jobs.filter(j => j.cleaner_id === cleaner.id)
+  const cleanerJobs = jobs.filter(j =>
+    (j.cleaners || []).some(jc => jc.cleaner_id === cleaner.id) || j.cleaner_id === cleaner.id
+  )
+  const getMyAssignment = (job: typeof jobs[0]) =>
+    (job.cleaners || []).find(jc => jc.cleaner_id === cleaner.id)
+
   const totalEarned = cleanerJobs
     .filter(j => j.status === 'done')
-    .reduce((s, j) => s + getJobPayout(j), 0)
+    .reduce((s, j) => { const my = getMyAssignment(j); return s + (my ? getCleanerPayout(my) : 0) }, 0)
   const outstanding = cleanerJobs
     .filter(j => j.status === 'delivered')
-    .reduce((s, j) => s + getJobPayout(j), 0)
-  const totalHours = cleanerJobs.reduce((s, j) => s + getJobHours(j), 0)
+    .reduce((s, j) => { const my = getMyAssignment(j); return s + (my ? getCleanerPayout(my) : 0) }, 0)
+  const totalHours = cleanerJobs.reduce((s, j) => { const my = getMyAssignment(j); return s + (my ? getCleanerHours(my) : 0) }, 0)
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]

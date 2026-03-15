@@ -5,7 +5,8 @@
  * to guarantee consistent numbers across every screen.
  */
 
-import { getJobHours, getJobRevenue, getJobPayout } from './utils'
+import { getJobHours, getJobRevenue, getJobPayout, getJobKm, getCleanerHours, getCleanerPayout } from './utils'
+import type { JobCleaner } from './types'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -82,6 +83,7 @@ type JobLike = {
   extra_costs?: number
   status?: string
   property?: { pricing_type?: string } | null
+  cleaners?: JobCleaner[]
 }
 
 /** Full financial breakdown for a single job */
@@ -89,7 +91,7 @@ export function getJobFinancials(job: JobLike) {
   const hours = getJobHours(job)
   const revenue = getJobRevenue(job)
   const payout = getJobPayout(job)
-  const kmCost = (job.km_driven || 0) * KM_RATE
+  const kmCost = getJobKm(job) * KM_RATE
   const extraCosts = job.extra_costs || 0
   const totalCost = payout + kmCost + extraCosts
   const profit = revenue - totalCost
@@ -143,24 +145,64 @@ export interface CleanerFinancials extends FinancialSummary {
   earned: number            // payout for done (paid) jobs
 }
 
-/** Break down financials per cleaner */
+/** Break down financials per cleaner (supports multi-cleaner jobs) */
 export function aggregateByCleaners(
-  jobs: (JobLike & { cleaner_id?: string })[],
+  jobs: (JobLike & { cleaners?: JobCleaner[]; cleaner_id?: string; status?: string })[],
   cleanerIds: string[]
 ): CleanerFinancials[] {
   return cleanerIds.map(cleanerId => {
-    const cleanerJobs = jobs.filter(j => j.cleaner_id === cleanerId)
-    const summary = aggregateFinancials(cleanerJobs)
+    // Find jobs that involve this cleaner
+    const cleanerJobs = jobs.filter(j => {
+      if (j.cleaners && j.cleaners.length > 0) {
+        return j.cleaners.some(jc => jc.cleaner_id === cleanerId)
+      }
+      return j.cleaner_id === cleanerId
+    })
 
-    const outstanding = cleanerJobs
-      .filter(j => j.status === 'delivered')
-      .reduce((s, j) => s + getJobPayout(j), 0)
+    // Calculate per-cleaner financials
+    let revenue = 0
+    let payout = 0
+    let kmCost = 0
+    let extraCosts = 0
+    let hours = 0
+    let outstanding = 0
+    let earned = 0
 
-    const earned = cleanerJobs
-      .filter(j => j.status === 'done')
-      .reduce((s, j) => s + getJobPayout(j), 0)
+    for (const job of cleanerJobs) {
+      // Revenue: full job revenue attributed to this cleaner's job
+      revenue += getJobRevenue(job)
 
-    return { ...summary, cleanerId, outstanding, earned }
+      if (job.cleaners && job.cleaners.length > 0) {
+        const jc = job.cleaners.find(c => c.cleaner_id === cleanerId)
+        if (jc) {
+          const cleanerHours = getCleanerHours(jc)
+          const cleanerPayoutTotal = getCleanerPayout(jc)
+          payout += cleanerPayoutTotal
+          kmCost += (jc.km_driven || 0) * KM_RATE
+          hours += cleanerHours
+
+          if (job.status === 'delivered') outstanding += cleanerPayoutTotal
+          if (job.status === 'done') earned += cleanerPayoutTotal
+        }
+      } else {
+        // Legacy single-cleaner
+        const jobPayout = getJobPayout(job)
+        payout += jobPayout
+        kmCost += (job.km_driven || 0) * KM_RATE
+        hours += getJobHours(job)
+
+        if (job.status === 'delivered') outstanding += jobPayout
+        if (job.status === 'done') earned += jobPayout
+      }
+
+      extraCosts += job.extra_costs || 0
+    }
+
+    const totalCost = payout + kmCost + extraCosts
+    const profit = revenue - totalCost
+    const margin = revenue > 0 ? Math.round((profit / revenue) * 100) : 0
+
+    return { revenue, payout, kmCost, extraCosts, totalCost, profit, margin, jobCount: cleanerJobs.length, hours, cleanerId, outstanding, earned }
   })
 }
 

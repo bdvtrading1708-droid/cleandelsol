@@ -39,7 +39,9 @@ export default function DashboardPage() {
   }
 
   // Filter by cleaner first, then by period
-  const cleanerJobs = selectedCleaner ? jobs.filter(j => j.cleaner_id === selectedCleaner) : jobs
+  const cleanerJobs = selectedCleaner
+    ? jobs.filter(j => (j.cleaners || []).some(jc => jc.cleaner_id === selectedCleaner) || j.cleaner_id === selectedCleaner)
+    : jobs
   const filtered = filterByPeriod(cleanerJobs, period)
   const { revenue: rev, totalCost: costs, profit, margin } = aggregateFinancials(filtered)
 
@@ -238,20 +240,34 @@ export default function DashboardPage() {
                       </div>
                       <div className="text-[9px] font-bold uppercase tracking-[.06em] mt-0.5" style={{ color: 'var(--t3)' }}>{days[dow]}</div>
                     </div>
-                    <div className="w-[3px] h-9 rounded-[2px] shrink-0" style={{ background: getCleanerColor(j.cleaner?.name) }} />
+                    <div className="w-[3px] h-9 rounded-[2px] shrink-0" style={{ background: getCleanerColor((j.cleaners || [])[0]?.cleaner?.name || j.cleaner?.name) }} />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-semibold tracking-[-0.2px] truncate" style={{ color: 'var(--t1)' }}>{j.property?.name || '—'}</div>
-                      {j.cleaner && (
-                        <div
-                          className="inline-flex items-center gap-1.5 mt-1 px-1.5 py-0.5 rounded-full"
-                          style={{ background: getCleanerColor(j.cleaner.name) + '18' }}
-                        >
-                          <CleanerAvatar src={j.cleaner.avatar_url} name={j.cleaner.name} size={18} />
-                          <span className="text-[11px] font-medium pr-1" style={{ color: getCleanerColor(j.cleaner.name) }}>
-                            {j.cleaner.name.split(' ')[0]}
-                          </span>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-1 mt-1 flex-wrap">
+                        {(j.cleaners || []).map(jc => jc.cleaner && (
+                          <div
+                            key={jc.id}
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full"
+                            style={{ background: getCleanerColor(jc.cleaner.name) + '18' }}
+                          >
+                            <CleanerAvatar src={jc.cleaner.avatar_url} name={jc.cleaner.name} size={18} />
+                            <span className="text-[11px] font-medium pr-1" style={{ color: getCleanerColor(jc.cleaner.name) }}>
+                              {jc.cleaner.name.split(' ')[0]}
+                            </span>
+                          </div>
+                        ))}
+                        {(!j.cleaners || j.cleaners.length === 0) && j.cleaner && (
+                          <div
+                            className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-full"
+                            style={{ background: getCleanerColor(j.cleaner.name) + '18' }}
+                          >
+                            <CleanerAvatar src={j.cleaner.avatar_url} name={j.cleaner.name} size={18} />
+                            <span className="text-[11px] font-medium pr-1" style={{ color: getCleanerColor(j.cleaner.name) }}>
+                              {j.cleaner.name.split(' ')[0]}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="text-right shrink-0">
                       <div className="text-[13px] font-bold tracking-[-0.2px]" style={{ color: 'var(--t1)' }}>{j.start_time || '—'}</div>

@@ -43,24 +43,38 @@ export interface Property {
 
 export type JobStatus = 'planned' | 'progress' | 'delivered' | 'done'
 
+export interface JobCleaner {
+  id: number
+  job_id: number
+  cleaner_id: string
+  cleaner_payout?: number
+  start_time?: string
+  end_time?: string
+  hours_worked?: number
+  km_driven?: number
+  cleaner?: Pick<User, 'id' | 'name' | 'email' | 'phone' | 'avatar_url'>
+}
+
 export interface Job {
   id: number
   property_id: string
-  cleaner_id: string
   date: string
   start_time?: string
   end_time?: string
   client_price?: number
-  cleaner_payout?: number
   status: JobStatus
-  hours_worked?: number
-  km_driven?: number
   extra_costs?: number
   payment_method?: 'cash' | 'bank'
   notes?: string
   property?: Property
-  cleaner?: Pick<User, 'id' | 'name' | 'email' | 'phone' | 'avatar_url'>
+  cleaners: JobCleaner[]
   photos?: JobPhoto[]
+  // Legacy fields - kept for backward compatibility during migration
+  cleaner_id?: string
+  cleaner_payout?: number
+  km_driven?: number
+  hours_worked?: number
+  cleaner?: Pick<User, 'id' | 'name' | 'email' | 'phone' | 'avatar_url'>
 }
 
 export interface JobPhoto {

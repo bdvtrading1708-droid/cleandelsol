@@ -5,7 +5,7 @@ import { useJobs } from '@/lib/hooks/use-jobs'
 import { usePartners } from '@/lib/hooks/use-partners'
 import { useLocale } from '@/lib/i18n'
 import { STATUS_COLORS } from '@/lib/constants'
-import { formatCurrency, formatDate, getJobRevenue, getJobPayout, getJobHours } from '@/lib/utils'
+import { formatCurrency, formatDate, getJobRevenue, getJobPayout, getJobHours, getJobKm } from '@/lib/utils'
 import { Plus } from 'lucide-react'
 import { JobPanel } from '@/components/jobs/job-panel'
 import { JobForm } from '@/components/jobs/job-form'
@@ -126,7 +126,10 @@ export default function JobsPage() {
                     {job.property?.name || '—'}
                   </div>
                   <div className="text-[12px] mt-0.5 truncate" style={{ color: 'var(--t3)' }}>
-                    {job.cleaner?.name || '—'} · {formatDate(job.date)} · {job.start_time || '—'}
+                    {(job.cleaners || []).length > 0
+                      ? job.cleaners.map(jc => jc.cleaner?.name?.split(' ')[0]).join(', ')
+                      : (job.cleaner?.name || '—')
+                    } · {formatDate(job.date)} · {job.start_time || '—'}
                   </div>
                 </div>
                 <div
@@ -153,7 +156,7 @@ export default function JobsPage() {
                 </div>
                 <div className="rounded-[12px] p-2 text-center" style={{ background: 'var(--fill)' }}>
                   <div className="text-[9px] font-semibold uppercase tracking-[.08em] mb-0.5" style={{ color: 'var(--t3)' }}>{t('km')}</div>
-                  <div className="text-[14px] font-bold tracking-[-0.3px]" style={{ color: 'var(--t1)' }}>{job.km_driven ?? '—'}</div>
+                  <div className="text-[14px] font-bold tracking-[-0.3px]" style={{ color: 'var(--t1)' }}>{getJobKm(job) || '—'}</div>
                 </div>
               </div>
 

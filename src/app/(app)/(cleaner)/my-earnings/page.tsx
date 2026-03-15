@@ -5,7 +5,7 @@ import { useJobs } from '@/lib/hooks/use-jobs'
 import { useAuth } from '@/providers/auth-provider'
 import { useLocale } from '@/lib/i18n'
 import { STATUS_COLORS } from '@/lib/constants'
-import { formatCurrency, formatDate, getJobPayout } from '@/lib/utils'
+import { formatCurrency, formatDate, getCleanerPayout, getCleanerHours } from '@/lib/utils'
 import { filterByPeriod, type Period } from '@/lib/financial'
 
 export default function MyEarningsPage() {
@@ -18,11 +18,20 @@ export default function MyEarningsPage() {
     return <div className="flex items-center justify-center py-20" style={{ color: 'var(--t3)' }}>{t('loading')}</div>
   }
 
+  const getMyAssignment = (job: typeof jobs[0]) =>
+    (job.cleaners || []).find(jc => jc.cleaner_id === user?.id)
+
   const filtered = filterByPeriod(jobs, period)
   const doneJobs = filtered.filter(j => j.status === 'done')
   const deliveredJobs = filtered.filter(j => j.status === 'delivered')
-  const totalEarned = doneJobs.reduce((s, j) => s + getJobPayout(j), 0)
-  const outstanding = deliveredJobs.reduce((s, j) => s + getJobPayout(j), 0)
+  const totalEarned = doneJobs.reduce((s, j) => {
+    const my = getMyAssignment(j)
+    return s + (my ? getCleanerPayout(my) : 0)
+  }, 0)
+  const outstanding = deliveredJobs.reduce((s, j) => {
+    const my = getMyAssignment(j)
+    return s + (my ? getCleanerPayout(my) : 0)
+  }, 0)
 
   const recentDone = [...doneJobs].sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 20)
 
@@ -101,14 +110,14 @@ export default function MyEarningsPage() {
                   {job.property?.name || '—'}
                 </div>
                 <div className="text-[11px] mt-0.5" style={{ color: 'var(--t3)' }}>
-                  {formatDate(job.date)} · {job.hours_worked ? `${job.hours_worked}u` : '—'} · {job.km_driven ? `${job.km_driven}km` : '—'}
+                  {formatDate(job.date)} · {(() => { const my = getMyAssignment(job); return my ? `${getCleanerHours(my)}u` : '—' })()} · {(() => { const my = getMyAssignment(job); return my?.km_driven ? `${my.km_driven}km` : '—' })()}
                 </div>
               </div>
 
               {/* Payout */}
               <div className="text-right shrink-0">
                 <div className="text-[15px] font-bold tracking-[-0.3px]" style={{ color: '#00A651' }}>
-                  {formatCurrency(getJobPayout(job))}
+                  {formatCurrency(getMyAssignment(job) ? getCleanerPayout(getMyAssignment(job)!) : 0)}
                 </div>
                 <div className="text-[9px] font-bold uppercase tracking-[.05em] mt-0.5" style={{ color: 'var(--t3)' }}>
                   {t('done')}

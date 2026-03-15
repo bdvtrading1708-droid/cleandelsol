@@ -231,17 +231,33 @@ export default function CalendarPage() {
                         className="flex items-center gap-3 rounded-[12px] p-2.5 w-full text-left transition-all active:scale-[0.98]"
                         style={{ background: 'var(--fill)' }}
                       >
-                        {/* Cleaner color dot */}
-                        <div
-                          className="w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{ background: getCleanerColor(job.cleaner?.name) }}
-                        />
+                        {/* Cleaner color dot(s) */}
+                        <div className="flex flex-col gap-0.5 shrink-0">
+                          {(job.cleaners || []).slice(0, 3).map(jc => (
+                            <div key={jc.id} className="w-2.5 h-2.5 rounded-full" style={{ background: getCleanerColor(jc.cleaner?.name) }} />
+                          ))}
+                          {(!job.cleaners || job.cleaners.length === 0) && job.cleaner && (
+                            <div className="w-2.5 h-2.5 rounded-full" style={{ background: getCleanerColor(job.cleaner?.name) }} />
+                          )}
+                        </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-[13px] font-semibold truncate" style={{ color: 'var(--t1)' }}>
                             {job.property?.name || '—'}
                           </div>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            {job.cleaner && (
+                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                            {(job.cleaners || []).map(jc => jc.cleaner && (
+                              <div
+                                key={jc.id}
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full"
+                                style={{ background: getCleanerColor(jc.cleaner.name) + '18' }}
+                              >
+                                <CleanerAvatar src={jc.cleaner.avatar_url} name={jc.cleaner.name} size={16} />
+                                <span className="text-[10px] font-medium pr-0.5" style={{ color: getCleanerColor(jc.cleaner.name) }}>
+                                  {jc.cleaner.name.split(' ')[0]}
+                                </span>
+                              </div>
+                            ))}
+                            {(!job.cleaners || job.cleaners.length === 0) && job.cleaner && (
                               <div
                                 className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full"
                                 style={{ background: getCleanerColor(job.cleaner.name) + '18' }}
@@ -318,13 +334,16 @@ export default function CalendarPage() {
                   </span>
                   {dayJobs.length > 0 && (
                     <div className="flex gap-0.5">
-                      {dayJobs.slice(0, 3).map(j => (
-                        <div
-                          key={j.id}
-                          className="w-1.5 h-1.5 rounded-full"
-                          style={{ background: isToday ? 'var(--bg)' : getCleanerColor(j.cleaner?.name) }}
-                        />
-                      ))}
+                      {dayJobs.slice(0, 3).map(j => {
+                        const firstCleaner = j.cleaners?.[0]?.cleaner || j.cleaner
+                        return (
+                          <div
+                            key={j.id}
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{ background: isToday ? 'var(--bg)' : getCleanerColor(firstCleaner?.name) }}
+                          />
+                        )
+                      })}
                     </div>
                   )}
                 </button>
