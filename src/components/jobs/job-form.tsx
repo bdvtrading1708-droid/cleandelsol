@@ -18,6 +18,8 @@ interface SelectedCleaner {
   payout: string
   start_time: string
   end_time: string
+  hours_worked: string
+  km_driven: string
 }
 
 interface Props {
@@ -139,14 +141,15 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
       cleaners: selectedCleaners.map(sc => {
         const cStart = sc.start_time || startTime
         const cEnd = sc.end_time || endTime
-        const cHours = calcHours(cStart, cEnd)
+        const cHours = sc.hours_worked ? parseFloat(sc.hours_worked) : calcHours(cStart, cEnd)
+        const cKm = sc.km_driven ? parseFloat(sc.km_driven) : (kmDriven ? parseFloat(kmDriven) : undefined)
         return {
           cleaner_id: sc.cleaner_id,
           cleaner_payout: sc.payout ? parseFloat(sc.payout) : undefined,
           start_time: cStart || undefined,
           end_time: cEnd || undefined,
           hours_worked: cHours > 0 ? cHours : undefined,
-          km_driven: kmDriven ? parseFloat(kmDriven) : undefined,
+          km_driven: cKm,
         }
       }),
     }
@@ -231,6 +234,8 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
           payout: cl.hourly_rate?.toString() || '',
           start_time: startTime,
           end_time: endTime,
+          hours_worked: '',
+          km_driven: '',
         }])
       }
     }
@@ -243,8 +248,14 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
     ))
   }
 
-  // Update cleaner-specific times
+  // Update cleaner-specific fields
   const updateCleanerTime = (cleanerId: string, field: 'start_time' | 'end_time', value: string) => {
+    setSelectedCleaners(prev => prev.map(sc =>
+      sc.cleaner_id === cleanerId ? { ...sc, [field]: value } : sc
+    ))
+  }
+
+  const updateCleanerField = (cleanerId: string, field: 'hours_worked' | 'km_driven', value: string) => {
     setSelectedCleaners(prev => prev.map(sc =>
       sc.cleaner_id === cleanerId ? { ...sc, [field]: value } : sc
     ))
@@ -495,6 +506,38 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
                                   </button>
                                 )}
                               </div>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-[10px] font-semibold uppercase tracking-[.08em] mb-0.5 block" style={{ color: 'var(--t3)' }}>
+                                Uren
+                              </label>
+                              <input
+                                type="number"
+                                step="0.5"
+                                min="0"
+                                value={sc.hours_worked}
+                                onChange={(e) => updateCleanerField(sc.cleaner_id, 'hours_worked', e.target.value)}
+                                className="w-full h-[38px] rounded-[10px] px-3 text-[14px] font-medium border-0 outline-none"
+                                style={inputStyle}
+                                placeholder="Optioneel"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-semibold uppercase tracking-[.08em] mb-0.5 block" style={{ color: 'var(--t3)' }}>
+                                KM
+                              </label>
+                              <input
+                                type="number"
+                                step="1"
+                                min="0"
+                                value={sc.km_driven}
+                                onChange={(e) => updateCleanerField(sc.cleaner_id, 'km_driven', e.target.value)}
+                                className="w-full h-[38px] rounded-[10px] px-3 text-[14px] font-medium border-0 outline-none"
+                                style={inputStyle}
+                                placeholder="Optioneel"
+                              />
                             </div>
                           </div>
                         </div>

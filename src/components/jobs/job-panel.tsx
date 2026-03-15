@@ -46,6 +46,7 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
   const [editCleanerPayouts, setEditCleanerPayouts] = useState<Record<number, string>>({})
   const [editCleanerEndTimes, setEditCleanerEndTimes] = useState<Record<number, string>>({})
   const [editCleanerKms, setEditCleanerKms] = useState<Record<number, string>>({})
+  const [editCleanerHours, setEditCleanerHours] = useState<Record<number, string>>({})
 
   // Reset edit state when job changes
   useEffect(() => {
@@ -59,14 +60,17 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
       const payouts: Record<number, string> = {}
       const endTimes: Record<number, string> = {}
       const kms: Record<number, string> = {}
+      const hours: Record<number, string> = {}
       for (const jc of (job.cleaners || [])) {
         payouts[jc.id] = jc.cleaner_payout?.toString() || ''
         endTimes[jc.id] = jc.end_time?.slice(0, 5) || ''
         kms[jc.id] = jc.km_driven?.toString() || ''
+        hours[jc.id] = jc.hours_worked?.toString() || ''
       }
       setEditCleanerPayouts(payouts)
       setEditCleanerEndTimes(endTimes)
       setEditCleanerKms(kms)
+      setEditCleanerHours(hours)
     }
   }, [job?.id])
 
@@ -118,13 +122,17 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
     // Update per-cleaner fields
     for (const jc of cleaners) {
       const endTime = editCleanerEndTimes[jc.id]
-      let hours_worked: number | undefined
-      const startTime = jc.start_time || job.start_time
-      if (startTime && endTime) {
-        const [sh, sm] = startTime.split(':').map(Number)
-        const [eh, em] = endTime.split(':').map(Number)
-        const diff = (eh * 60 + em) - (sh * 60 + sm)
-        hours_worked = diff > 0 ? diff / 60 : undefined
+      const manualHours = editCleanerHours[jc.id] ? parseFloat(editCleanerHours[jc.id]) : undefined
+      let hours_worked: number | undefined = manualHours
+      // If no manual hours, calculate from times
+      if (!hours_worked) {
+        const startTime = jc.start_time || job.start_time
+        if (startTime && endTime) {
+          const [sh, sm] = startTime.split(':').map(Number)
+          const [eh, em] = endTime.split(':').map(Number)
+          const diff = (eh * 60 + em) - (sh * 60 + sm)
+          hours_worked = diff > 0 ? diff / 60 : undefined
+        }
       }
 
       updateCleaner.mutate({
@@ -236,7 +244,7 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
                         <CleanerAvatar src={jc.cleaner?.avatar_url} name={jc.cleaner?.name || ''} size={22} />
                         <span className="text-[12px] font-semibold" style={{ color: 'var(--t1)' }}>{jc.cleaner?.name?.split(' ')[0]}</span>
                       </div>
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-2 gap-2">
                         <div>
                           <label className="text-[9px] font-semibold uppercase tracking-[.08em] mb-0.5 block" style={{ color: 'var(--t3)' }}>€/uur</label>
                           <input
@@ -247,6 +255,19 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
                             style={{ background: 'var(--inp)', color: 'var(--t1)' }}
                           />
                         </div>
+                        <div>
+                          <label className="text-[9px] font-semibold uppercase tracking-[.08em] mb-0.5 block" style={{ color: 'var(--t3)' }}>Uren</label>
+                          <input
+                            type="number" step="0.5" min="0"
+                            value={editCleanerHours[jc.id] || ''}
+                            onChange={(e) => setEditCleanerHours(prev => ({ ...prev, [jc.id]: e.target.value }))}
+                            className="w-full h-[36px] rounded-[10px] px-2.5 text-[13px] font-medium border-0 outline-none"
+                            style={{ background: 'var(--inp)', color: 'var(--t1)' }}
+                            placeholder="0"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
                         <div>
                           <label className="text-[9px] font-semibold uppercase tracking-[.08em] mb-0.5 block" style={{ color: 'var(--t3)' }}>Eindtijd</label>
                           <input
