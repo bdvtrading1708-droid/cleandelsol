@@ -3,7 +3,7 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useLocale } from '@/lib/i18n'
 import { useJobs } from '@/lib/hooks/use-jobs'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, getJobPayout, getJobHours } from '@/lib/utils'
 import { Phone, Mail, Camera, Pencil } from 'lucide-react'
 import { CleanerAvatar } from '@/components/cleaners/cleaner-avatar'
 import { createClient } from '@/lib/supabase/client'
@@ -30,11 +30,11 @@ export function CleanerPanel({ cleaner, open, onClose, onEdit }: Props) {
   const cleanerJobs = jobs.filter(j => j.cleaner_id === cleaner.id)
   const totalEarned = cleanerJobs
     .filter(j => j.status === 'done')
-    .reduce((s, j) => s + (j.cleaner_payout || 0), 0)
+    .reduce((s, j) => s + getJobPayout(j), 0)
   const outstanding = cleanerJobs
     .filter(j => j.status === 'delivered')
-    .reduce((s, j) => s + (j.cleaner_payout || 0), 0)
-  const totalHours = cleanerJobs.reduce((s, j) => s + (j.hours_worked || 0), 0)
+    .reduce((s, j) => s + getJobPayout(j), 0)
+  const totalHours = cleanerJobs.reduce((s, j) => s + getJobHours(j), 0)
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]

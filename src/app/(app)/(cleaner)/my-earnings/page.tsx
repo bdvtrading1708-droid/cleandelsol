@@ -4,7 +4,7 @@ import { useJobs } from '@/lib/hooks/use-jobs'
 import { useAuth } from '@/providers/auth-provider'
 import { useLocale } from '@/lib/i18n'
 import { STATUS_COLORS } from '@/lib/constants'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, getJobPayout } from '@/lib/utils'
 
 export default function MyEarningsPage() {
   const { user } = useAuth()
@@ -17,8 +17,8 @@ export default function MyEarningsPage() {
 
   const doneJobs = jobs.filter(j => j.status === 'done')
   const deliveredJobs = jobs.filter(j => j.status === 'delivered')
-  const totalEarned = doneJobs.reduce((s, j) => s + (j.cleaner_payout || 0), 0)
-  const outstanding = deliveredJobs.reduce((s, j) => s + (j.cleaner_payout || 0), 0)
+  const totalEarned = doneJobs.reduce((s, j) => s + getJobPayout(j), 0)
+  const outstanding = deliveredJobs.reduce((s, j) => s + getJobPayout(j), 0)
 
   const recentDone = [...doneJobs].sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 20)
 
@@ -85,7 +85,7 @@ export default function MyEarningsPage() {
               {/* Payout */}
               <div className="text-right shrink-0">
                 <div className="text-[15px] font-bold tracking-[-0.3px]" style={{ color: '#00A651' }}>
-                  {formatCurrency(job.cleaner_payout || 0)}
+                  {formatCurrency(getJobPayout(job))}
                 </div>
                 <div className="text-[9px] font-bold uppercase tracking-[.05em] mt-0.5" style={{ color: 'var(--t3)' }}>
                   {t('done')}

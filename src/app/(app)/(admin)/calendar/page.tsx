@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import { useJobs } from '@/lib/hooks/use-jobs'
 import { useLocale } from '@/lib/i18n'
 import { STATUS_COLORS } from '@/lib/constants'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, getJobRevenue } from '@/lib/utils'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { JobPanel } from '@/components/jobs/job-panel'
 import { JobForm } from '@/components/jobs/job-form'
@@ -62,8 +62,11 @@ export default function CalendarPage() {
   const jobsByDate = useMemo(() => {
     const map: Record<string, Job[]> = {}
     jobs.forEach(j => {
-      if (!map[j.date]) map[j.date] = []
-      map[j.date].push(j)
+      // Normalize date: take only YYYY-MM-DD portion in case Supabase returns timestamp
+      const dateKey = j.date ? j.date.slice(0, 10) : ''
+      if (!dateKey) return
+      if (!map[dateKey]) map[dateKey] = []
+      map[dateKey].push(j)
     })
     return map
   }, [jobs])
@@ -239,11 +242,11 @@ export default function CalendarPage() {
                             {job.property?.name || '—'}
                           </div>
                           <div className="text-[11px] truncate" style={{ color: 'var(--t3)' }}>
-                            {job.cleaner?.name || '—'} {job.start_time ? `· ${job.start_time}` : ''}
+                            {job.cleaner?.name || '—'} {job.start_time ? `· ${job.start_time.slice(0, 5)}` : ''}
                           </div>
                         </div>
                         <div className="text-[13px] font-bold shrink-0" style={{ color: 'var(--t1)' }}>
-                          {formatCurrency(job.client_price || 0)}
+                          {formatCurrency(getJobRevenue(job))}
                         </div>
                       </button>
                     ))}

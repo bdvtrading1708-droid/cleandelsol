@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useCleaners } from '@/lib/hooks/use-cleaners'
 import { useJobs } from '@/lib/hooks/use-jobs'
 import { useLocale } from '@/lib/i18n'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, getJobPayout } from '@/lib/utils'
 import { Plus } from 'lucide-react'
 import { CleanerPanel } from '@/components/cleaners/cleaner-panel'
 import { CleanerForm } from '@/components/cleaners/cleaner-form'
@@ -48,11 +48,11 @@ export default function CleanersPage() {
             const cleanerJobs = jobs.filter(j => j.cleaner_id === cleaner.id)
             const totalEarned = cleanerJobs
               .filter(j => j.status === 'done')
-              .reduce((s, j) => s + (j.cleaner_payout || 0), 0)
+              .reduce((s, j) => s + getJobPayout(j), 0)
             const outstanding = cleanerJobs
               .filter(j => j.status === 'delivered')
-              .reduce((s, j) => s + (j.cleaner_payout || 0), 0)
-            const totalRevenue = cleanerJobs.reduce((s, j) => s + (j.cleaner_payout || 0), 0)
+              .reduce((s, j) => s + getJobPayout(j), 0)
+            const totalRevenue = cleanerJobs.reduce((s, j) => s + getJobPayout(j), 0)
             const earnedPct = totalRevenue > 0 ? Math.round((totalEarned / totalRevenue) * 100) : 0
 
             return (

@@ -5,7 +5,7 @@ import { useLocale } from '@/lib/i18n'
 import { useAuth } from '@/providers/auth-provider'
 import { useUpdateJobStatus, useDeleteJob } from '@/lib/hooks/use-jobs'
 import { STATUS_COLORS } from '@/lib/constants'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, getJobRevenue, getJobPayout } from '@/lib/utils'
 import { MapPin, Clock, Car, FileText, Camera, ChevronRight, Trash2 } from 'lucide-react'
 import type { Job, JobStatus } from '@/lib/types'
 import { useState } from 'react'
@@ -97,8 +97,8 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
           <div className="px-5 pb-5 mt-4 flex flex-col gap-3">
             {/* Stats */}
             <div className="grid grid-cols-2 gap-2">
-              <StatBox icon={<span className="text-[13px] font-bold" style={{ color: 'var(--green)' }}>€</span>} label={t('price')} value={formatCurrency(job.client_price || 0)} />
-              <StatBox icon={<span className="text-[13px] font-bold" style={{ color: 'var(--blue)' }}>€</span>} label={t('payout')} value={formatCurrency(job.cleaner_payout || 0)} />
+              <StatBox icon={<span className="text-[13px] font-bold" style={{ color: 'var(--green)' }}>€</span>} label={t('price')} value={formatCurrency(getJobRevenue(job))} />
+              <StatBox icon={<span className="text-[13px] font-bold" style={{ color: 'var(--blue)' }}>€</span>} label={t('payout')} value={formatCurrency(getJobPayout(job))} />
               <StatBox icon={<Clock size={14} style={{ color: 'var(--amber)' }} />} label={t('hours')} value={job.hours_worked != null ? `${job.hours_worked}h` : '—'} />
               <StatBox icon={<Car size={14} style={{ color: 'var(--t2)' }} />} label={t('km')} value={job.km_driven != null ? `${job.km_driven}` : '—'} />
             </div>
