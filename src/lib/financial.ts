@@ -179,23 +179,28 @@ export function aggregateByCleaners(
         if (jc) {
           const cleanerHours = getCleanerHours(jc)
           const cleanerPayoutTotal = getCleanerPayout(jc)
+          const jcKmCost = (jc.km_driven || 0) * KM_RATE
+          const jcExtraCosts = jc.extra_costs || 0
+          const cleanerTotalWithCosts = cleanerPayoutTotal + jcKmCost + jcExtraCosts
           payout += cleanerPayoutTotal
-          kmCost += (jc.km_driven || 0) * KM_RATE
-          extraCosts += jc.extra_costs || 0
+          kmCost += jcKmCost
+          extraCosts += jcExtraCosts
           hours += cleanerHours
 
-          if (job.status === 'delivered') outstanding += cleanerPayoutTotal
-          if (job.status === 'done') earned += cleanerPayoutTotal
+          if (job.status === 'delivered') outstanding += cleanerTotalWithCosts
+          if (job.status === 'done') earned += cleanerTotalWithCosts
         }
       } else {
         // Legacy single-cleaner
         const jobPayout = getJobPayout(job)
+        const legacyKmCost = (job.km_driven || 0) * KM_RATE
+        const legacyTotalWithCosts = jobPayout + legacyKmCost
         payout += jobPayout
-        kmCost += (job.km_driven || 0) * KM_RATE
+        kmCost += legacyKmCost
         hours += getJobHours(job)
 
-        if (job.status === 'delivered') outstanding += jobPayout
-        if (job.status === 'done') earned += jobPayout
+        if (job.status === 'delivered') outstanding += legacyTotalWithCosts
+        if (job.status === 'done') earned += legacyTotalWithCosts
       }
 
       extraCosts += job.extra_costs || 0
