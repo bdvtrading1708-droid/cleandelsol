@@ -31,7 +31,7 @@ export default function DashboardPage() {
   const { data: cleaners = [] } = useCleaners()
   const { t, tArray } = useLocale()
   const [period, setPeriod] = useState<Period>('week')
-  const [agendaPeriod, setAgendaPeriod] = useState<Period>('week')
+  const [agendaPeriod, setAgendaPeriod] = useState<Period>('maand')
   const [selectedCleaner, setSelectedCleaner] = useState<string | null>(null)
 
   if (isLoading) {
