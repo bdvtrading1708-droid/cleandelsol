@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useJobs } from '@/lib/hooks/use-jobs'
+import { usePartners } from '@/lib/hooks/use-partners'
 import { useLocale } from '@/lib/i18n'
 import { STATUS_COLORS } from '@/lib/constants'
 import { formatCurrency, formatDate, getJobRevenue, getJobPayout, getJobHours } from '@/lib/utils'
@@ -10,20 +11,32 @@ import { JobPanel } from '@/components/jobs/job-panel'
 import { JobForm } from '@/components/jobs/job-form'
 import type { Job, JobStatus } from '@/lib/types'
 
-const STATUSES: (JobStatus | 'all')[] = ['all', 'planned', 'progress', 'delivered', 'done']
+const STATUSES: JobStatus[] = ['planned', 'progress', 'delivered', 'done']
 
 export default function JobsPage() {
   const { data: jobs = [], isLoading } = useJobs()
+  const { data: partners = [] } = usePartners()
   const { t } = useLocale()
-  const [filter, setFilter] = useState<JobStatus | 'all'>('all')
+  const [filter, setFilter] = useState<JobStatus>('planned')
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [showForm, setShowForm] = useState(false)
+  const [partnerFilter, setPartnerFilter] = useState<string | null>(null)
 
   if (isLoading) {
     return <div className="flex items-center justify-center py-20" style={{ color: 'var(--t3)' }}>{t('loading')}</div>
   }
 
-  const filtered = filter === 'all' ? jobs : jobs.filter(j => j.status === filter)
+  let filtered = jobs.filter(j => j.status === filter)
+
+  // Sub-filter by partner when on "delivered" (wacht op betaling)
+  if (filter === 'delivered' && partnerFilter) {
+    filtered = filtered.filter(j => j.property?.partner_id === partnerFilter)
+  }
+
+  // Get unique partners for delivered jobs (for sub-filter)
+  const deliveredJobs = jobs.filter(j => j.status === 'delivered')
+  const deliveredPartnerIds = [...new Set(deliveredJobs.map(j => j.property?.partner_id).filter(Boolean))] as string[]
+  const deliveredPartners = partners.filter(p => deliveredPartnerIds.includes(p.id))
 
   return (
     <>
@@ -41,21 +54,56 @@ export default function JobsPage() {
       </div>
 
       {/* Status filter */}
-      <div className="flex gap-1 mb-4 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+      <div className="flex gap-1 mb-3 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
         {STATUSES.map(s => (
           <button
             key={s}
             className="px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all shrink-0"
             style={{
-              background: filter === s ? (s === 'all' ? 'var(--t1)' : STATUS_COLORS[s]) : 'var(--fill)',
-              color: filter === s ? (s === 'all' ? 'var(--bg)' : '#fff') : 'var(--t3)',
+              background: filter === s ? STATUS_COLORS[s] : 'var(--fill)',
+              color: filter === s ? '#fff' : 'var(--t3)',
             }}
-            onClick={() => setFilter(s)}
+            onClick={() => { setFilter(s); setPartnerFilter(null) }}
           >
-            {s === 'all' ? t('alles') : t(s === 'progress' ? 'inprog' : s)}
+            {t(s === 'progress' ? 'inprog' : s)}
+            {s === 'delivered' && deliveredJobs.length > 0 && (
+              <span className="ml-1 opacity-70">({deliveredJobs.length})</span>
+            )}
           </button>
         ))}
       </div>
+
+      {/* Partner sub-filter for "Wacht op betaling" */}
+      {filter === 'delivered' && deliveredPartners.length > 0 && (
+        <div className="flex gap-1 mb-4 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+          <button
+            className="px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all shrink-0"
+            style={{
+              background: !partnerFilter ? 'var(--t1)' : 'var(--fill)',
+              color: !partnerFilter ? 'var(--bg)' : 'var(--t3)',
+            }}
+            onClick={() => setPartnerFilter(null)}
+          >
+            Alle partners
+          </button>
+          {deliveredPartners.map(p => {
+            const count = deliveredJobs.filter(j => j.property?.partner_id === p.id).length
+            return (
+              <button
+                key={p.id}
+                className="px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all shrink-0"
+                style={{
+                  background: partnerFilter === p.id ? 'var(--t1)' : 'var(--fill)',
+                  color: partnerFilter === p.id ? 'var(--bg)' : 'var(--t3)',
+                }}
+                onClick={() => setPartnerFilter(p.id)}
+              >
+                {p.name} ({count})
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {/* Job cards */}
       {filtered.length === 0 ? (
