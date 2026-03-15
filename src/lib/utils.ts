@@ -7,7 +7,8 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(amount: number, locale = 'nl'): string {
-  return `€${Math.round(amount).toLocaleString(locale)}`
+  if (Number.isInteger(amount)) return `€${amount.toLocaleString(locale)}`
+  return `€${amount.toFixed(2).replace(/\.00$/, '')}`
 }
 
 export function formatDate(date: string, locale = 'nl'): string {

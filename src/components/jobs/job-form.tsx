@@ -36,8 +36,24 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
   const [selectedCleaners, setSelectedCleaners] = useState<SelectedCleaner[]>([])
   const [date, setDate] = useState(defaultDate ?? '')
   useEffect(() => { if (open && defaultDate) setDate(defaultDate) }, [open, defaultDate])
-  const [startTime, setStartTime] = useState('')
-  const [endTime, setEndTime] = useState('')
+  const [startTime, setStartTimeRaw] = useState('')
+  const [endTime, setEndTimeRaw] = useState('')
+
+  // Sync cleaner times when main times change
+  const setStartTime = (val: string) => {
+    const old = startTime
+    setStartTimeRaw(val)
+    setSelectedCleaners(prev => prev.map(sc =>
+      (!sc.start_time || sc.start_time === old) ? { ...sc, start_time: val } : sc
+    ))
+  }
+  const setEndTime = (val: string) => {
+    const old = endTime
+    setEndTimeRaw(val)
+    setSelectedCleaners(prev => prev.map(sc =>
+      (!sc.end_time || sc.end_time === old) ? { ...sc, end_time: val } : sc
+    ))
+  }
   const [clientPrice, setClientPrice] = useState('')
   const [kmDriven, setKmDriven] = useState('')
   const [notes, setNotes] = useState('')
@@ -223,7 +239,7 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
                         </span>
                         <span className="text-[11px] font-medium" style={{ color: 'var(--t3)' }}>
                           €{sc.payout || '0'}/u
-                          {cleanerHours > 0 && payoutNum > 0 && ` = €${(payoutNum * cleanerHours).toFixed(0)}`}
+                          {cleanerHours > 0 && payoutNum > 0 && ` = €${(payoutNum * cleanerHours).toFixed(2).replace(/\.00$/, '')}`}
                         </span>
                         <button
                           type="button"
