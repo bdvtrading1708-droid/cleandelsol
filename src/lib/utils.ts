@@ -85,6 +85,11 @@ export function getCleanerTotalPayout(jc: { cleaner_payout?: number; start_time?
   return basePayout + kmCost + extraCosts
 }
 
+/** Total revenue for a job including laundry costs */
+export function getJobTotalRevenue(job: { client_price?: number; start_time?: string; end_time?: string; hours_worked?: number; pricing_type?: string; property?: { pricing_type?: string } | null; cleaners?: JobCleaner[]; laundry_cost?: number }): number {
+  return getJobRevenue(job) + (job.laundry_cost || 0)
+}
+
 /** Total km for a job (sum of all cleaners) */
 export function getJobKm(job: { km_driven?: number; cleaners?: JobCleaner[] }): number {
   if (job.cleaners && job.cleaners.length > 0) {

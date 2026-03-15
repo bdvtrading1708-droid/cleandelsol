@@ -68,6 +68,7 @@ export interface Job {
   client_price?: number
   status: JobStatus
   extra_costs?: number
+  laundry_cost?: number
   payment_method?: 'cash' | 'bank'
   notes?: string
   property?: Property

@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import { useJobs } from '@/lib/hooks/use-jobs'
 import { useLocale } from '@/lib/i18n'
 import { STATUS_COLORS, getCleanerColor } from '@/lib/constants'
-import { formatCurrency, getJobRevenue } from '@/lib/utils'
+import { formatCurrency, getJobTotalRevenue } from '@/lib/utils'
 import { CleanerAvatar } from '@/components/cleaners/cleaner-avatar'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { JobPanel } from '@/components/jobs/job-panel'
@@ -274,7 +274,7 @@ export default function CalendarPage() {
                           </div>
                         </div>
                         <div className="text-[13px] font-bold shrink-0" style={{ color: 'var(--t1)' }}>
-                          {formatCurrency(getJobRevenue(job))}
+                          {formatCurrency(getJobTotalRevenue(job))}
                         </div>
                       </button>
                     ))}

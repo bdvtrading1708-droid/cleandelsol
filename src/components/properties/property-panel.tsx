@@ -3,7 +3,7 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useLocale } from '@/lib/i18n'
 import { useJobs } from '@/lib/hooks/use-jobs'
-import { formatCurrency, getJobRevenue } from '@/lib/utils'
+import { formatCurrency, getJobTotalRevenue } from '@/lib/utils'
 import { MapPin, ChevronRight, FileText, Camera, Trash2, Pencil } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useQueryClient } from '@tanstack/react-query'
@@ -30,7 +30,7 @@ export function PropertyPanel({ property, open, onClose, onEdit }: Props) {
   if (!property) return null
 
   const propJobs = jobs.filter(j => j.property_id === property.id)
-  const totalRevenue = propJobs.reduce((s, j) => s + getJobRevenue(j), 0)
+  const totalRevenue = propJobs.reduce((s, j) => s + getJobTotalRevenue(j), 0)
   const completedJobs = propJobs.filter(j => j.status === 'done').length
 
   const openMaps = () => {

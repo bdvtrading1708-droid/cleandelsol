@@ -65,6 +65,8 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
   }
   const [clientPrice, setClientPrice] = useState('')
   const [kmDriven, setKmDriven] = useState('')
+  const [laundryEnabled, setLaundryEnabled] = useState(false)
+  const [laundryCost, setLaundryCost] = useState('')
   const [notes, setNotes] = useState('')
   const [repeatDays, setRepeatDays] = useState(1)
   const [showCleanerPicker, setShowCleanerPicker] = useState(false)
@@ -120,6 +122,8 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
     setEndTime('')
     setClientPrice('')
     setKmDriven('')
+    setLaundryEnabled(false)
+    setLaundryCost('')
     setNotes('')
     setRepeatDays(1)
     setShowCleanerPicker(false)
@@ -137,6 +141,7 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
       start_time: startTime || undefined,
       end_time: endTime || undefined,
       client_price: clientPrice ? parseFloat(clientPrice) : undefined,
+      laundry_cost: laundryEnabled && laundryCost ? parseFloat(laundryCost) : undefined,
       notes: notes || undefined,
       cleaners: selectedCleaners.map(sc => {
         const cStart = sc.start_time || startTime
@@ -664,14 +669,18 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
           </div>
 
           {/* Totaal overview - shown when hours are calculated */}
-          {hours > 0 && (priceNum > 0 || totalPayout > 0) && (
+          {hours > 0 && (priceNum > 0 || totalPayout > 0) && (() => {
+            const laundryNum = laundryEnabled ? (parseFloat(laundryCost) || 0) : 0
+            const displayRevenue = totalPrice + laundryNum
+            return (
             <div className="rounded-[14px] p-3 flex flex-col gap-1" style={{ background: 'var(--inp)' }}>
               <div className="flex justify-between items-center">
                 <span className="text-[12px] font-medium" style={{ color: 'var(--t3)' }}>
                   {isFixedPrice ? `Vast tarief` : `${totalCleanerHours}u × €${priceNum}`}
+                  {laundryNum > 0 && ` + was €${laundryNum}`}
                 </span>
                 <span className="text-[15px] font-bold" style={{ color: 'var(--t1)' }}>
-                  Omzet: €{totalPrice.toFixed(2).replace(/\.00$/, '')}
+                  Omzet: €{displayRevenue.toFixed(2).replace(/\.00$/, '')}
                 </span>
               </div>
               {totalPayout > 0 && (
@@ -684,16 +693,17 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
                   </span>
                 </div>
               )}
-              {totalPrice > 0 && totalPayout > 0 && (
+              {displayRevenue > 0 && totalPayout > 0 && (
                 <div className="flex justify-between items-center pt-1 mt-1" style={{ borderTop: '1px solid var(--border)' }}>
                   <span className="text-[12px] font-medium" style={{ color: 'var(--t3)' }}>Winst</span>
-                  <span className="text-[13px] font-bold" style={{ color: totalPrice - totalPayout > 0 ? '#00A651' : '#ef4444' }}>
-                    €{(totalPrice - totalPayout).toFixed(2).replace(/\.00$/, '')}
+                  <span className="text-[13px] font-bold" style={{ color: displayRevenue - totalPayout > 0 ? '#00A651' : '#ef4444' }}>
+                    €{(displayRevenue - totalPayout).toFixed(2).replace(/\.00$/, '')}
                   </span>
                 </div>
               )}
             </div>
-          )}
+            )
+          })()}
 
           {/* KM driven */}
           <div>
@@ -709,6 +719,37 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
               style={inputStyle}
               placeholder="0"
             />
+          </div>
+
+          {/* Laundry / Was service */}
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+              Was service
+            </label>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setLaundryEnabled(!laundryEnabled)}
+                className="w-[52px] h-[30px] rounded-full transition-all relative flex-shrink-0"
+                style={{ background: laundryEnabled ? 'var(--green)' : 'var(--inp)' }}
+              >
+                <div
+                  className="w-[24px] h-[24px] rounded-full bg-white absolute top-[3px] transition-all"
+                  style={{ left: laundryEnabled ? '25px' : '3px' }}
+                />
+              </button>
+              {laundryEnabled && (
+                <input
+                  type="number"
+                  step="0.01"
+                  value={laundryCost}
+                  onChange={(e) => setLaundryCost(e.target.value)}
+                  className="flex-1 h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
+                  style={inputStyle}
+                  placeholder="Prijs (€)"
+                />
+              )}
+            </div>
           </div>
 
           {/* Repeat days */}

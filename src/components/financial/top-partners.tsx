@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { useLocale } from '@/lib/i18n'
-import { formatCurrency, getJobRevenue } from '@/lib/utils'
+import { formatCurrency, getJobTotalRevenue } from '@/lib/utils'
 import { filterByPeriod, type Period } from '@/lib/financial'
 import type { Job, Partner } from '@/lib/types'
 
@@ -24,7 +24,7 @@ export default function TopPartnersByRevenue({ jobs, partners }: { jobs: Job[]; 
       const pid = job.property?.partner_id
       if (!pid) continue
       const existing = revenueMap.get(pid) || { revenue: 0, jobCount: 0 }
-      existing.revenue += getJobRevenue(job)
+      existing.revenue += getJobTotalRevenue(job)
       existing.jobCount += 1
       revenueMap.set(pid, existing)
     }

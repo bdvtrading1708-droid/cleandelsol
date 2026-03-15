@@ -81,6 +81,7 @@ type JobLike = {
   hours_worked?: number
   km_driven?: number
   extra_costs?: number
+  laundry_cost?: number
   status?: string
   property?: { pricing_type?: string } | null
   cleaners?: JobCleaner[]
@@ -89,7 +90,7 @@ type JobLike = {
 /** Full financial breakdown for a single job */
 export function getJobFinancials(job: JobLike) {
   const hours = getJobHours(job)
-  const revenue = getJobRevenue(job)
+  const revenue = getJobRevenue(job) + (job.laundry_cost || 0)
   const payout = getJobPayout(job)
   const kmCost = getJobKm(job) * KM_RATE
   // Sum extra_costs from per-cleaner entries + job-level (legacy)
@@ -98,13 +99,15 @@ export function getJobFinancials(job: JobLike) {
   const totalCost = payout + kmCost + extraCosts
   const profit = revenue - totalCost
 
-  return { hours, revenue, payout, kmCost, extraCosts, totalCost, profit }
+  const laundryCost = job.laundry_cost || 0
+  return { hours, revenue, laundryCost, payout, kmCost, extraCosts, totalCost, profit }
 }
 
 // ─── Aggregation ─────────────────────────────────────────────────────────────
 
 export interface FinancialSummary {
   revenue: number
+  laundryCost: number
   payout: number
   kmCost: number
   extraCosts: number
@@ -118,6 +121,7 @@ export interface FinancialSummary {
 /** Aggregate financial totals for a list of jobs */
 export function aggregateFinancials(jobs: JobLike[]): FinancialSummary {
   let revenue = 0
+  let laundryCost = 0
   let payout = 0
   let kmCost = 0
   let extraCosts = 0
@@ -126,6 +130,7 @@ export function aggregateFinancials(jobs: JobLike[]): FinancialSummary {
   for (const job of jobs) {
     const f = getJobFinancials(job)
     revenue += f.revenue
+    laundryCost += f.laundryCost
     payout += f.payout
     kmCost += f.kmCost
     extraCosts += f.extraCosts
@@ -136,7 +141,7 @@ export function aggregateFinancials(jobs: JobLike[]): FinancialSummary {
   const profit = revenue - totalCost
   const margin = revenue > 0 ? Math.round((profit / revenue) * 100) : 0
 
-  return { revenue, payout, kmCost, extraCosts, totalCost, profit, margin, jobCount: jobs.length, hours }
+  return { revenue, laundryCost, payout, kmCost, extraCosts, totalCost, profit, margin, jobCount: jobs.length, hours }
 }
 
 // ─── Per-cleaner breakdown ───────────────────────────────────────────────────
@@ -173,8 +178,8 @@ export function aggregateByCleaners(
     let totalPayout = 0
 
     for (const job of cleanerJobs) {
-      // Revenue: full job revenue attributed to this cleaner's job
-      revenue += getJobRevenue(job)
+      // Revenue: full job revenue attributed to this cleaner's job (including laundry)
+      revenue += getJobRevenue(job) + (job.laundry_cost || 0)
 
       if (job.cleaners && job.cleaners.length > 0) {
         const jc = job.cleaners.find(c => c.cleaner_id === cleanerId)
@@ -214,7 +219,8 @@ export function aggregateByCleaners(
     const profit = revenue - totalCost
     const margin = revenue > 0 ? Math.round((profit / revenue) * 100) : 0
 
-    return { revenue, payout, kmCost, extraCosts, totalCost, profit, margin, jobCount: cleanerJobs.length, hours, cleanerId, outstanding, earned, totalPayout }
+    const laundryCost = cleanerJobs.reduce((s, j) => s + (j.laundry_cost || 0), 0)
+    return { revenue, laundryCost, payout, kmCost, extraCosts, totalCost, profit, margin, jobCount: cleanerJobs.length, hours, cleanerId, outstanding, earned, totalPayout }
   })
 }
 

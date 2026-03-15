@@ -55,10 +55,11 @@ export function useUpdateJobStatus() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ id, status, notes, extra_costs, payment_method }: { id: number; status: JobStatus; notes?: string; extra_costs?: number; payment_method?: string }) => {
+    mutationFn: async ({ id, status, notes, extra_costs, laundry_cost, payment_method }: { id: number; status: JobStatus; notes?: string; extra_costs?: number; laundry_cost?: number; payment_method?: string }) => {
       const update: Record<string, unknown> = { status }
       if (notes !== undefined) update.notes = notes
       if (extra_costs !== undefined) update.extra_costs = extra_costs
+      if (laundry_cost !== undefined) update.laundry_cost = laundry_cost
       if (payment_method !== undefined) update.payment_method = payment_method
 
       const { error } = await supabase.from('jobs').update(update).eq('id', id)
@@ -115,6 +116,7 @@ interface CreateJobInput {
   start_time?: string
   end_time?: string
   client_price?: number
+  laundry_cost?: number
   notes?: string
   cleaners: {
     cleaner_id: string
@@ -146,6 +148,7 @@ export function useCreateJob() {
             start_time: job.start_time,
             end_time: job.end_time,
             client_price: job.client_price,
+            laundry_cost: job.laundry_cost || 0,
             notes: job.notes,
             status: 'planned' as const,
           })

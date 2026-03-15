@@ -5,7 +5,7 @@ import { useLocale } from '@/lib/i18n'
 import { useAuth } from '@/providers/auth-provider'
 import { useUpdateJobStatus, useUpdateJobCleaner, useDeleteJob } from '@/lib/hooks/use-jobs'
 import { STATUS_COLORS, getCleanerColor } from '@/lib/constants'
-import { formatCurrency, formatDate, getJobRevenue, getJobPayout, getCleanerPayout, getCleanerTotalPayout, getCleanerHours, getJobKm } from '@/lib/utils'
+import { formatCurrency, formatDate, getJobTotalRevenue, getJobPayout, getCleanerPayout, getCleanerTotalPayout, getCleanerHours, getJobKm } from '@/lib/utils'
 import { MapPin, Clock, Car, FileText, Camera, ChevronRight, Trash2, Pencil, Users } from 'lucide-react'
 import { CleanerAvatar } from '@/components/cleaners/cleaner-avatar'
 import type { Job, JobStatus } from '@/lib/types'
@@ -41,6 +41,7 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
   const [editPrice, setEditPrice] = useState('')
   const [editExtraCosts, setEditExtraCosts] = useState('')
   const [editPaymentMethod, setEditPaymentMethod] = useState<'cash' | 'bank'>('bank')
+  const [editLaundryCost, setEditLaundryCost] = useState('')
 
   // Per-cleaner edit state
   const [editCleanerPayouts, setEditCleanerPayouts] = useState<Record<number, string>>({})
@@ -53,6 +54,7 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
     if (job) {
       setEditPrice(job.client_price?.toString() || '')
       setEditExtraCosts(job.extra_costs?.toString() || '')
+      setEditLaundryCost(job.laundry_cost?.toString() || '')
       setEditPaymentMethod(job.payment_method || 'bank')
       setEditing(false)
 
@@ -116,6 +118,7 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
       id: job.id,
       status: job.status,
       extra_costs: editExtraCosts ? parseFloat(editExtraCosts) : 0,
+      laundry_cost: editLaundryCost ? parseFloat(editLaundryCost) : 0,
       payment_method: editPaymentMethod,
     })
 
@@ -293,7 +296,7 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
                   )
                 })}
 
-                {/* Extra kosten + betaalwijze */}
+                {/* Extra kosten + was kosten */}
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="text-[10px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>Extra kosten (€)</label>
@@ -306,19 +309,32 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>Betaalwijze</label>
-                    <div className="flex gap-1.5">
-                      <button type="button" onClick={() => setEditPaymentMethod('bank')}
-                        className="flex-1 h-[42px] rounded-[12px] text-[12px] font-semibold transition-all"
-                        style={{ background: editPaymentMethod === 'bank' ? 'var(--t1)' : 'var(--inp)', color: editPaymentMethod === 'bank' ? 'var(--bg)' : 'var(--t3)' }}>
-                        Bank
-                      </button>
-                      <button type="button" onClick={() => setEditPaymentMethod('cash')}
-                        className="flex-1 h-[42px] rounded-[12px] text-[12px] font-semibold transition-all"
-                        style={{ background: editPaymentMethod === 'cash' ? 'var(--t1)' : 'var(--inp)', color: editPaymentMethod === 'cash' ? 'var(--bg)' : 'var(--t3)' }}>
-                        Cash
-                      </button>
-                    </div>
+                    <label className="text-[10px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>Was kosten (€)</label>
+                    <input
+                      type="number" step="0.01"
+                      value={editLaundryCost}
+                      onChange={(e) => setEditLaundryCost(e.target.value)}
+                      className="w-full h-[42px] rounded-[12px] px-3 text-[14px] font-medium border-0 outline-none"
+                      style={{ background: 'var(--inp)', color: 'var(--t1)' }}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+
+                {/* Betaalwijze */}
+                <div>
+                  <label className="text-[10px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>Betaalwijze</label>
+                  <div className="flex gap-1.5">
+                    <button type="button" onClick={() => setEditPaymentMethod('bank')}
+                      className="flex-1 h-[42px] rounded-[12px] text-[12px] font-semibold transition-all"
+                      style={{ background: editPaymentMethod === 'bank' ? 'var(--t1)' : 'var(--inp)', color: editPaymentMethod === 'bank' ? 'var(--bg)' : 'var(--t3)' }}>
+                      Bank
+                    </button>
+                    <button type="button" onClick={() => setEditPaymentMethod('cash')}
+                      className="flex-1 h-[42px] rounded-[12px] text-[12px] font-semibold transition-all"
+                      style={{ background: editPaymentMethod === 'cash' ? 'var(--t1)' : 'var(--inp)', color: editPaymentMethod === 'cash' ? 'var(--bg)' : 'var(--t3)' }}>
+                      Cash
+                    </button>
                   </div>
                 </div>
 
@@ -346,7 +362,7 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
                 )}
                 <div className={`grid ${isAdmin ? 'grid-cols-2' : 'grid-cols-1'} gap-2 mb-2`}>
                   {isAdmin && (
-                    <StatBox icon={<span className="text-[13px] font-bold" style={{ color: 'var(--green)' }}>€</span>} label={t('price')} value={formatCurrency(getJobRevenue(job))} />
+                    <StatBox icon={<span className="text-[13px] font-bold" style={{ color: 'var(--green)' }}>€</span>} label={t('price')} value={formatCurrency(getJobTotalRevenue(job))} />
                   )}
                   <StatBox icon={<span className="text-[13px] font-bold" style={{ color: 'var(--blue)' }}>€</span>} label={t('payout')} value={formatCurrency(
                     isCleaner
@@ -421,20 +437,35 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
               </div>
             )}
 
-            {/* Extra kosten - admin only (cleaners fill via delivery form) */}
+            {/* Extra kosten + Was kosten - admin only */}
             {isAdmin && (
-              <div>
-                <label className="text-[10px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
-                  Extra kosten (€)
-                </label>
-                <input
-                  type="number" step="0.01"
-                  value={editExtraCosts}
-                  onChange={(e) => setEditExtraCosts(e.target.value)}
-                  className="w-full h-[42px] rounded-[14px] px-3.5 text-[14px] font-medium border-0 outline-none"
-                  style={{ background: 'var(--fill)', color: 'var(--t1)' }}
-                  placeholder="Bv. parkeerkosten, schoonmaakmiddel..."
-                />
+              <div className="flex flex-col gap-2">
+                <div>
+                  <label className="text-[10px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+                    Extra kosten (€)
+                  </label>
+                  <input
+                    type="number" step="0.01"
+                    value={editExtraCosts}
+                    onChange={(e) => setEditExtraCosts(e.target.value)}
+                    className="w-full h-[42px] rounded-[14px] px-3.5 text-[14px] font-medium border-0 outline-none"
+                    style={{ background: 'var(--fill)', color: 'var(--t1)' }}
+                    placeholder="Bv. parkeerkosten, schoonmaakmiddel..."
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+                    Was kosten (€)
+                  </label>
+                  <input
+                    type="number" step="0.01"
+                    value={editLaundryCost}
+                    onChange={(e) => setEditLaundryCost(e.target.value)}
+                    className="w-full h-[42px] rounded-[14px] px-3.5 text-[14px] font-medium border-0 outline-none"
+                    style={{ background: 'var(--fill)', color: 'var(--t1)' }}
+                    placeholder="0"
+                  />
+                </div>
               </div>
             )}
 
@@ -467,16 +498,21 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
               </div>
             )}
 
-            {/* Save extra costs when changed - admin only */}
-            {isAdmin && editExtraCosts !== (job.extra_costs?.toString() || '') && (
+            {/* Save extra/laundry costs when changed - admin only */}
+            {isAdmin && (editExtraCosts !== (job.extra_costs?.toString() || '') || editLaundryCost !== (job.laundry_cost?.toString() || '')) && (
               <button
                 onClick={() => {
-                  updateStatus.mutate({ id: job.id, status: job.status, extra_costs: editExtraCosts ? parseFloat(editExtraCosts) : 0 })
+                  updateStatus.mutate({
+                    id: job.id,
+                    status: job.status,
+                    extra_costs: editExtraCosts ? parseFloat(editExtraCosts) : 0,
+                    laundry_cost: editLaundryCost ? parseFloat(editLaundryCost) : 0,
+                  })
                 }}
                 disabled={updateStatus.isPending}
                 className="w-full h-[38px] rounded-[12px] text-[12px] font-bold transition-all"
                 style={{ background: 'var(--green)', color: '#fff', opacity: updateStatus.isPending ? 0.6 : 1 }}>
-                {updateStatus.isPending ? t('loading') : 'Extra kosten opslaan'}
+                {updateStatus.isPending ? t('loading') : 'Kosten opslaan'}
               </button>
             )}
 

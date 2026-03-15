@@ -5,7 +5,7 @@ import { useJobs } from '@/lib/hooks/use-jobs'
 import { usePartners } from '@/lib/hooks/use-partners'
 import { useLocale } from '@/lib/i18n'
 import { STATUS_COLORS } from '@/lib/constants'
-import { formatCurrency, formatDate, getJobRevenue, getJobPayout, getJobHours, getJobKm } from '@/lib/utils'
+import { formatCurrency, formatDate, getJobTotalRevenue, getJobPayout, getJobHours, getJobKm } from '@/lib/utils'
 import { Plus } from 'lucide-react'
 import { JobPanel } from '@/components/jobs/job-panel'
 import { JobForm } from '@/components/jobs/job-form'
@@ -144,7 +144,7 @@ export default function JobsPage() {
               <div className="grid grid-cols-4 gap-2">
                 <div className="rounded-[12px] p-2 text-center" style={{ background: 'var(--fill)' }}>
                   <div className="text-[9px] font-semibold uppercase tracking-[.08em] mb-0.5" style={{ color: 'var(--t3)' }}>{t('price')}</div>
-                  <div className="text-[14px] font-bold tracking-[-0.3px]" style={{ color: 'var(--t1)' }}>{formatCurrency(getJobRevenue(job))}</div>
+                  <div className="text-[14px] font-bold tracking-[-0.3px]" style={{ color: 'var(--t1)' }}>{formatCurrency(getJobTotalRevenue(job))}</div>
                 </div>
                 <div className="rounded-[12px] p-2 text-center" style={{ background: 'var(--fill)' }}>
                   <div className="text-[9px] font-semibold uppercase tracking-[.08em] mb-0.5" style={{ color: 'var(--t3)' }}>{t('payout')}</div>

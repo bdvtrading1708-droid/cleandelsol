@@ -4,7 +4,7 @@ import { useJobs } from '@/lib/hooks/use-jobs'
 import { useCleaners } from '@/lib/hooks/use-cleaners'
 import { useLocale } from '@/lib/i18n'
 import { useState } from 'react'
-import { formatCurrency, getJobRevenue } from '@/lib/utils'
+import { formatCurrency, getJobTotalRevenue } from '@/lib/utils'
 import { STATUS_COLORS, getCleanerColor } from '@/lib/constants'
 import { CleanerAvatar } from '@/components/cleaners/cleaner-avatar'
 import { filterByPeriod, aggregateFinancials, toDateStr, type Period } from '@/lib/financial'
@@ -55,7 +55,7 @@ export default function DashboardPage() {
     const ds = toDateStr(d)
     const dayJobs = cleanerJobs.filter(j => j.date === ds)
     const dow = d.getDay() === 0 ? 6 : d.getDay() - 1
-    bars.push({ label: days[dow], value: dayJobs.reduce((s, j) => s + getJobRevenue(j), 0), isToday: ds === today })
+    bars.push({ label: days[dow], value: dayJobs.reduce((s, j) => s + getJobTotalRevenue(j), 0), isToday: ds === today })
   }
   const maxBar = Math.max(1, ...bars.map(b => b.value))
 
@@ -283,7 +283,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="text-right shrink-0">
                       <div className="text-[13px] font-bold tracking-[-0.2px]" style={{ color: 'var(--t1)' }}>{j.start_time || '—'}</div>
-                      <div className="text-[11px] font-medium mt-0.5" style={{ color: 'var(--t3)' }}>{formatCurrency(getJobRevenue(j))}</div>
+                      <div className="text-[11px] font-medium mt-0.5" style={{ color: 'var(--t3)' }}>{formatCurrency(getJobTotalRevenue(j))}</div>
                     </div>
                   </div>
                 ))}
