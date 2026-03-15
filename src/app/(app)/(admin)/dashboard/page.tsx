@@ -5,7 +5,7 @@ import { useCleaners } from '@/lib/hooks/use-cleaners'
 import { useLocale } from '@/lib/i18n'
 import { useState } from 'react'
 import { formatCurrency, getJobRevenue } from '@/lib/utils'
-import { STATUS_COLORS } from '@/lib/constants'
+import { STATUS_COLORS, getCleanerColor } from '@/lib/constants'
 import { CleanerAvatar } from '@/components/cleaners/cleaner-avatar'
 import { filterByPeriod, aggregateFinancials, toDateStr, type Period } from '@/lib/financial'
 
@@ -238,10 +238,20 @@ export default function DashboardPage() {
                       </div>
                       <div className="text-[9px] font-bold uppercase tracking-[.06em] mt-0.5" style={{ color: 'var(--t3)' }}>{days[dow]}</div>
                     </div>
-                    <div className="w-[3px] h-9 rounded-[2px] shrink-0" style={{ background: STATUS_COLORS[j.status] || '#0064D2' }} />
+                    <div className="w-[3px] h-9 rounded-[2px] shrink-0" style={{ background: getCleanerColor(j.cleaner?.name) }} />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-semibold tracking-[-0.2px] truncate" style={{ color: 'var(--t1)' }}>{j.property?.name || '—'}</div>
-                      <div className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--t2)' }}>{j.cleaner?.name || '—'}</div>
+                      {j.cleaner && (
+                        <div
+                          className="inline-flex items-center gap-1.5 mt-1 px-1.5 py-0.5 rounded-full"
+                          style={{ background: getCleanerColor(j.cleaner.name) + '18' }}
+                        >
+                          <CleanerAvatar src={j.cleaner.avatar_url} name={j.cleaner.name} size={18} />
+                          <span className="text-[11px] font-medium pr-1" style={{ color: getCleanerColor(j.cleaner.name) }}>
+                            {j.cleaner.name.split(' ')[0]}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <div className="text-right shrink-0">
                       <div className="text-[13px] font-bold tracking-[-0.2px]" style={{ color: 'var(--t1)' }}>{j.start_time || '—'}</div>

@@ -3,8 +3,9 @@
 import { useState, useMemo } from 'react'
 import { useJobs } from '@/lib/hooks/use-jobs'
 import { useLocale } from '@/lib/i18n'
-import { STATUS_COLORS } from '@/lib/constants'
+import { STATUS_COLORS, getCleanerColor } from '@/lib/constants'
 import { formatCurrency, getJobRevenue } from '@/lib/utils'
+import { CleanerAvatar } from '@/components/cleaners/cleaner-avatar'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { JobPanel } from '@/components/jobs/job-panel'
 import { JobForm } from '@/components/jobs/job-form'
@@ -230,17 +231,30 @@ export default function CalendarPage() {
                         className="flex items-center gap-3 rounded-[12px] p-2.5 w-full text-left transition-all active:scale-[0.98]"
                         style={{ background: 'var(--fill)' }}
                       >
-                        {/* Status dot */}
+                        {/* Cleaner color dot */}
                         <div
                           className="w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{ background: STATUS_COLORS[job.status] }}
+                          style={{ background: getCleanerColor(job.cleaner?.name) }}
                         />
                         <div className="flex-1 min-w-0">
                           <div className="text-[13px] font-semibold truncate" style={{ color: 'var(--t1)' }}>
                             {job.property?.name || '—'}
                           </div>
-                          <div className="text-[11px] truncate" style={{ color: 'var(--t3)' }}>
-                            {job.cleaner?.name || '—'} {job.start_time ? `· ${job.start_time.slice(0, 5)}` : ''}
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            {job.cleaner && (
+                              <div
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full"
+                                style={{ background: getCleanerColor(job.cleaner.name) + '18' }}
+                              >
+                                <CleanerAvatar src={job.cleaner.avatar_url} name={job.cleaner.name} size={16} />
+                                <span className="text-[10px] font-medium pr-0.5" style={{ color: getCleanerColor(job.cleaner.name) }}>
+                                  {job.cleaner.name.split(' ')[0]}
+                                </span>
+                              </div>
+                            )}
+                            {job.start_time && (
+                              <span className="text-[10px]" style={{ color: 'var(--t3)' }}>{job.start_time.slice(0, 5)}</span>
+                            )}
                           </div>
                         </div>
                         <div className="text-[13px] font-bold shrink-0" style={{ color: 'var(--t1)' }}>
@@ -308,7 +322,7 @@ export default function CalendarPage() {
                         <div
                           key={j.id}
                           className="w-1.5 h-1.5 rounded-full"
-                          style={{ background: isToday ? 'var(--bg)' : STATUS_COLORS[j.status] }}
+                          style={{ background: isToday ? 'var(--bg)' : getCleanerColor(j.cleaner?.name) }}
                         />
                       ))}
                     </div>

@@ -12,7 +12,7 @@ export function useJobs(cleanerId?: string) {
     queryFn: async () => {
       let query = supabase
         .from('jobs')
-        .select('*, property:properties(*), cleaner:users!jobs_cleaner_id_fkey(id, name, email, phone)')
+        .select('*, property:properties(*), cleaner:users!jobs_cleaner_id_fkey(id, name, email, phone, avatar_url)')
         .order('date', { ascending: false })
 
       if (cleanerId) {

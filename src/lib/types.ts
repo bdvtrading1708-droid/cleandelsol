@@ -59,7 +59,7 @@ export interface Job {
   payment_method?: 'cash' | 'bank'
   notes?: string
   property?: Property
-  cleaner?: Pick<User, 'id' | 'name' | 'email' | 'phone'>
+  cleaner?: Pick<User, 'id' | 'name' | 'email' | 'phone' | 'avatar_url'>
   photos?: JobPhoto[]
 }
 
