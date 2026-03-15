@@ -29,6 +29,7 @@ export function CleanerPanel({ cleaner, open, onClose, onEdit, onPasswordReset }
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const updateStatus = useUpdateJobStatus()
+  const [paidMonthFilter, setPaidMonthFilter] = useState<string>('all')
 
   const sendWelcome = useMutation({
     mutationFn: async (cleanerId: string) => {
@@ -352,6 +353,103 @@ export function CleanerPanel({ cleaner, open, onClose, onEdit, onPasswordReset }
                     {updateStatus.isPending ? t('loading') : (t('allPaid') || 'Alles betaald')}
                   </button>
                 )}
+              </div>
+            )
+          })()}
+
+          {/* Betaald - paid history */}
+          {(() => {
+            const paidJobs = cleanerJobs
+              .filter(j => j.status === 'done')
+              .sort((a, b) => ((b.paid_at || b.date || '')).localeCompare(a.paid_at || a.date || ''))
+
+            if (paidJobs.length === 0) return null
+
+            // Build available months from paid jobs
+            const monthOptions = Array.from(new Set(
+              paidJobs.map(j => {
+                const d = j.paid_at || j.date || ''
+                return d.slice(0, 7) // 'YYYY-MM'
+              }).filter(Boolean)
+            )).sort((a, b) => b.localeCompare(a))
+
+            const monthNames = (t('months') || []) as string[]
+            const formatMonth = (ym: string) => {
+              const [y, m] = ym.split('-')
+              const mi = parseInt(m, 10) - 1
+              return `${monthNames[mi] || m} ${y}`
+            }
+
+            const filtered = paidMonthFilter === 'all'
+              ? paidJobs
+              : paidJobs.filter(j => (j.paid_at || j.date || '').startsWith(paidMonthFilter))
+
+            const filteredTotal = filtered.reduce((s, j) => {
+              const my = getMyAssignment(j)
+              return s + (my ? getCleanerTotalPayout(my) : 0)
+            }, 0)
+
+            return (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-[11px] font-semibold uppercase tracking-[.08em]" style={{ color: 'var(--t3)' }}>
+                    {t('markPaid') || 'Betaald'} ({filtered.length})
+                  </div>
+                  <select
+                    value={paidMonthFilter}
+                    onChange={e => setPaidMonthFilter(e.target.value)}
+                    className="text-[11px] font-medium rounded-lg px-2 py-1 border-0 outline-none"
+                    style={{ background: 'var(--fill)', color: 'var(--t2)' }}
+                  >
+                    <option value="all">{t('alles') || 'Alle'}</option>
+                    {monthOptions.map(ym => (
+                      <option key={ym} value={ym}>{formatMonth(ym)}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="rounded-[14px] overflow-hidden" style={{ background: 'var(--fill)' }}>
+                  {filtered.map((job, i) => {
+                    const my = getMyAssignment(job)
+                    if (!my) return null
+                    const payout = getCleanerTotalPayout(my)
+                    const hours = getCleanerHours(my)
+
+                    return (
+                      <div
+                        key={job.id}
+                        className="flex items-center gap-2.5 px-3 py-2.5"
+                        style={{ borderBottom: i < filtered.length - 1 ? '1px solid var(--border)' : 'none' }}
+                      >
+                        <div className="w-[3px] h-8 rounded-[2px] shrink-0" style={{ background: '#00A651' }} />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[13px] font-bold tracking-[-0.2px] truncate" style={{ color: 'var(--t1)' }}>
+                            {job.property?.name || job.custom_property_name || '—'}
+                          </div>
+                          <div className="text-[10px] mt-0.5" style={{ color: 'var(--t3)' }}>
+                            {job.date ? formatDate(job.date) : '—'} · {hours}u · {my.km_driven || 0}km
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className="text-[13px] font-bold tracking-[-0.3px]" style={{ color: '#00A651' }}>
+                            {formatCurrency(payout)}
+                          </div>
+                          <div className="text-[8px] font-bold uppercase tracking-[.05em] mt-0.5" style={{ color: '#00A651' }}>
+                            ✓ {t('markPaid') || 'Betaald'}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                {/* Total */}
+                <div className="flex items-center justify-between mt-2 px-1">
+                  <div className="text-[11px] font-semibold" style={{ color: 'var(--t3)' }}>
+                    {t('totalEarned') || 'Totaal'}
+                  </div>
+                  <div className="text-[14px] font-bold" style={{ color: '#00A651' }}>
+                    {formatCurrency(filteredTotal)}
+                  </div>
+                </div>
               </div>
             )
           })()}

@@ -57,6 +57,8 @@ export function useUpdateJobStatus() {
   return useMutation({
     mutationFn: async ({ id, status, notes, extra_costs, laundry_cost, payment_method }: { id: number; status: JobStatus; notes?: string; extra_costs?: number; laundry_cost?: number; payment_method?: string }) => {
       const update: Record<string, unknown> = { status }
+      // When marking as paid (done), record the timestamp
+      if (status === 'done') update.paid_at = new Date().toISOString()
       if (notes !== undefined) update.notes = notes
       if (extra_costs !== undefined) update.extra_costs = extra_costs
       if (laundry_cost !== undefined) update.laundry_cost = laundry_cost
