@@ -77,6 +77,14 @@ export function getCleanerPayout(jc: { cleaner_payout?: number; start_time?: str
   return (jc.cleaner_payout || 0) * (hours > 0 ? hours : 1)
 }
 
+/** Total payout for a cleaner including KM and extra costs (what the cleaner receives) */
+export function getCleanerTotalPayout(jc: { cleaner_payout?: number; start_time?: string | null; end_time?: string | null; hours_worked?: number | null; km_driven?: number; extra_costs?: number }): number {
+  const basePayout = getCleanerPayout(jc)
+  const kmCost = (jc.km_driven || 0) * 0.10
+  const extraCosts = jc.extra_costs || 0
+  return basePayout + kmCost + extraCosts
+}
+
 /** Total km for a job (sum of all cleaners) */
 export function getJobKm(job: { km_driven?: number; cleaners?: JobCleaner[] }): number {
   if (job.cleaners && job.cleaners.length > 0) {

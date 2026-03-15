@@ -75,12 +75,13 @@ export function useUpdateJobCleaner() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ id, end_time, hours_worked, km_driven, cleaner_payout }: { id: number; end_time?: string; hours_worked?: number; km_driven?: number; cleaner_payout?: number }) => {
+    mutationFn: async ({ id, end_time, hours_worked, km_driven, cleaner_payout, extra_costs }: { id: number; end_time?: string; hours_worked?: number; km_driven?: number; cleaner_payout?: number; extra_costs?: number }) => {
       const update: Record<string, unknown> = {}
       if (end_time !== undefined) update.end_time = end_time
       if (hours_worked !== undefined) update.hours_worked = hours_worked
       if (km_driven !== undefined) update.km_driven = km_driven
       if (cleaner_payout !== undefined) update.cleaner_payout = cleaner_payout
+      if (extra_costs !== undefined) update.extra_costs = extra_costs
 
       const { error } = await supabase.from('job_cleaners').update(update).eq('id', id)
       if (error) throw error

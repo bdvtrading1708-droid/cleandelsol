@@ -5,7 +5,7 @@ import { useLocale } from '@/lib/i18n'
 import { useAuth } from '@/providers/auth-provider'
 import { useUpdateJobStatus, useUpdateJobCleaner, useDeleteJob } from '@/lib/hooks/use-jobs'
 import { STATUS_COLORS, getCleanerColor } from '@/lib/constants'
-import { formatCurrency, formatDate, getJobRevenue, getJobPayout, getCleanerPayout, getCleanerHours, getJobKm } from '@/lib/utils'
+import { formatCurrency, formatDate, getJobRevenue, getJobPayout, getCleanerPayout, getCleanerTotalPayout, getCleanerHours, getJobKm } from '@/lib/utils'
 import { MapPin, Clock, Car, FileText, Camera, ChevronRight, Trash2, Pencil, Users } from 'lucide-react'
 import { CleanerAvatar } from '@/components/cleaners/cleaner-avatar'
 import type { Job, JobStatus } from '@/lib/types'
@@ -164,9 +164,11 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
                   {job.property?.name || job.custom_property_name || '—'}
                 </SheetTitle>
                 <div className="text-[13px] mt-0.5" style={{ color: 'var(--t3)' }}>
-                  {cleaners.length > 0
-                    ? cleaners.map(jc => jc.cleaner?.name?.split(' ')[0]).join(', ')
-                    : job.cleaner?.name || '—'
+                  {isCleaner
+                    ? (user?.name?.split(' ')[0] || '—')
+                    : (cleaners.length > 0
+                      ? cleaners.map(jc => jc.cleaner?.name?.split(' ')[0]).join(', ')
+                      : job.cleaner?.name || '—')
                   } · {formatDate(job.date)} · {job.start_time?.slice(0, 5) || '—'}{job.end_time ? ` – ${job.end_time.slice(0, 5)}` : ''}
                 </div>
               </div>
@@ -321,15 +323,21 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
                     <Pencil size={12} />
                   </button>
                 )}
-                <div className="grid grid-cols-2 gap-2 mb-2">
-                  <StatBox icon={<span className="text-[13px] font-bold" style={{ color: 'var(--green)' }}>€</span>} label={t('price')} value={formatCurrency(getJobRevenue(job))} />
-                  <StatBox icon={<span className="text-[13px] font-bold" style={{ color: 'var(--blue)' }}>€</span>} label={t('payout')} value={formatCurrency(getJobPayout(job))} />
+                <div className={`grid ${isAdmin ? 'grid-cols-2' : 'grid-cols-1'} gap-2 mb-2`}>
+                  {isAdmin && (
+                    <StatBox icon={<span className="text-[13px] font-bold" style={{ color: 'var(--green)' }}>€</span>} label={t('price')} value={formatCurrency(getJobRevenue(job))} />
+                  )}
+                  <StatBox icon={<span className="text-[13px] font-bold" style={{ color: 'var(--blue)' }}>€</span>} label={t('payout')} value={formatCurrency(
+                    isCleaner
+                      ? (() => { const my = cleaners.find(jc => jc.cleaner_id === user?.id); return my ? getCleanerTotalPayout(my) : 0 })()
+                      : getJobPayout(job)
+                  )} />
                 </div>
 
                 {/* Per-cleaner breakdown */}
                 {cleaners.length > 0 && (
                   <div className="flex flex-col gap-1.5 mb-2">
-                    {cleaners.map(jc => {
+                    {(isCleaner ? cleaners.filter(jc => jc.cleaner_id === user?.id) : cleaners).map(jc => {
                       const color = getCleanerColor(jc.cleaner?.name)
                       const hours = getCleanerHours(jc)
                       return (
@@ -347,7 +355,7 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
                               </div>
                             </div>
                             <div className="text-[13px] font-bold shrink-0" style={{ color }}>
-                              {formatCurrency(getCleanerPayout(jc))}
+                              {formatCurrency(isCleaner ? getCleanerTotalPayout(jc) : getCleanerPayout(jc))}
                             </div>
                           </div>
                           {/* Inline end time editor for admin */}
@@ -392,50 +400,54 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
               </div>
             )}
 
-            {/* Extra kosten - always editable */}
-            <div>
-              <label className="text-[10px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
-                Extra kosten (€)
-              </label>
-              <input
-                type="number" step="0.01"
-                value={editExtraCosts}
-                onChange={(e) => setEditExtraCosts(e.target.value)}
-                className="w-full h-[42px] rounded-[14px] px-3.5 text-[14px] font-medium border-0 outline-none"
-                style={{ background: 'var(--fill)', color: 'var(--t1)' }}
-                placeholder="Bv. parkeerkosten, schoonmaakmiddel..."
-              />
-            </div>
-
-            {/* Betaalwijze - always editable */}
-            <div>
-              <label className="text-[10px] font-semibold uppercase tracking-[.08em] mb-1.5 block" style={{ color: 'var(--t3)' }}>
-                Betaalwijze
-              </label>
-              <div className="flex gap-2">
-                <button type="button"
-                  onClick={() => {
-                    setEditPaymentMethod('bank')
-                    updateStatus.mutate({ id: job.id, status: job.status, payment_method: 'bank' })
-                  }}
-                  className="flex-1 h-[42px] rounded-[14px] text-[13px] font-semibold transition-all"
-                  style={{ background: editPaymentMethod === 'bank' ? 'var(--t1)' : 'var(--fill)', color: editPaymentMethod === 'bank' ? 'var(--bg)' : 'var(--t3)' }}>
-                  Bank
-                </button>
-                <button type="button"
-                  onClick={() => {
-                    setEditPaymentMethod('cash')
-                    updateStatus.mutate({ id: job.id, status: job.status, payment_method: 'cash' })
-                  }}
-                  className="flex-1 h-[42px] rounded-[14px] text-[13px] font-semibold transition-all"
-                  style={{ background: editPaymentMethod === 'cash' ? 'var(--t1)' : 'var(--fill)', color: editPaymentMethod === 'cash' ? 'var(--bg)' : 'var(--t3)' }}>
-                  Cash
-                </button>
+            {/* Extra kosten - admin only (cleaners fill via delivery form) */}
+            {isAdmin && (
+              <div>
+                <label className="text-[10px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+                  Extra kosten (€)
+                </label>
+                <input
+                  type="number" step="0.01"
+                  value={editExtraCosts}
+                  onChange={(e) => setEditExtraCosts(e.target.value)}
+                  className="w-full h-[42px] rounded-[14px] px-3.5 text-[14px] font-medium border-0 outline-none"
+                  style={{ background: 'var(--fill)', color: 'var(--t1)' }}
+                  placeholder="Bv. parkeerkosten, schoonmaakmiddel..."
+                />
               </div>
-            </div>
+            )}
 
-            {/* Save extra costs when changed */}
-            {editExtraCosts !== (job.extra_costs?.toString() || '') && (
+            {/* Betaalwijze - admin only */}
+            {isAdmin && (
+              <div>
+                <label className="text-[10px] font-semibold uppercase tracking-[.08em] mb-1.5 block" style={{ color: 'var(--t3)' }}>
+                  Betaalwijze
+                </label>
+                <div className="flex gap-2">
+                  <button type="button"
+                    onClick={() => {
+                      setEditPaymentMethod('bank')
+                      updateStatus.mutate({ id: job.id, status: job.status, payment_method: 'bank' })
+                    }}
+                    className="flex-1 h-[42px] rounded-[14px] text-[13px] font-semibold transition-all"
+                    style={{ background: editPaymentMethod === 'bank' ? 'var(--t1)' : 'var(--fill)', color: editPaymentMethod === 'bank' ? 'var(--bg)' : 'var(--t3)' }}>
+                    Bank
+                  </button>
+                  <button type="button"
+                    onClick={() => {
+                      setEditPaymentMethod('cash')
+                      updateStatus.mutate({ id: job.id, status: job.status, payment_method: 'cash' })
+                    }}
+                    className="flex-1 h-[42px] rounded-[14px] text-[13px] font-semibold transition-all"
+                    style={{ background: editPaymentMethod === 'cash' ? 'var(--t1)' : 'var(--fill)', color: editPaymentMethod === 'cash' ? 'var(--bg)' : 'var(--t3)' }}>
+                    Cash
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Save extra costs when changed - admin only */}
+            {isAdmin && editExtraCosts !== (job.extra_costs?.toString() || '') && (
               <button
                 onClick={() => {
                   updateStatus.mutate({ id: job.id, status: job.status, extra_costs: editExtraCosts ? parseFloat(editExtraCosts) : 0 })

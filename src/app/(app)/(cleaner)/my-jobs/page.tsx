@@ -5,7 +5,7 @@ import { useJobs } from '@/lib/hooks/use-jobs'
 import { useAuth } from '@/providers/auth-provider'
 import { useLocale } from '@/lib/i18n'
 import { STATUS_COLORS } from '@/lib/constants'
-import { formatCurrency, formatDate, getCleanerPayout, getCleanerHours } from '@/lib/utils'
+import { formatCurrency, formatDate, getCleanerTotalPayout, getCleanerHours } from '@/lib/utils'
 import { JobPanel } from '@/components/jobs/job-panel'
 import type { Job } from '@/lib/types'
 
@@ -25,7 +25,7 @@ export default function MyJobsPage() {
 
   const totalEarned = jobs.filter(j => j.status === 'done').reduce((s, j) => {
     const my = getMyAssignment(j)
-    return s + (my ? getCleanerPayout(my) : 0)
+    return s + (my ? getCleanerTotalPayout(my) : 0)
   }, 0)
   const totalHours = jobs.reduce((s, j) => {
     const my = getMyAssignment(j)
@@ -103,7 +103,7 @@ export default function MyJobsPage() {
               {/* Payout + status */}
               <div className="text-right shrink-0">
                 <div className="text-[15px] font-bold tracking-[-0.3px]" style={{ color: 'var(--t1)' }}>
-                  {formatCurrency(getMyAssignment(job) ? getCleanerPayout(getMyAssignment(job)!) : 0)}
+                  {formatCurrency(getMyAssignment(job) ? getCleanerTotalPayout(getMyAssignment(job)!) : 0)}
                 </div>
                 <div
                   className="text-[9px] font-bold uppercase tracking-[.05em] mt-0.5"

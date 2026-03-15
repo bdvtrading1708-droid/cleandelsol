@@ -92,7 +92,9 @@ export function getJobFinancials(job: JobLike) {
   const revenue = getJobRevenue(job)
   const payout = getJobPayout(job)
   const kmCost = getJobKm(job) * KM_RATE
-  const extraCosts = job.extra_costs || 0
+  // Sum extra_costs from per-cleaner entries + job-level (legacy)
+  const cleanerExtraCosts = (job.cleaners || []).reduce((s, jc) => s + (jc.extra_costs || 0), 0)
+  const extraCosts = cleanerExtraCosts + (job.extra_costs || 0)
   const totalCost = payout + kmCost + extraCosts
   const profit = revenue - totalCost
 
@@ -179,6 +181,7 @@ export function aggregateByCleaners(
           const cleanerPayoutTotal = getCleanerPayout(jc)
           payout += cleanerPayoutTotal
           kmCost += (jc.km_driven || 0) * KM_RATE
+          extraCosts += jc.extra_costs || 0
           hours += cleanerHours
 
           if (job.status === 'delivered') outstanding += cleanerPayoutTotal

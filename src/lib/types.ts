@@ -53,6 +53,7 @@ export interface JobCleaner {
   end_time?: string
   hours_worked?: number
   km_driven?: number
+  extra_costs?: number
   cleaner?: Pick<User, 'id' | 'name' | 'email' | 'phone' | 'avatar_url'>
 }
 

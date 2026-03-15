@@ -29,7 +29,7 @@ export function JobDeliveryForm({ job, open, onClose, onSuccess }: Props) {
 
   const [endTime, setEndTime] = useState(myAssignment?.end_time?.slice(0, 5) || job.end_time?.slice(0, 5) || '')
   const [km, setKm] = useState(myAssignment?.km_driven?.toString() || '')
-  const [extraCosts, setExtraCosts] = useState(job.extra_costs?.toString() || '')
+  const [extraCosts, setExtraCosts] = useState(myAssignment?.extra_costs?.toString() || '')
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bank'>(job.payment_method || 'bank')
   const [notes, setNotes] = useState(job.notes || '')
   const [files, setFiles] = useState<File[]>([])
@@ -77,7 +77,7 @@ export function JobDeliveryForm({ job, open, onClose, onSuccess }: Props) {
         hours_worked = diff > 0 ? diff / 60 : undefined
       }
 
-      // Update the cleaner's assignment
+      // Update the cleaner's assignment (including per-cleaner extra costs)
       if (myAssignment) {
         await new Promise<void>((resolve, reject) => {
           updateCleaner.mutate({
@@ -85,6 +85,7 @@ export function JobDeliveryForm({ job, open, onClose, onSuccess }: Props) {
             end_time: endTime,
             hours_worked,
             km_driven: parseFloat(km),
+            extra_costs: extraCosts ? parseFloat(extraCosts) : 0,
           }, {
             onSuccess: () => resolve(),
             onError: (err) => reject(err),
@@ -96,7 +97,6 @@ export function JobDeliveryForm({ job, open, onClose, onSuccess }: Props) {
       updateStatus.mutate({
         id: job.id,
         status: 'delivered',
-        extra_costs: extraCosts ? parseFloat(extraCosts) : 0,
         payment_method: paymentMethod,
         notes: notes || undefined,
       }, {
@@ -281,6 +281,54 @@ export function JobDeliveryForm({ job, open, onClose, onSuccess }: Props) {
               </div>
             )}
           </div>
+
+          {/* Live calculation summary */}
+          {endTime && km && (() => {
+            const uurtarief = myAssignment?.cleaner_payout || 0
+            let calcHours = 0
+            if (myStartTime && endTime) {
+              const [sh, sm] = myStartTime.split(':').map(Number)
+              const [eh, em] = endTime.split(':').map(Number)
+              const diff = (eh * 60 + em) - (sh * 60 + sm)
+              calcHours = diff > 0 ? diff / 60 : 0
+            }
+            const basePayout = uurtarief * (calcHours > 0 ? calcHours : 1)
+            const kmVal = parseFloat(km) || 0
+            const kmCost = kmVal * 0.10
+            const extra = parseFloat(extraCosts) || 0
+            const total = basePayout + kmCost + extra
+            return (
+              <div className="rounded-[14px] p-3.5" style={{ background: 'var(--fill)' }}>
+                <div className="text-[10px] font-bold uppercase tracking-[.08em] mb-2" style={{ color: 'var(--t3)' }}>
+                  Samenvatting
+                </div>
+                <div className="flex flex-col gap-1">
+                  <div className="flex justify-between text-[13px]" style={{ color: 'var(--t2)' }}>
+                    <span>{calcHours > 0 ? `${Math.round(calcHours * 100) / 100}u` : '1u'} × €{uurtarief}/uur</span>
+                    <span className="font-semibold" style={{ color: 'var(--t1)' }}>€{basePayout.toFixed(2)}</span>
+                  </div>
+                  {kmVal > 0 && (
+                    <div className="flex justify-between text-[13px]" style={{ color: 'var(--t2)' }}>
+                      <span>{kmVal}km × €0,10/km</span>
+                      <span className="font-semibold" style={{ color: 'var(--t1)' }}>€{kmCost.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {extra > 0 && (
+                    <div className="flex justify-between text-[13px]" style={{ color: 'var(--t2)' }}>
+                      <span>Extra kosten</span>
+                      <span className="font-semibold" style={{ color: 'var(--t1)' }}>€{extra.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="border-t mt-1 pt-1.5" style={{ borderColor: 'var(--border)' }}>
+                    <div className="flex justify-between text-[14px] font-bold" style={{ color: 'var(--t1)' }}>
+                      <span>Totaal uitbetaling</span>
+                      <span style={{ color: 'var(--green)' }}>€{total.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
 
           {/* Submit */}
           <button

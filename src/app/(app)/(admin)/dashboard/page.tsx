@@ -43,7 +43,7 @@ export default function DashboardPage() {
     ? jobs.filter(j => (j.cleaners || []).some(jc => jc.cleaner_id === selectedCleaner) || j.cleaner_id === selectedCleaner)
     : jobs
   const filtered = filterByPeriod(cleanerJobs, period)
-  const { revenue: rev, totalCost: costs, profit, margin } = aggregateFinancials(filtered)
+  const { revenue: rev, totalCost: costs, profit, margin, kmCost, extraCosts, payout } = aggregateFinancials(filtered)
 
   // 7-day chart
   const today = toDateStr(new Date())
@@ -138,7 +138,17 @@ export default function DashboardPage() {
         })()}
 
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-2 mb-4">
+        <div className="grid grid-cols-2 gap-2 mb-2">
+          <div className="rounded-[18px] p-3" style={{ background: 'rgba(255,255,255,0.09)' }}>
+            <div className="flex items-center gap-1.5 mb-1">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2L6 10M6 10L3 7M6 10L9 7" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <div className="text-[9px] font-semibold tracking-[.1em] uppercase" style={{ color: 'rgba(255,255,255,0.40)' }}>Kosten</div>
+            </div>
+            <div className="text-[20px] font-bold tracking-[-0.5px] leading-none text-white">{formatCurrency(costs)}</div>
+            <div className="text-[10px] font-semibold mt-0.5 text-red-400">
+              ↓ {formatCurrency(payout)} loon · {formatCurrency(kmCost + extraCosts)} overig
+            </div>
+          </div>
           <div className="rounded-[18px] p-3" style={{ background: 'rgba(255,255,255,0.09)' }}>
             <div className="text-[9px] font-semibold tracking-[.1em] uppercase mb-1" style={{ color: 'rgba(255,255,255,0.40)' }}>{t('profit')}</div>
             <div className="text-[20px] font-bold tracking-[-0.5px] leading-none text-white">{formatCurrency(profit)}</div>
@@ -146,11 +156,13 @@ export default function DashboardPage() {
               {margin > 0 ? '↑' : ''}{margin}%
             </div>
           </div>
-          <div className="rounded-[18px] p-3" style={{ background: 'rgba(255,255,255,0.09)' }}>
-            <div className="text-[9px] font-semibold tracking-[.1em] uppercase mb-1" style={{ color: 'rgba(255,255,255,0.40)' }}>{t('orders')}</div>
+        </div>
+        <div className="rounded-[18px] p-3 mb-4" style={{ background: 'rgba(255,255,255,0.09)' }}>
+          <div className="text-[9px] font-semibold tracking-[.1em] uppercase mb-1" style={{ color: 'rgba(255,255,255,0.40)' }}>{t('orders')}</div>
+          <div className="flex items-baseline gap-3">
             <div className="text-[20px] font-bold tracking-[-0.5px] leading-none text-white">{filtered.length}</div>
-            <div className="text-[10px] font-semibold mt-0.5" style={{ color: 'rgba(255,255,255,0.30)' }}>
-              {t('totalCost').split(' ')[0]}: {formatCurrency(costs)}
+            <div className="text-[10px] font-semibold" style={{ color: 'rgba(255,255,255,0.30)' }}>
+              {t('revenue').toLowerCase()}: {formatCurrency(rev)}
             </div>
           </div>
         </div>
