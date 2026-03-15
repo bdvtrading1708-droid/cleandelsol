@@ -3,7 +3,7 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useLocale } from '@/lib/i18n'
 import { useProperties } from '@/lib/hooks/use-properties'
-import { Phone, Mail, Building2, Camera } from 'lucide-react'
+import { Phone, Mail, Building2, Camera, MapPin, FileText } from 'lucide-react'
 import { CleanerAvatar } from '@/components/cleaners/cleaner-avatar'
 import { createClient } from '@/lib/supabase/client'
 import { useQueryClient } from '@tanstack/react-query'
@@ -133,6 +133,32 @@ export function PartnerPanel({ partner, open, onClose }: Props) {
                 {partner.email}
               </span>
             </a>
+          )}
+
+          {/* Address */}
+          {(partner.address || partner.city) && (
+            <div
+              className="flex items-center gap-2.5 rounded-[14px] p-3"
+              style={{ background: 'var(--fill)' }}
+            >
+              <MapPin size={16} style={{ color: 'var(--t3)' }} />
+              <span className="flex-1 text-[13px] font-medium" style={{ color: 'var(--t1)' }}>
+                {[partner.address, [partner.postal_code, partner.city].filter(Boolean).join(' '), partner.country].filter(Boolean).join(', ')}
+              </span>
+            </div>
+          )}
+
+          {/* Tax number */}
+          {partner.tax_number && (
+            <div
+              className="flex items-center gap-2.5 rounded-[14px] p-3"
+              style={{ background: 'var(--fill)' }}
+            >
+              <FileText size={16} style={{ color: 'var(--t3)' }} />
+              <span className="flex-1 text-[13px] font-medium" style={{ color: 'var(--t1)' }}>
+                NIF/CIF: {partner.tax_number}
+              </span>
+            </div>
           )}
 
           {/* Properties */}

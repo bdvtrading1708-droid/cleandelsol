@@ -20,6 +20,24 @@ export function usePartners() {
   })
 }
 
+export function useUpdatePartner() {
+  const supabase = createClient()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<Partner> & { id: string }) => {
+      const { error } = await supabase
+        .from('partners')
+        .update(updates)
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['partners'] })
+    },
+  })
+}
+
 export function useCreatePartner() {
   const supabase = createClient()
   const queryClient = useQueryClient()

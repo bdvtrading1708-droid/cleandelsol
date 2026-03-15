@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200" fill="none">
+  <!-- Wave with fin -->
+  <g stroke="#000" stroke-width="3" stroke-linecap="round" fill="none">
+    <!-- Fin/dolphin element -->
+    <path d="M175 75 C175 55, 195 40, 200 35 C205 40, 210 55, 210 75" />
+    <!-- Top wave -->
+    <path d="M140 80 C155 65, 175 75, 200 75 C225 75, 245 65, 260 80" />
+    <!-- Middle wave -->
+    <path d="M130 95 C150 80, 175 90, 200 90 C225 90, 250 80, 270 95" />
+    <!-- Bottom wave -->
+    <path d="M120 110 C145 95, 175 105, 200 105 C225 105, 255 95, 280 110" />
+  </g>
+  <!-- Text -->
+  <text x="200" y="160" text-anchor="middle" font-family="'Helvetica Neue', Arial, sans-serif" font-size="32" font-weight="300" letter-spacing="8" fill="#000">
+    CLEAN DEL SOL
+  </text>
+</svg>

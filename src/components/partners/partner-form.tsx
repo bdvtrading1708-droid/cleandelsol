@@ -22,6 +22,11 @@ export function PartnerForm({ open, onClose }: Props) {
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [notes, setNotes] = useState('')
+  const [address, setAddress] = useState('')
+  const [city, setCity] = useState('')
+  const [postalCode, setPostalCode] = useState('')
+  const [country, setCountry] = useState('España')
+  const [taxNumber, setTaxNumber] = useState('')
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -31,6 +36,11 @@ export function PartnerForm({ open, onClose }: Props) {
     setPhone('')
     setEmail('')
     setNotes('')
+    setAddress('')
+    setCity('')
+    setPostalCode('')
+    setCountry('España')
+    setTaxNumber('')
     setAvatarFile(null)
     setAvatarPreview(null)
   }
@@ -52,6 +62,11 @@ export function PartnerForm({ open, onClose }: Props) {
       phone: phone || undefined,
       email: email || undefined,
       notes: notes || undefined,
+      address: address || undefined,
+      city: city || undefined,
+      postal_code: postalCode || undefined,
+      country: country || undefined,
+      tax_number: taxNumber || undefined,
     }, {
       onSuccess: async (data) => {
         // Upload avatar if selected
@@ -174,6 +189,81 @@ export function PartnerForm({ open, onClose }: Props) {
               style={inputStyle}
               placeholder="email@voorbeeld.com"
             />
+          </div>
+
+          {/* Address */}
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+              Adres
+            </label>
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
+              style={inputStyle}
+              placeholder="Straat en huisnummer"
+            />
+          </div>
+
+          {/* City + Postal Code */}
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+                Postcode
+              </label>
+              <input
+                type="text"
+                value={postalCode}
+                onChange={(e) => setPostalCode(e.target.value)}
+                className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
+                style={inputStyle}
+                placeholder="29130"
+              />
+            </div>
+            <div className="flex-[2]">
+              <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+                Stad
+              </label>
+              <input
+                type="text"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
+                style={inputStyle}
+                placeholder="Stad"
+              />
+            </div>
+          </div>
+
+          {/* Country + Tax Number */}
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+                Land
+              </label>
+              <input
+                type="text"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
+                style={inputStyle}
+                placeholder="España"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+                NIF/CIF
+              </label>
+              <input
+                type="text"
+                value={taxNumber}
+                onChange={(e) => setTaxNumber(e.target.value)}
+                className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
+                style={inputStyle}
+                placeholder="B12345678"
+              />
+            </div>
           </div>
 
           {/* Notes */}

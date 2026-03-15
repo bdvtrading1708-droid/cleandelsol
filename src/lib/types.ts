@@ -20,6 +20,23 @@ export interface Partner {
   email?: string
   notes?: string
   avatar_url?: string
+  address?: string
+  city?: string
+  postal_code?: string
+  country?: string
+  tax_number?: string
+}
+
+export interface Invoice {
+  id: number
+  invoice_number: string
+  partner_id: string
+  created_at: string
+  total_amount: number
+  pdf_url?: string
+  status: 'sent' | 'paid'
+  partner?: Partner
+  jobs?: Job[]
 }
 
 export interface Property {
