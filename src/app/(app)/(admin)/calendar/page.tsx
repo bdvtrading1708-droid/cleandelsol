@@ -12,9 +12,6 @@ import type { Job } from '@/lib/types'
 
 function getWeekDates(date: Date): Date[] {
   const d = new Date(date)
-  const day = d.getDay()
-  const diff = day === 0 ? -6 : 1 - day // Monday = start
-  d.setDate(d.getDate() + diff)
   const week: Date[] = []
   for (let i = 0; i < 7; i++) {
     week.push(new Date(d))
@@ -93,10 +90,11 @@ export default function CalendarPage() {
     ? (() => {
         const start = weekDates[0]
         const end = weekDates[6]
+        const startDayName = dayNames[start.getDay() === 0 ? 6 : start.getDay() - 1]
         if (start.getMonth() === end.getMonth()) {
-          return `${start.getDate()} - ${end.getDate()} ${monthNames[start.getMonth()]} ${start.getFullYear()}`
+          return `${startDayName} ${start.getDate()} - ${end.getDate()} ${monthNames[start.getMonth()]} ${start.getFullYear()}`
         }
-        return `${start.getDate()} ${monthNames[start.getMonth()]} - ${end.getDate()} ${monthNames[end.getMonth()]} ${end.getFullYear()}`
+        return `${startDayName} ${start.getDate()} ${monthNames[start.getMonth()]} - ${end.getDate()} ${monthNames[end.getMonth()]} ${end.getFullYear()}`
       })()
     : `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`
 
@@ -200,7 +198,7 @@ export default function CalendarPage() {
                       className="text-[13px] font-bold"
                       style={{ color: isToday ? 'var(--bg)' : 'var(--t1)' }}
                     >
-                      {dayNames[i]}
+                      {dayNames[date.getDay() === 0 ? 6 : date.getDay() - 1]}
                     </span>
                     <span
                       className="text-[13px]"
