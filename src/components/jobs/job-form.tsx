@@ -319,8 +319,8 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
             {showPropertyDropdown && (
               <div
                 ref={propertyDropdownRef}
-                className="absolute left-0 right-0 mt-1.5 rounded-[14px] overflow-hidden max-h-[240px] overflow-y-auto z-10"
-                style={{ background: 'var(--inp)', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}
+                className="absolute left-0 right-0 mt-1.5 rounded-[14px] overflow-hidden max-h-[240px] overflow-y-auto z-50"
+                style={{ background: 'var(--bg2)', border: '1px solid var(--border)', boxShadow: '0 8px 30px rgba(0,0,0,0.25)' }}
               >
                 {filteredProperties.map(p => (
                   <button
