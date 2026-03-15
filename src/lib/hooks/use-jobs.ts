@@ -66,7 +66,7 @@ export function useCreateJob() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (jobs: { property_id: string; cleaner_id: string; date: string; start_time?: string; end_time?: string; client_price?: number; cleaner_payout?: number; km_driven?: number; notes?: string } | { property_id: string; cleaner_id: string; date: string; start_time?: string; end_time?: string; client_price?: number; cleaner_payout?: number; km_driven?: number; notes?: string }[]) => {
+    mutationFn: async (jobs: { property_id: string; cleaner_id: string; date: string; start_time?: string; end_time?: string; client_price?: number; cleaner_payout?: number; hours_worked?: number; km_driven?: number; notes?: string } | { property_id: string; cleaner_id: string; date: string; start_time?: string; end_time?: string; client_price?: number; cleaner_payout?: number; hours_worked?: number; km_driven?: number; notes?: string }[]) => {
       const rows = (Array.isArray(jobs) ? jobs : [jobs]).map(j => ({ ...j, status: 'planned' as const }))
       const { error } = await supabase.from('jobs').insert(rows)
       if (error) throw error

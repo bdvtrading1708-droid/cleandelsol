@@ -31,6 +31,23 @@ export function JobForm({ open, onClose }: Props) {
   const [notes, setNotes] = useState('')
   const [repeatDays, setRepeatDays] = useState(1)
 
+  // Calculate hours from start/end time
+  const calcHours = (start: string, end: string): number => {
+    if (!start || !end) return 0
+    const [sh, sm] = start.split(':').map(Number)
+    const [eh, em] = end.split(':').map(Number)
+    const diff = (eh * 60 + em) - (sh * 60 + sm)
+    return diff > 0 ? diff / 60 : 0
+  }
+
+  const hours = calcHours(startTime, endTime)
+
+  // Calculate totals: rate × hours
+  const priceNum = parseFloat(clientPrice) || 0
+  const payoutNum = parseFloat(cleanerPayout) || 0
+  const totalPrice = hours > 0 ? priceNum * hours : priceNum
+  const totalPayout = hours > 0 ? payoutNum * hours : payoutNum
+
   const reset = () => {
     setPropertyId('')
     setCleanerId('')
@@ -47,6 +64,7 @@ export function JobForm({ open, onClose }: Props) {
   const handleSubmit = () => {
     if (!propertyId || !cleanerId || !date) return
 
+    // Store the hourly RATE — display pages calculate total (rate × hours)
     const baseJob = {
       property_id: propertyId,
       cleaner_id: cleanerId,
@@ -55,6 +73,7 @@ export function JobForm({ open, onClose }: Props) {
       end_time: endTime || undefined,
       client_price: clientPrice ? parseFloat(clientPrice) : undefined,
       cleaner_payout: cleanerPayout ? parseFloat(cleanerPayout) : undefined,
+      hours_worked: hours > 0 ? hours : undefined,
       km_driven: kmDriven ? parseFloat(kmDriven) : undefined,
       notes: notes || undefined,
     }
@@ -75,28 +94,31 @@ export function JobForm({ open, onClose }: Props) {
     }
   }
 
-  // Auto-fill price when property selected
+  // Auto-fill rate when property selected
   const handlePropertyChange = (id: string) => {
     setPropertyId(id)
     const prop = properties.find(p => p.id === id)
-    if (prop?.default_price && !clientPrice) {
-      setClientPrice(prop.default_price.toString())
-    }
-    if (prop?.fixed_price && !clientPrice) {
+    if (prop?.fixed_price) {
       setClientPrice(prop.fixed_price.toString())
+    } else if (prop?.default_price) {
+      setClientPrice(prop.default_price.toString())
     }
   }
 
-  // Auto-fill payout when cleaner selected
+  // Auto-fill rate when cleaner selected
   const handleCleanerChange = (id: string) => {
     setCleanerId(id)
     const cl = cleaners.find(c => c.id === id)
-    if (cl?.hourly_rate && !cleanerPayout) {
+    if (cl?.hourly_rate) {
       setCleanerPayout(cl.hourly_rate.toString())
     }
   }
 
   const inputStyle = { background: 'var(--inp)', color: 'var(--t1)' }
+
+  // Check if the selected property uses fixed pricing
+  const selectedProp = properties.find(p => p.id === propertyId)
+  const isFixedPrice = selectedProp?.pricing_type === 'fixed' || (selectedProp?.fixed_price && !selectedProp?.default_price)
 
   return (
     <Sheet open={open} onOpenChange={(o) => { if (!o) { reset(); onClose() } }}>
@@ -194,7 +216,7 @@ export function JobForm({ open, onClose }: Props) {
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
-                {t('price')} (€)
+                {isFixedPrice ? `${t('price')} (€)` : `${t('price')}/uur (€)`}
               </label>
               <input
                 type="number"
@@ -208,7 +230,7 @@ export function JobForm({ open, onClose }: Props) {
             </div>
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
-                {t('payout')} (€)
+                {t('payout')}/uur (€)
               </label>
               <input
                 type="number"
@@ -221,6 +243,30 @@ export function JobForm({ open, onClose }: Props) {
               />
             </div>
           </div>
+
+          {/* Totaal overview - shown when hours are calculated */}
+          {hours > 0 && (priceNum > 0 || payoutNum > 0) && (
+            <div className="rounded-[14px] p-3 flex flex-col gap-1" style={{ background: 'var(--inp)' }}>
+              <div className="flex justify-between items-center">
+                <span className="text-[12px] font-medium" style={{ color: 'var(--t3)' }}>
+                  {hours}u × €{priceNum}
+                </span>
+                <span className="text-[15px] font-bold" style={{ color: 'var(--t1)' }}>
+                  Totaal: €{totalPrice.toFixed(2).replace(/\.00$/, '')}
+                </span>
+              </div>
+              {payoutNum > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-[12px] font-medium" style={{ color: 'var(--t3)' }}>
+                    {hours}u × €{payoutNum}
+                  </span>
+                  <span className="text-[13px] font-semibold" style={{ color: 'var(--t2)' }}>
+                    Uitbetaling: €{totalPayout.toFixed(2).replace(/\.00$/, '')}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* KM driven */}
           <div>

@@ -5,7 +5,7 @@ import { useJobs } from '@/lib/hooks/use-jobs'
 import { useCleaners } from '@/lib/hooks/use-cleaners'
 import { usePartners } from '@/lib/hooks/use-partners'
 import { useLocale } from '@/lib/i18n'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, getJobRevenue, getJobPayout } from '@/lib/utils'
 import TopPartnersByRevenue from '@/components/financial/top-partners'
 
 type Period = 'maand' | 'jaar' | 'alles'
@@ -32,17 +32,17 @@ export default function FinancialPage() {
   })()
 
   const KM_RATE = 0.10
-  const totalRev = filtered.reduce((s, j) => s + (j.client_price || 0), 0)
-  const totalCost = filtered.reduce((s, j) => s + (j.cleaner_payout || 0) + (j.km_driven || 0) * KM_RATE, 0)
+  const totalRev = filtered.reduce((s, j) => s + getJobRevenue(j), 0)
+  const totalCost = filtered.reduce((s, j) => s + getJobPayout(j) + (j.km_driven || 0) * KM_RATE, 0)
   const netProfit = totalRev - totalCost
   const margin = totalRev > 0 ? Math.round((netProfit / totalRev) * 100) : 0
 
   // Per-cleaner breakdown
   const perCleaner = cleaners.map(c => {
     const cJobs = filtered.filter(j => j.cleaner_id === c.id)
-    const rev = cJobs.reduce((s, j) => s + (j.client_price || 0), 0)
-    const cost = cJobs.reduce((s, j) => s + (j.cleaner_payout || 0) + (j.km_driven || 0) * KM_RATE, 0)
-    const outstanding = cJobs.filter(j => j.status === 'delivered').reduce((s, j) => s + (j.cleaner_payout || 0), 0)
+    const rev = cJobs.reduce((s, j) => s + getJobRevenue(j), 0)
+    const cost = cJobs.reduce((s, j) => s + getJobPayout(j) + (j.km_driven || 0) * KM_RATE, 0)
+    const outstanding = cJobs.filter(j => j.status === 'delivered').reduce((s, j) => s + getJobPayout(j), 0)
     return { cleaner: c, jobCount: cJobs.length, rev, cost, profit: rev - cost, outstanding }
   }).filter(c => c.jobCount > 0).sort((a, b) => b.rev - a.rev)
 

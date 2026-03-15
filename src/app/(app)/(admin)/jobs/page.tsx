@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useJobs } from '@/lib/hooks/use-jobs'
 import { useLocale } from '@/lib/i18n'
 import { STATUS_COLORS } from '@/lib/constants'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, getJobRevenue, getJobPayout, getJobHours } from '@/lib/utils'
 import { Plus } from 'lucide-react'
 import { JobPanel } from '@/components/jobs/job-panel'
 import { JobForm } from '@/components/jobs/job-form'
@@ -93,15 +93,15 @@ export default function JobsPage() {
               <div className="grid grid-cols-4 gap-2">
                 <div className="rounded-[12px] p-2 text-center" style={{ background: 'var(--fill)' }}>
                   <div className="text-[9px] font-semibold uppercase tracking-[.08em] mb-0.5" style={{ color: 'var(--t3)' }}>{t('price')}</div>
-                  <div className="text-[14px] font-bold tracking-[-0.3px]" style={{ color: 'var(--t1)' }}>{formatCurrency(job.client_price || 0)}</div>
+                  <div className="text-[14px] font-bold tracking-[-0.3px]" style={{ color: 'var(--t1)' }}>{formatCurrency(getJobRevenue(job))}</div>
                 </div>
                 <div className="rounded-[12px] p-2 text-center" style={{ background: 'var(--fill)' }}>
                   <div className="text-[9px] font-semibold uppercase tracking-[.08em] mb-0.5" style={{ color: 'var(--t3)' }}>{t('payout')}</div>
-                  <div className="text-[14px] font-bold tracking-[-0.3px]" style={{ color: 'var(--t1)' }}>{formatCurrency(job.cleaner_payout || 0)}</div>
+                  <div className="text-[14px] font-bold tracking-[-0.3px]" style={{ color: 'var(--t1)' }}>{formatCurrency(getJobPayout(job))}</div>
                 </div>
                 <div className="rounded-[12px] p-2 text-center" style={{ background: 'var(--fill)' }}>
                   <div className="text-[9px] font-semibold uppercase tracking-[.08em] mb-0.5" style={{ color: 'var(--t3)' }}>{t('hours')}</div>
-                  <div className="text-[14px] font-bold tracking-[-0.3px]" style={{ color: 'var(--t1)' }}>{job.hours_worked ?? '—'}</div>
+                  <div className="text-[14px] font-bold tracking-[-0.3px]" style={{ color: 'var(--t1)' }}>{getJobHours(job) > 1 ? getJobHours(job) : (job.hours_worked ?? '—')}</div>
                 </div>
                 <div className="rounded-[12px] p-2 text-center" style={{ background: 'var(--fill)' }}>
                   <div className="text-[9px] font-semibold uppercase tracking-[.08em] mb-0.5" style={{ color: 'var(--t3)' }}>{t('km')}</div>

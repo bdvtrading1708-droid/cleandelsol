@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import { isToday, startOfWeek, format } from 'date-fns'
 import { useLocale } from '@/lib/i18n'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, getJobRevenue } from '@/lib/utils'
 import type { Job, Partner } from '@/lib/types'
 
 type PartnerPeriod = 'today' | 'week' | 'maand' | 'jaar' | 'alles'
@@ -41,7 +41,7 @@ export default function TopPartnersByRevenue({ jobs, partners }: { jobs: Job[]; 
       const pid = job.property?.partner_id
       if (!pid) continue
       const existing = revenueMap.get(pid) || { revenue: 0, jobCount: 0 }
-      existing.revenue += job.client_price || 0
+      existing.revenue += getJobRevenue(job)
       existing.jobCount += 1
       revenueMap.set(pid, existing)
     }
