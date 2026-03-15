@@ -50,10 +50,15 @@ export function getCleanerHours(jc: { start_time?: string; end_time?: string; ho
   return calcHoursFromTimes(jc.start_time, jc.end_time, jc.hours_worked)
 }
 
-/** Total revenue for a job: fixed price OR hourly rate × hours (client pays one price regardless of cleaner count) */
+/** Total revenue for a job: fixed price OR hourly rate × total cleaner hours */
 export function getJobRevenue(job: { client_price?: number; start_time?: string; end_time?: string; hours_worked?: number; property?: { pricing_type?: string } | null; cleaners?: JobCleaner[] }): number {
   if (job.property?.pricing_type === 'fixed') return job.client_price || 0
-  // For revenue, always use job-level times (what the client pays), not individual cleaner times
+  // For hourly jobs with multiple cleaners, revenue = price × total cleaner hours
+  if (job.cleaners && job.cleaners.length > 0) {
+    const totalHours = job.cleaners.reduce((sum, jc) => sum + getCleanerHours(jc), 0)
+    return (job.client_price || 0) * totalHours
+  }
+  // Legacy fallback: single cleaner, use job-level times
   const hours = calcHoursFromTimes(job.start_time, job.end_time, job.hours_worked)
   return (job.client_price || 0) * hours
 }

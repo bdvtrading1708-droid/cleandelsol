@@ -78,7 +78,10 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
 
   // Calculate totals
   const priceNum = parseFloat(clientPrice) || 0
-  const totalPrice = isFixedPrice ? priceNum : (hours > 0 ? priceNum * hours : priceNum)
+  const totalCleanerHours = selectedCleaners.length > 0
+    ? selectedCleaners.reduce((sum, sc) => sum + calcHours(sc.start_time || startTime, sc.end_time || endTime), 0)
+    : hours
+  const totalPrice = isFixedPrice ? priceNum : (totalCleanerHours > 0 ? priceNum * totalCleanerHours : priceNum)
   const totalPayout = selectedCleaners.reduce((sum, sc) => {
     const payoutNum = parseFloat(sc.payout) || 0
     const cleanerHours = calcHours(sc.start_time || startTime, sc.end_time || endTime)
@@ -410,7 +413,7 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
             <div className="rounded-[14px] p-3 flex flex-col gap-1" style={{ background: 'var(--inp)' }}>
               <div className="flex justify-between items-center">
                 <span className="text-[12px] font-medium" style={{ color: 'var(--t3)' }}>
-                  {isFixedPrice ? `Vast tarief` : `${hours}u × €${priceNum}`}
+                  {isFixedPrice ? `Vast tarief` : `${totalCleanerHours}u × €${priceNum}`}
                 </span>
                 <span className="text-[15px] font-bold" style={{ color: 'var(--t1)' }}>
                   Omzet: €{totalPrice.toFixed(2).replace(/\.00$/, '')}
