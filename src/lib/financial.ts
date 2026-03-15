@@ -224,6 +224,14 @@ export function aggregateByCleaners(
   })
 }
 
+// ─── Month filtering ────────────────────────────────────────────────────────
+
+/** Filter items to a specific month (0-11) and year */
+export function filterByMonth<T extends { date?: string }>(items: T[], month: number, year: number): T[] {
+  const prefix = `${year}-${String(month + 1).padStart(2, '0')}`
+  return items.filter(item => item.date?.startsWith(prefix))
+}
+
 // ─── Helper: today string for comparisons ────────────────────────────────────
 
 export { toDateStr, getMonday }

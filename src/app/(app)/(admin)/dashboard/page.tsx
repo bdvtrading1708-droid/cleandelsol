@@ -3,28 +3,12 @@
 import { useJobs } from '@/lib/hooks/use-jobs'
 import { useCleaners } from '@/lib/hooks/use-cleaners'
 import { useLocale } from '@/lib/i18n'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { formatCurrency, getJobTotalRevenue } from '@/lib/utils'
 import { STATUS_COLORS, getCleanerColor } from '@/lib/constants'
 import { CleanerAvatar } from '@/components/cleaners/cleaner-avatar'
-import { filterByPeriod, aggregateFinancials, toDateStr, type Period } from '@/lib/financial'
-
-function smoothPath(pts: { x: number; y: number }[]): string {
-  if (pts.length < 2) return ''
-  const d: string[] = [`M ${pts[0].x},${pts[0].y}`]
-  for (let i = 0; i < pts.length - 1; i++) {
-    const p0 = pts[i - 1] || { x: 2 * pts[0].x - pts[1].x, y: 2 * pts[0].y - pts[1].y }
-    const p1 = pts[i]
-    const p2 = pts[i + 1]
-    const p3 = pts[i + 2] || { x: 2 * p2.x - p1.x, y: 2 * p2.y - p1.y }
-    const cp1x = p1.x + (p2.x - p0.x) / 6
-    const cp1y = p1.y + (p2.y - p0.y) / 6
-    const cp2x = p2.x - (p3.x - p1.x) / 6
-    const cp2y = p2.y - (p3.y - p1.y) / 6
-    d.push(`C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`)
-  }
-  return d.join(' ')
-}
+import { filterByPeriod, filterByMonth, aggregateFinancials, toDateStr, getMonday, type Period } from '@/lib/financial'
+import { RevenueChart, type ChartDataPoint } from '@/components/dashboard/revenue-chart'
 
 export default function DashboardPage() {
   const { data: jobs = [], isLoading } = useJobs()
@@ -33,33 +17,145 @@ export default function DashboardPage() {
   const [period, setPeriod] = useState<Period>('week')
   const [agendaPeriod, setAgendaPeriod] = useState<Period>('maand')
   const [selectedCleaner, setSelectedCleaner] = useState<string | null>(null)
+  const [chartMonth, setChartMonth] = useState(new Date().getMonth())
+  const [chartYear, setChartYear] = useState(new Date().getFullYear())
+
+  // Filter by cleaner first
+  const cleanerJobs = selectedCleaner
+    ? jobs.filter(j => (j.cleaners || []).some(jc => jc.cleaner_id === selectedCleaner) || j.cleaner_id === selectedCleaner)
+    : jobs
+
+  // For maand period, use the selected month; for others, use filterByPeriod
+  const filtered = period === 'maand'
+    ? filterByMonth(cleanerJobs, chartMonth, chartYear)
+    : filterByPeriod(cleanerJobs, period)
+  const { revenue: rev, totalCost: costs, profit, margin, kmCost, extraCosts, payout } = aggregateFinancials(filtered)
+
+  const today = toDateStr(new Date())
+  const now = new Date()
+  const days = tArray('days')
+  const months = tArray('months')
+
+  // Build chart data based on period
+  const chartData: ChartDataPoint[] = useMemo(() => {
+    if (period === 'dag') {
+      // Show hours of today: 06, 08, 10, 12, 14, 16, 18, 20
+      const slots = [6, 8, 10, 12, 14, 16, 18, 20]
+      const todayJobs = cleanerJobs.filter(j => j.date === today)
+      const currentHour = now.getHours()
+      return slots.map((hour, i) => {
+        const nextHour = slots[i + 1] ?? 22
+        const slotJobs = todayJobs.filter(j => {
+          if (!j.start_time) return false
+          const h = parseInt(j.start_time.split(':')[0], 10)
+          return h >= hour && h < nextHour
+        })
+        return {
+          label: `${String(hour).padStart(2, '0')}:00`,
+          value: slotJobs.reduce((s, j) => s + getJobTotalRevenue(j), 0),
+          isCurrent: currentHour >= hour && currentHour < nextHour,
+          showLabel: true,
+        }
+      })
+    }
+
+    if (period === 'week') {
+      const monday = getMonday(now)
+      return Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(monday)
+        d.setDate(monday.getDate() + i)
+        const ds = toDateStr(d)
+        const dayJobs = cleanerJobs.filter(j => j.date === ds)
+        return {
+          label: days[i],
+          value: dayJobs.reduce((s, j) => s + getJobTotalRevenue(j), 0),
+          isCurrent: ds === today,
+          showLabel: true,
+        }
+      })
+    }
+
+    if (period === 'maand') {
+      const daysInMonth = new Date(chartYear, chartMonth + 1, 0).getDate()
+      const showLabelDays = new Set([1, 5, 10, 15, 20, 25, daysInMonth])
+      const isCurrentMonth = chartMonth === now.getMonth() && chartYear === now.getFullYear()
+      return Array.from({ length: daysInMonth }, (_, i) => {
+        const dayNum = i + 1
+        const ds = `${chartYear}-${String(chartMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`
+        const dayJobs = cleanerJobs.filter(j => j.date === ds)
+        return {
+          label: String(dayNum),
+          value: dayJobs.reduce((s, j) => s + getJobTotalRevenue(j), 0),
+          isCurrent: isCurrentMonth && dayNum === now.getDate(),
+          showLabel: showLabelDays.has(dayNum),
+        }
+      })
+    }
+
+    if (period === 'jaar') {
+      const currentYear = now.getFullYear()
+      return Array.from({ length: 12 }, (_, i) => {
+        const prefix = `${currentYear}-${String(i + 1).padStart(2, '0')}`
+        const monthJobs = cleanerJobs.filter(j => j.date?.startsWith(prefix))
+        return {
+          label: months[i]?.slice(0, 3) || '',
+          value: monthJobs.reduce((s, j) => s + getJobTotalRevenue(j), 0),
+          isCurrent: i === now.getMonth() && currentYear === now.getFullYear(),
+          showLabel: true,
+        }
+      })
+    }
+
+    // alles - group by month from first to last data
+    const allDates = cleanerJobs.map(j => j.date).filter(Boolean).sort()
+    if (allDates.length === 0) {
+      return [{ label: months[now.getMonth()]?.slice(0, 3) || '', value: 0, isCurrent: true, showLabel: true }]
+    }
+    const firstDate = allDates[0]!
+    const lastDate = allDates[allDates.length - 1]!
+    const firstYear = parseInt(firstDate.slice(0, 4))
+    const firstMonth = parseInt(firstDate.slice(5, 7)) - 1
+    const lastYear = parseInt(lastDate.slice(0, 4))
+    const lastMonth = parseInt(lastDate.slice(5, 7)) - 1
+
+    const points: ChartDataPoint[] = []
+    let y = firstYear, m = firstMonth
+    while (y < lastYear || (y === lastYear && m <= lastMonth)) {
+      const prefix = `${y}-${String(m + 1).padStart(2, '0')}`
+      const monthJobs = cleanerJobs.filter(j => j.date?.startsWith(prefix))
+      const totalMonths = points.length + ((lastYear - firstYear) * 12 + lastMonth - firstMonth + 1) - points.length
+      points.push({
+        label: `${months[m]?.slice(0, 3)}'${String(y).slice(2)}`,
+        value: monthJobs.reduce((s, j) => s + getJobTotalRevenue(j), 0),
+        isCurrent: m === now.getMonth() && y === now.getFullYear(),
+        showLabel: true, // will thin out below
+      })
+      m++
+      if (m > 11) { m = 0; y++ }
+    }
+    // Thin labels if too many
+    if (points.length > 8) {
+      const step = Math.ceil(points.length / 6)
+      points.forEach((p, i) => { p.showLabel = i === 0 || i === points.length - 1 || i % step === 0 })
+    }
+    return points
+  }, [period, cleanerJobs, today, chartMonth, chartYear, days, months, now.getDate(), now.getMonth(), now.getFullYear()])
 
   if (isLoading) {
     return <div className="flex items-center justify-center py-20" style={{ color: 'var(--t3)' }}>{t('loading')}</div>
   }
 
-  // Filter by cleaner first, then by period
-  const cleanerJobs = selectedCleaner
-    ? jobs.filter(j => (j.cleaners || []).some(jc => jc.cleaner_id === selectedCleaner) || j.cleaner_id === selectedCleaner)
-    : jobs
-  const filtered = filterByPeriod(cleanerJobs, period)
-  const { revenue: rev, totalCost: costs, profit, margin, kmCost, extraCosts, payout } = aggregateFinancials(filtered)
-
-  // 7-day chart
-  const today = toDateStr(new Date())
-  const days = tArray('days')
-  const bars = []
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date()
-    d.setDate(d.getDate() - i)
-    const ds = toDateStr(d)
-    const dayJobs = cleanerJobs.filter(j => j.date === ds)
-    const dow = d.getDay() === 0 ? 6 : d.getDay() - 1
-    bars.push({ label: days[dow], value: dayJobs.reduce((s, j) => s + getJobTotalRevenue(j), 0), isToday: ds === today })
+  // Month navigation handlers
+  const prevMonth = () => {
+    if (chartMonth === 0) { setChartMonth(11); setChartYear(chartYear - 1) }
+    else setChartMonth(chartMonth - 1)
   }
-  const maxBar = Math.max(1, ...bars.map(b => b.value))
+  const nextMonth = () => {
+    if (chartMonth === 11) { setChartMonth(0); setChartYear(chartYear + 1) }
+    else setChartMonth(chartMonth + 1)
+  }
 
-  // Agenda - only show today and future jobs
+  // Agenda
   const agendaJobs = filterByPeriod(jobs, agendaPeriod)
     .filter(j => j.date != null && j.date >= today)
     .sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.start_time || '').localeCompare(b.start_time || ''))
@@ -71,12 +167,17 @@ export default function DashboardPage() {
 
   const periods: Period[] = ['dag', 'week', 'maand', 'jaar', 'alles']
 
+  // Hero subtitle
+  const periodLabel = period === 'maand'
+    ? `${months[chartMonth]} ${chartYear}`
+    : t(period)
+
   return (
     <>
       {/* Hero Widget */}
       <div className="rounded-[22px] p-[22px] mt-3.5 relative overflow-hidden" style={{ background: 'var(--hero-bg)', boxShadow: 'var(--shadow-md)' }}>
         <div className="text-[11px] font-medium mb-1" style={{ color: 'rgba(255,255,255,0.45)' }}>
-          {selectedCleaner ? cleaners.find(c => c.id === selectedCleaner)?.name?.split(' ')[0] : t('allCl')} · {t(period)}
+          {selectedCleaner ? cleaners.find(c => c.id === selectedCleaner)?.name?.split(' ')[0] : t('allCl')} · {periodLabel}
         </div>
         <div className="text-[44px] font-bold tracking-[-2px] leading-none mb-0.5 text-white">
           {formatCurrency(rev)}
@@ -93,49 +194,44 @@ export default function DashboardPage() {
                 background: period === p ? 'rgba(255,255,255,0.18)' : 'transparent',
                 color: period === p ? '#fff' : 'rgba(255,255,255,0.45)',
               }}
-              onClick={() => setPeriod(p)}
+              onClick={() => {
+                setPeriod(p)
+                if (p === 'maand') {
+                  setChartMonth(now.getMonth())
+                  setChartYear(now.getFullYear())
+                }
+              }}
             >
               {t(p)}
             </button>
           ))}
         </div>
 
+        {/* Month selector (only for maand) */}
+        {period === 'maand' && (
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <button
+              onClick={prevMonth}
+              className="w-7 h-7 rounded-full flex items-center justify-center"
+              style={{ background: 'rgba(255,255,255,0.10)' }}
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7.5 2.5L4.5 6L7.5 9.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+            <div className="text-[12px] font-semibold text-white min-w-[120px] text-center">
+              {months[chartMonth]} {chartYear}
+            </div>
+            <button
+              onClick={nextMonth}
+              className="w-7 h-7 rounded-full flex items-center justify-center"
+              style={{ background: 'rgba(255,255,255,0.10)' }}
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L7.5 6L4.5 9.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+          </div>
+        )}
+
         {/* Chart */}
-        {(() => {
-          const cw = 200, ch = 44, pt = 4, pb = 4, uh = ch - pt - pb
-          const points = bars.map((b, i) => ({
-            x: (i / (bars.length - 1)) * cw,
-            y: pt + uh - (b.value / maxBar) * uh,
-          }))
-          const linePath = smoothPath(points)
-          const curvePart = linePath.indexOf('C') >= 0 ? linePath.slice(linePath.indexOf('C')) : `L ${points[points.length - 1].x},${points[points.length - 1].y}`
-          const fillPath = `M 0,${ch} L ${points[0].x},${points[0].y} ${curvePart} L ${cw},${ch} Z`
-          const todayIdx = bars.findIndex(b => b.isToday)
-          return (
-            <>
-              <svg viewBox={`0 0 ${cw} ${ch}`} className="w-full h-[52px] mb-1" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="heroChartGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="rgba(80,200,120,0.25)" />
-                    <stop offset="100%" stopColor="rgba(80,200,120,0)" />
-                  </linearGradient>
-                </defs>
-                <path d={fillPath} fill="url(#heroChartGrad)" />
-                <path d={linePath} fill="none" stroke="rgba(80,200,120,0.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                {todayIdx >= 0 && (
-                  <circle cx={points[todayIdx].x} cy={points[todayIdx].y} r="2.5" fill="rgba(80,200,120,0.9)" />
-                )}
-              </svg>
-              <div className="flex justify-between mb-4">
-                {bars.map((b, i) => (
-                  <div key={i} className="text-[7px] font-semibold text-center" style={{ color: b.isToday ? 'rgba(255,255,255,0.50)' : 'rgba(255,255,255,0.30)' }}>
-                    {b.label}
-                  </div>
-                ))}
-              </div>
-            </>
-          )
-        })()}
+        <RevenueChart data={chartData} />
 
         {/* Stats */}
         <div className="grid grid-cols-2 gap-2 mb-2">
@@ -228,7 +324,6 @@ export default function DashboardPage() {
           const d = new Date(date + 'T00:00:00')
           const isToday = date === today
           const dow = d.getDay() === 0 ? 6 : d.getDay() - 1
-          const months = tArray('months')
           const dayLabel = isToday
             ? t('today')
             : `${days[dow]} ${d.getDate()} ${months[d.getMonth()]?.slice(0, 3)}`
