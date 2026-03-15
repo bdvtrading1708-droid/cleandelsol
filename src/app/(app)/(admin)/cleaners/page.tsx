@@ -139,13 +139,82 @@ export default function CleanersPage() {
           setSelectedCleaner(null)
           setTimeout(() => setEditCleaner(c), 300)
         }}
+        onPasswordReset={(creds) => {
+          setSelectedCleaner(null)
+          setTimeout(() => setCreatedCreds(creds), 300)
+        }}
       />
 
       <CleanerForm
         open={showForm || !!editCleaner}
         onClose={() => { setShowForm(false); setEditCleaner(null) }}
         editCleaner={editCleaner}
+        onCreated={(creds) => setCreatedCreds(creds)}
       />
+
+      {/* Credentials dialog */}
+      <Sheet open={!!createdCreds} onOpenChange={(o) => { if (!o) { setCreatedCreds(null); setCopied(false) } }}>
+        <SheetContent
+          side="bottom"
+          className="rounded-t-[24px] p-0 border-0"
+          style={{ background: 'var(--bg2)' }}
+        >
+          <SheetHeader className="px-5 pt-5 pb-0">
+            <SheetTitle className="text-[20px] font-bold tracking-[-0.5px] text-left" style={{ color: 'var(--t1)' }}>
+              {t('accCreated')}
+            </SheetTitle>
+          </SheetHeader>
+          {createdCreds && (
+            <div className="px-5 pb-5 mt-4 flex flex-col gap-3">
+              <div className="rounded-[14px] p-4" style={{ background: 'var(--fill)' }}>
+                <div className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1" style={{ color: 'var(--t3)' }}>
+                  Naam
+                </div>
+                <div className="text-[15px] font-medium" style={{ color: 'var(--t1)' }}>
+                  {createdCreds.name}
+                </div>
+              </div>
+              <div className="rounded-[14px] p-4" style={{ background: 'var(--fill)' }}>
+                <div className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1" style={{ color: 'var(--t3)' }}>
+                  E-mail
+                </div>
+                <div className="text-[15px] font-medium" style={{ color: 'var(--t1)' }}>
+                  {createdCreds.email}
+                </div>
+              </div>
+              <div className="rounded-[14px] p-4" style={{ background: 'var(--fill)' }}>
+                <div className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1" style={{ color: 'var(--t3)' }}>
+                  {t('pass')}
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="text-[15px] font-mono font-medium flex-1" style={{ color: 'var(--t1)' }}>
+                    {createdCreds.password}
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(createdCreds.password)
+                      setCopied(true)
+                      toast.success(t('copied') || 'Gekopieerd!')
+                      setTimeout(() => setCopied(false), 2000)
+                    }}
+                    className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                    style={{ background: 'var(--card)' }}
+                  >
+                    {copied ? <Check size={14} style={{ color: 'var(--green)' }} /> : <Copy size={14} style={{ color: 'var(--t2)' }} />}
+                  </button>
+                </div>
+              </div>
+              <button
+                onClick={() => { setCreatedCreds(null); setCopied(false) }}
+                className="w-full h-[50px] rounded-[16px] text-[15px] font-bold mt-1"
+                style={{ background: 'var(--t1)', color: 'var(--bg)' }}
+              >
+                {t('close')}
+              </button>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </>
   )
 }

@@ -83,5 +83,20 @@
   "openRoute": "Navigate",
   "allCl": "Everyone",
   "days": ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
-  "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+  "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+  "forgotPass": "Forgot password?",
+  "forgotMsg": "Enter your email to receive a reset link",
+  "sendReset": "Send reset link",
+  "resetSent": "Check your email for the reset link",
+  "resetPass": "Set new password",
+  "newPass": "New password",
+  "confirmPass": "Confirm password",
+  "resetSuccess": "Password changed!",
+  "passNoMatch": "Passwords don't match",
+  "backToLogin": "Back to login",
+  "sendWelcome": "Send welcome email",
+  "resendWelcome": "Resend welcome email",
+  "welcomeSent": "Welcome email sent!",
+  "copied": "Copied!",
+  "credentials": "Login credentials"
 }

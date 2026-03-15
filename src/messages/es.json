@@ -83,5 +83,20 @@
   "openRoute": "Navegar",
   "allCl": "Todos",
   "days": ["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"],
-  "months": ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+  "months": ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
+  "forgotPass": "¿Olvidaste tu contraseña?",
+  "forgotMsg": "Introduce tu correo para recibir un enlace de restablecimiento",
+  "sendReset": "Enviar enlace",
+  "resetSent": "Revisa tu correo para el enlace de restablecimiento",
+  "resetPass": "Establecer nueva contraseña",
+  "newPass": "Nueva contraseña",
+  "confirmPass": "Confirmar contraseña",
+  "resetSuccess": "¡Contraseña cambiada!",
+  "passNoMatch": "Las contraseñas no coinciden",
+  "backToLogin": "Volver al inicio de sesión",
+  "sendWelcome": "Enviar correo de bienvenida",
+  "resendWelcome": "Reenviar correo de bienvenida",
+  "welcomeSent": "¡Correo de bienvenida enviado!",
+  "copied": "¡Copiado!",
+  "credentials": "Credenciales"
 }

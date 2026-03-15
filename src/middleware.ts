@@ -13,8 +13,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // If user is not authenticated and not on /login, redirect to /login
-  if (!user && pathname !== '/login') {
+  // If user is not authenticated and not on a public route, redirect to /login
+  const publicPaths = ['/login', '/auth/callback', '/reset-password']
+  if (!user && !publicPaths.some(p => pathname.startsWith(p))) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)

@@ -83,5 +83,20 @@
   "openRoute": "Navigeer",
   "allCl": "Iedereen",
   "days": ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"],
-  "months": ["Januari", "Februari", "Maart", "April", "Mei", "Juni", "Juli", "Augustus", "September", "Oktober", "November", "December"]
+  "months": ["Januari", "Februari", "Maart", "April", "Mei", "Juni", "Juli", "Augustus", "September", "Oktober", "November", "December"],
+  "forgotPass": "Wachtwoord vergeten?",
+  "forgotMsg": "Vul je e-mailadres in om een reset link te ontvangen",
+  "sendReset": "Verstuur reset link",
+  "resetSent": "Check je e-mail voor de reset link",
+  "resetPass": "Nieuw wachtwoord instellen",
+  "newPass": "Nieuw wachtwoord",
+  "confirmPass": "Bevestig wachtwoord",
+  "resetSuccess": "Wachtwoord gewijzigd!",
+  "passNoMatch": "Wachtwoorden komen niet overeen",
+  "backToLogin": "Terug naar inloggen",
+  "sendWelcome": "Stuur welkomstmail",
+  "resendWelcome": "Welkomstmail opnieuw sturen",
+  "welcomeSent": "Welkomstmail verstuurd!",
+  "copied": "Gekopieerd!",
+  "credentials": "Inloggegevens"
 }

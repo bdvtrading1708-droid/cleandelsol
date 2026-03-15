@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
   try {
-    const { name, email, phone, hourly_rate, payment_notes } = await request.json()
+    const { name, email, phone, hourly_rate, payment_notes, password: customPassword } = await request.json()
 
     if (!name || !email) {
       return NextResponse.json({ error: 'Name and email required' }, { status: 400 })
@@ -21,8 +21,8 @@ export async function POST(request: Request) {
 
     const supabase = createClient(supabaseUrl, serviceRoleKey)
 
-    // Create auth user with a random password
-    const password = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)
+    // Use custom password if provided, otherwise generate random
+    const password = customPassword || (Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2))
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email,
       password,

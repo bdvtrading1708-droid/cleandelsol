@@ -12,6 +12,30 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [forgotMode, setForgotMode] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
+
+  async function handleForgotPassword(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+      })
+      if (error) {
+        setError(error.message)
+      } else {
+        setResetSent(true)
+      }
+    } catch {
+      setError('Er ging iets mis')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -134,93 +158,193 @@ export default function LoginPage() {
           ))}
         </div>
 
-        {/* Login form */}
-        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <input
-            type="email"
-            placeholder={t('email')}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{
-              width: '100%',
-              padding: '14px 16px',
-              background: 'var(--inp)',
-              border: '1.5px solid var(--border)',
-              borderRadius: 14,
-              fontSize: 15,
-              color: 'var(--t1)',
-              outline: 'none',
-              boxSizing: 'border-box',
-            }}
-          />
+        {forgotMode ? (
+          /* Forgot password form */
+          resetSent ? (
+            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <p style={{ color: 'var(--t2)', fontSize: 14, margin: 0, lineHeight: 1.6 }}>
+                {t('resetSent') || 'Check je e-mail voor de reset link'}
+              </p>
+              <button
+                onClick={() => { setForgotMode(false); setResetSent(false); setError('') }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--t3)',
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  marginTop: 8,
+                }}
+              >
+                {t('backToLogin') || 'Terug naar inloggen'}
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleForgotPassword} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <p style={{ color: 'var(--t2)', fontSize: 13, margin: 0, textAlign: 'center' }}>
+                {t('forgotMsg') || 'Vul je e-mailadres in om een reset link te ontvangen'}
+              </p>
+              <input
+                type="email"
+                placeholder={t('email')}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                style={{
+                  width: '100%',
+                  padding: '14px 16px',
+                  background: 'var(--inp)',
+                  border: '1.5px solid var(--border)',
+                  borderRadius: 14,
+                  fontSize: 15,
+                  color: 'var(--t1)',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
 
-          <input
-            type="password"
-            placeholder={t('pass')}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{
-              width: '100%',
-              padding: '14px 16px',
-              background: 'var(--inp)',
-              border: '1.5px solid var(--border)',
-              borderRadius: 14,
-              fontSize: 15,
-              color: 'var(--t1)',
-              outline: 'none',
-              boxSizing: 'border-box',
-            }}
-          />
+              {error && (
+                <p style={{ color: '#e74c3c', fontSize: 13, textAlign: 'center', margin: 0 }}>
+                  {error}
+                </p>
+              )}
 
-          {error && (
-            <p
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  background: 'var(--t1)',
+                  color: 'var(--bg)',
+                  border: 'none',
+                  borderRadius: 100,
+                  fontSize: 15,
+                  fontWeight: 600,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.7 : 1,
+                  transition: 'opacity 0.2s',
+                  marginTop: 4,
+                }}
+              >
+                {loading ? t('loading') : (t('sendReset') || 'Verstuur reset link')}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setForgotMode(false); setError('') }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--t3)',
+                  fontSize: 13,
+                  cursor: 'pointer',
+                }}
+              >
+                {t('backToLogin') || 'Terug naar inloggen'}
+              </button>
+            </form>
+          )
+        ) : (
+          <>
+            {/* Login form */}
+            <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <input
+                type="email"
+                placeholder={t('email')}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                style={{
+                  width: '100%',
+                  padding: '14px 16px',
+                  background: 'var(--inp)',
+                  border: '1.5px solid var(--border)',
+                  borderRadius: 14,
+                  fontSize: 15,
+                  color: 'var(--t1)',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+
+              <input
+                type="password"
+                placeholder={t('pass')}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                style={{
+                  width: '100%',
+                  padding: '14px 16px',
+                  background: 'var(--inp)',
+                  border: '1.5px solid var(--border)',
+                  borderRadius: 14,
+                  fontSize: 15,
+                  color: 'var(--t1)',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+
+              {error && (
+                <p style={{ color: '#e74c3c', fontSize: 13, textAlign: 'center', margin: 0 }}>
+                  {error}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  background: 'var(--t1)',
+                  color: 'var(--bg)',
+                  border: 'none',
+                  borderRadius: 100,
+                  fontSize: 15,
+                  fontWeight: 600,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.7 : 1,
+                  transition: 'opacity 0.2s',
+                  marginTop: 4,
+                }}
+              >
+                {loading ? t('loading') : t('login')}
+              </button>
+            </form>
+
+            <button
+              onClick={() => { setForgotMode(true); setError('') }}
               style={{
-                color: '#e74c3c',
+                display: 'block',
+                width: '100%',
+                background: 'none',
+                border: 'none',
+                color: 'var(--t3)',
                 fontSize: 13,
-                textAlign: 'center',
-                margin: 0,
+                cursor: 'pointer',
+                marginTop: 12,
               }}
             >
-              {error}
+              {t('forgotPass') || 'Wachtwoord vergeten?'}
+            </button>
+
+            {/* Demo hint */}
+            <p
+              style={{
+                textAlign: 'center',
+                fontSize: 12,
+                color: 'var(--t3)',
+                marginTop: 12,
+                lineHeight: 1.5,
+              }}
+            >
+              Demo: admin@cleandelsol.com / demo1234
             </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '14px',
-              background: 'var(--t1)',
-              color: 'var(--bg)',
-              border: 'none',
-              borderRadius: 100,
-              fontSize: 15,
-              fontWeight: 600,
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.7 : 1,
-              transition: 'opacity 0.2s',
-              marginTop: 4,
-            }}
-          >
-            {loading ? t('loading') : t('login')}
-          </button>
-        </form>
-
-        {/* Demo hint */}
-        <p
-          style={{
-            textAlign: 'center',
-            fontSize: 12,
-            color: 'var(--t3)',
-            marginTop: 20,
-            lineHeight: 1.5,
-          }}
-        >
-          Demo: admin@cleandelsol.com / demo1234
-        </p>
+          </>
+        )}
       </div>
     </div>
   )

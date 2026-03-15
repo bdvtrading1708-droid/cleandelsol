@@ -26,6 +26,7 @@ export function CleanerForm({ open, onClose, editCleaner, onCreated }: Props) {
   const [phone, setPhone] = useState('')
   const [hourlyRate, setHourlyRate] = useState('')
   const [paymentNotes, setPaymentNotes] = useState('')
+  const [customPassword, setCustomPassword] = useState('')
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -49,6 +50,7 @@ export function CleanerForm({ open, onClose, editCleaner, onCreated }: Props) {
     setPhone('')
     setHourlyRate('')
     setPaymentNotes('')
+    setCustomPassword('')
     setAvatarFile(null)
     setAvatarPreview(null)
   }
@@ -120,6 +122,7 @@ export function CleanerForm({ open, onClose, editCleaner, onCreated }: Props) {
             phone: phone || undefined,
             hourly_rate: hourlyRate ? parseFloat(hourlyRate) : undefined,
             payment_notes: paymentNotes || undefined,
+            password: customPassword || undefined,
           }),
         })
         if (!res.ok) {
@@ -240,6 +243,23 @@ export function CleanerForm({ open, onClose, editCleaner, onCreated }: Props) {
                 className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
                 style={inputStyle}
                 placeholder="email@voorbeeld.com"
+              />
+            </div>
+          )}
+
+          {/* Password (only for new cleaners) */}
+          {!isEdit && (
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+                {t('pass')}
+              </label>
+              <input
+                type="text"
+                value={customPassword}
+                onChange={(e) => setCustomPassword(e.target.value)}
+                className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
+                style={inputStyle}
+                placeholder="Laat leeg voor willekeurig"
               />
             </div>
           )}

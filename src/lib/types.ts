@@ -10,6 +10,7 @@ export interface User {
   hourly_rate?: number
   payment_notes?: string
   avatar_url?: string
+  welcome_email_sent?: boolean
 }
 
 export interface Partner {

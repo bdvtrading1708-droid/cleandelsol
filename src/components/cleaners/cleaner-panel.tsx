@@ -4,7 +4,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { useLocale } from '@/lib/i18n'
 import { useJobs } from '@/lib/hooks/use-jobs'
 import { formatCurrency, getCleanerPayout, getCleanerHours } from '@/lib/utils'
-import { Phone, Mail, Camera, Pencil } from 'lucide-react'
+import { Phone, Mail, Camera, Pencil, Send, Check, KeyRound } from 'lucide-react'
+import { useMutation } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { CleanerAvatar } from '@/components/cleaners/cleaner-avatar'
 import { createClient } from '@/lib/supabase/client'
 import { useQueryClient } from '@tanstack/react-query'
@@ -16,14 +18,59 @@ interface Props {
   open: boolean
   onClose: () => void
   onEdit?: (cleaner: User) => void
+  onPasswordReset?: (creds: { name: string; email: string; password: string }) => void
 }
 
-export function CleanerPanel({ cleaner, open, onClose, onEdit }: Props) {
+export function CleanerPanel({ cleaner, open, onClose, onEdit, onPasswordReset }: Props) {
   const { t } = useLocale()
   const { data: jobs = [] } = useJobs()
   const queryClient = useQueryClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+
+  const sendWelcome = useMutation({
+    mutationFn: async (cleanerId: string) => {
+      const res = await fetch('/api/cleaners/send-welcome', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cleanerId }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Failed to send email')
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cleaners'] })
+      toast.success(t('welcomeSent') || 'Welkomstmail verstuurd!')
+    },
+    onError: (err: Error) => {
+      toast.error(err.message)
+    },
+  })
+
+  const resetPassword = useMutation({
+    mutationFn: async (cleanerId: string) => {
+      const res = await fetch('/api/cleaners/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cleanerId }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Failed to reset password')
+      }
+      return res.json() as Promise<{ password: string }>
+    },
+    onSuccess: (data) => {
+      if (cleaner && onPasswordReset) {
+        onPasswordReset({ name: cleaner.name, email: cleaner.email, password: data.password })
+      }
+    },
+    onError: (err: Error) => {
+      toast.error(err.message)
+    },
+  })
 
   if (!cleaner) return null
 
@@ -161,6 +208,41 @@ export function CleanerPanel({ cleaner, open, onClose, onEdit }: Props) {
               </span>
             </a>
           )}
+
+          {/* Send welcome email */}
+          <button
+            onClick={() => sendWelcome.mutate(cleaner.id)}
+            disabled={sendWelcome.isPending}
+            className="flex items-center gap-2.5 rounded-[14px] p-3 text-left w-full transition-colors"
+            style={{ background: cleaner.welcome_email_sent ? 'var(--fill)' : 'var(--fill)' }}
+          >
+            {cleaner.welcome_email_sent ? (
+              <Check size={16} style={{ color: 'var(--green)' }} />
+            ) : (
+              <Send size={16} style={{ color: 'var(--t2)' }} />
+            )}
+            <span className="flex-1 text-[13px] font-medium" style={{ color: cleaner.welcome_email_sent ? 'var(--t3)' : 'var(--t1)' }}>
+              {sendWelcome.isPending
+                ? (t('loading'))
+                : cleaner.welcome_email_sent
+                  ? (t('resendWelcome') || 'Opnieuw versturen')
+                  : (t('sendWelcome') || 'Stuur welkomstmail')
+              }
+            </span>
+          </button>
+
+          {/* Reset password */}
+          <button
+            onClick={() => resetPassword.mutate(cleaner.id)}
+            disabled={resetPassword.isPending}
+            className="flex items-center gap-2.5 rounded-[14px] p-3 text-left w-full transition-colors"
+            style={{ background: 'var(--fill)' }}
+          >
+            <KeyRound size={16} style={{ color: 'var(--t2)' }} />
+            <span className="flex-1 text-[13px] font-medium" style={{ color: 'var(--t1)' }}>
+              {resetPassword.isPending ? t('loading') : (t('resetPass') || 'Wachtwoord resetten')}
+            </span>
+          </button>
 
           {/* Stats grid */}
           <div className="grid grid-cols-2 gap-2">
