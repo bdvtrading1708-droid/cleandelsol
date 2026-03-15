@@ -5,16 +5,17 @@ import { useLocale } from '@/lib/i18n'
 import { useCreateJob } from '@/lib/hooks/use-jobs'
 import { useProperties } from '@/lib/hooks/use-properties'
 import { useCleaners } from '@/lib/hooks/use-cleaners'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { addDays, format } from 'date-fns'
 import { Copy } from 'lucide-react'
 
 interface Props {
   open: boolean
   onClose: () => void
+  defaultDate?: string
 }
 
-export function JobForm({ open, onClose }: Props) {
+export function JobForm({ open, onClose, defaultDate }: Props) {
   const { t } = useLocale()
   const createJob = useCreateJob()
   const { data: properties = [] } = useProperties()
@@ -22,7 +23,8 @@ export function JobForm({ open, onClose }: Props) {
 
   const [propertyId, setPropertyId] = useState('')
   const [cleanerId, setCleanerId] = useState('')
-  const [date, setDate] = useState('')
+  const [date, setDate] = useState(defaultDate ?? '')
+  useEffect(() => { if (open && defaultDate) setDate(defaultDate) }, [open, defaultDate])
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
   const [clientPrice, setClientPrice] = useState('')
@@ -51,7 +53,7 @@ export function JobForm({ open, onClose }: Props) {
   const reset = () => {
     setPropertyId('')
     setCleanerId('')
-    setDate('')
+    setDate(defaultDate ?? '')
     setStartTime('')
     setEndTime('')
     setClientPrice('')

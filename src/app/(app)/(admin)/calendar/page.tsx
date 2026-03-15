@@ -333,6 +333,7 @@ export default function CalendarPage() {
       <JobForm
         open={showForm}
         onClose={() => setShowForm(false)}
+        defaultDate={view === 'week' ? toDateStr(weekDates[0]) : toDateStr(currentDate)}
       />
     </>
   )
