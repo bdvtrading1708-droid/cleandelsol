@@ -79,6 +79,7 @@ type JobLike = {
   end_time?: string
   hours_worked?: number
   km_driven?: number
+  extra_costs?: number
   status?: string
   property?: { pricing_type?: string } | null
 }
@@ -89,10 +90,11 @@ export function getJobFinancials(job: JobLike) {
   const revenue = getJobRevenue(job)
   const payout = getJobPayout(job)
   const kmCost = (job.km_driven || 0) * KM_RATE
-  const totalCost = payout + kmCost
+  const extraCosts = job.extra_costs || 0
+  const totalCost = payout + kmCost + extraCosts
   const profit = revenue - totalCost
 
-  return { hours, revenue, payout, kmCost, totalCost, profit }
+  return { hours, revenue, payout, kmCost, extraCosts, totalCost, profit }
 }
 
 // ─── Aggregation ─────────────────────────────────────────────────────────────
@@ -101,6 +103,7 @@ export interface FinancialSummary {
   revenue: number
   payout: number
   kmCost: number
+  extraCosts: number
   totalCost: number
   profit: number
   margin: number
@@ -113,6 +116,7 @@ export function aggregateFinancials(jobs: JobLike[]): FinancialSummary {
   let revenue = 0
   let payout = 0
   let kmCost = 0
+  let extraCosts = 0
   let hours = 0
 
   for (const job of jobs) {
@@ -120,14 +124,15 @@ export function aggregateFinancials(jobs: JobLike[]): FinancialSummary {
     revenue += f.revenue
     payout += f.payout
     kmCost += f.kmCost
+    extraCosts += f.extraCosts
     hours += f.hours
   }
 
-  const totalCost = payout + kmCost
+  const totalCost = payout + kmCost + extraCosts
   const profit = revenue - totalCost
   const margin = revenue > 0 ? Math.round((profit / revenue) * 100) : 0
 
-  return { revenue, payout, kmCost, totalCost, profit, margin, jobCount: jobs.length, hours }
+  return { revenue, payout, kmCost, extraCosts, totalCost, profit, margin, jobCount: jobs.length, hours }
 }
 
 // ─── Per-cleaner breakdown ───────────────────────────────────────────────────

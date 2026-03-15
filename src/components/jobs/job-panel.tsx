@@ -6,7 +6,7 @@ import { useAuth } from '@/providers/auth-provider'
 import { useUpdateJobStatus, useDeleteJob } from '@/lib/hooks/use-jobs'
 import { STATUS_COLORS } from '@/lib/constants'
 import { formatCurrency, formatDate, getJobRevenue, getJobPayout } from '@/lib/utils'
-import { MapPin, Clock, Car, FileText, Camera, ChevronRight, Trash2, Pencil } from 'lucide-react'
+import { MapPin, Clock, Car, FileText, Camera, ChevronRight, Trash2, Pencil, Banknote, CreditCard } from 'lucide-react'
 import type { Job, JobStatus } from '@/lib/types'
 import { useState, useEffect } from 'react'
 import { JobDeliveryForm } from './job-delivery-form'
@@ -40,6 +40,8 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
   const [editPayout, setEditPayout] = useState('')
   const [editKm, setEditKm] = useState('')
   const [editEndTime, setEditEndTime] = useState('')
+  const [editExtraCosts, setEditExtraCosts] = useState('')
+  const [editPaymentMethod, setEditPaymentMethod] = useState<'cash' | 'bank'>('bank')
 
   // Reset edit state when job changes
   useEffect(() => {
@@ -48,6 +50,8 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
       setEditPayout(job.cleaner_payout?.toString() || '')
       setEditKm(job.km_driven?.toString() || '')
       setEditEndTime(job.end_time?.slice(0, 5) || '')
+      setEditExtraCosts(job.extra_costs?.toString() || '')
+      setEditPaymentMethod(job.payment_method || 'bank')
       setEditing(false)
     }
   }, [job?.id])
@@ -108,6 +112,8 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
       km_driven: editKm ? parseFloat(editKm) : undefined,
       end_time: editEndTime || undefined,
       hours_worked,
+      extra_costs: editExtraCosts ? parseFloat(editExtraCosts) : 0,
+      payment_method: editPaymentMethod,
     }, {
       onSuccess: () => { setEditing(false); onClose() },
     })
@@ -237,6 +243,51 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
                     />
                   </div>
                 </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+                      Extra kosten (€)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editExtraCosts}
+                      onChange={(e) => setEditExtraCosts(e.target.value)}
+                      className="w-full h-[42px] rounded-[12px] px-3 text-[14px] font-medium border-0 outline-none"
+                      style={{ background: 'var(--inp)', color: 'var(--t1)' }}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+                      Betaalwijze
+                    </label>
+                    <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setEditPaymentMethod('bank')}
+                        className="flex-1 h-[42px] rounded-[12px] text-[12px] font-semibold transition-all"
+                        style={{
+                          background: editPaymentMethod === 'bank' ? 'var(--t1)' : 'var(--inp)',
+                          color: editPaymentMethod === 'bank' ? 'var(--bg)' : 'var(--t3)',
+                        }}
+                      >
+                        Bank
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditPaymentMethod('cash')}
+                        className="flex-1 h-[42px] rounded-[12px] text-[12px] font-semibold transition-all"
+                        style={{
+                          background: editPaymentMethod === 'cash' ? 'var(--t1)' : 'var(--inp)',
+                          color: editPaymentMethod === 'cash' ? 'var(--bg)' : 'var(--t3)',
+                        }}
+                      >
+                        Cash
+                      </button>
+                    </div>
+                  </div>
+                </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setEditing(false)}
@@ -271,6 +322,12 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
                   <StatBox icon={<span className="text-[13px] font-bold" style={{ color: 'var(--blue)' }}>€</span>} label={t('payout')} value={formatCurrency(getJobPayout(job))} />
                   <StatBox icon={<Clock size={14} style={{ color: 'var(--amber)' }} />} label={t('hours')} value={job.hours_worked != null ? `${job.hours_worked}h` : '—'} />
                   <StatBox icon={<Car size={14} style={{ color: 'var(--t2)' }} />} label={t('km')} value={job.km_driven != null ? `${job.km_driven}` : '—'} />
+                  {(job.extra_costs != null && job.extra_costs > 0) && (
+                    <StatBox icon={<span className="text-[13px] font-bold" style={{ color: '#ef4444' }}>€</span>} label="Extra kosten" value={formatCurrency(job.extra_costs)} />
+                  )}
+                  {job.payment_method && (
+                    <StatBox icon={<CreditCard size={14} style={{ color: 'var(--t2)' }} />} label="Betaalwijze" value={job.payment_method === 'cash' ? 'Cash' : 'Bank'} />
+                  )}
                 </div>
               </div>
             )}

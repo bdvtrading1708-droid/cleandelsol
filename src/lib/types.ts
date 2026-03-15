@@ -55,6 +55,8 @@ export interface Job {
   status: JobStatus
   hours_worked?: number
   km_driven?: number
+  extra_costs?: number
+  payment_method?: 'cash' | 'bank'
   notes?: string
   property?: Property
   cleaner?: Pick<User, 'id' | 'name' | 'email' | 'phone'>

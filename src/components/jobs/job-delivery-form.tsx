@@ -22,6 +22,8 @@ export function JobDeliveryForm({ job, open, onClose, onSuccess }: Props) {
 
   const [endTime, setEndTime] = useState(job.end_time?.slice(0, 5) || '')
   const [km, setKm] = useState(job.km_driven?.toString() || '')
+  const [extraCosts, setExtraCosts] = useState(job.extra_costs?.toString() || '')
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bank'>(job.payment_method || 'bank')
   const [notes, setNotes] = useState(job.notes || '')
   const [files, setFiles] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
@@ -75,6 +77,8 @@ export function JobDeliveryForm({ job, open, onClose, onSuccess }: Props) {
         end_time: endTime,
         hours_worked,
         km_driven: parseFloat(km),
+        extra_costs: extraCosts ? parseFloat(extraCosts) : 0,
+        payment_method: paymentMethod,
         notes: notes || undefined,
       }, {
         onSuccess,
@@ -155,6 +159,53 @@ export function JobDeliveryForm({ job, open, onClose, onSuccess }: Props) {
                 Vul het aantal km in
               </div>
             )}
+          </div>
+
+          {/* Extra costs */}
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+              Extra kosten (€)
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              value={extraCosts}
+              onChange={(e) => setExtraCosts(e.target.value)}
+              className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
+              style={{ background: 'var(--inp)', color: 'var(--t1)' }}
+              placeholder="Bv. parkeerkosten, schoonmaakmiddel..."
+            />
+          </div>
+
+          {/* Payment method */}
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1.5 block" style={{ color: 'var(--t3)' }}>
+              Betaalwijze
+            </label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('bank')}
+                className="flex-1 h-[46px] rounded-[14px] text-[14px] font-semibold transition-all"
+                style={{
+                  background: paymentMethod === 'bank' ? 'var(--t1)' : 'var(--inp)',
+                  color: paymentMethod === 'bank' ? 'var(--bg)' : 'var(--t3)',
+                }}
+              >
+                Bank
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('cash')}
+                className="flex-1 h-[46px] rounded-[14px] text-[14px] font-semibold transition-all"
+                style={{
+                  background: paymentMethod === 'cash' ? 'var(--t1)' : 'var(--inp)',
+                  color: paymentMethod === 'cash' ? 'var(--bg)' : 'var(--t3)',
+                }}
+              >
+                Cash
+              </button>
+            </div>
           </div>
 
           {/* Notes */}
