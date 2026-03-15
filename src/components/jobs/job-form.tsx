@@ -44,10 +44,14 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
 
   const hours = calcHours(startTime, endTime)
 
-  // Calculate totals: rate × hours
+  // Check if the selected property uses fixed pricing
+  const selectedProp = properties.find(p => p.id === propertyId)
+  const isFixedPrice = selectedProp?.pricing_type === 'fixed' || (selectedProp?.fixed_price && !selectedProp?.default_price)
+
+  // Calculate totals: fixed price stays as-is, hourly rate × hours
   const priceNum = parseFloat(clientPrice) || 0
   const payoutNum = parseFloat(cleanerPayout) || 0
-  const totalPrice = hours > 0 ? priceNum * hours : priceNum
+  const totalPrice = isFixedPrice ? priceNum : (hours > 0 ? priceNum * hours : priceNum)
   const totalPayout = hours > 0 ? payoutNum * hours : payoutNum
 
   const reset = () => {
@@ -115,10 +119,6 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
   }
 
   const inputStyle = { background: 'var(--inp)', color: 'var(--t1)' }
-
-  // Check if the selected property uses fixed pricing
-  const selectedProp = properties.find(p => p.id === propertyId)
-  const isFixedPrice = selectedProp?.pricing_type === 'fixed' || (selectedProp?.fixed_price && !selectedProp?.default_price)
 
   return (
     <Sheet open={open} onOpenChange={(o) => { if (!o) { reset(); onClose() } }}>
@@ -249,7 +249,7 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
             <div className="rounded-[14px] p-3 flex flex-col gap-1" style={{ background: 'var(--inp)' }}>
               <div className="flex justify-between items-center">
                 <span className="text-[12px] font-medium" style={{ color: 'var(--t3)' }}>
-                  {hours}u × €{priceNum}
+                  {isFixedPrice ? `Vast tarief` : `${hours}u × €${priceNum}`}
                 </span>
                 <span className="text-[15px] font-bold" style={{ color: 'var(--t1)' }}>
                   Totaal: €{totalPrice.toFixed(2).replace(/\.00$/, '')}
