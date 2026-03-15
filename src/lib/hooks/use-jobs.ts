@@ -31,11 +31,14 @@ export function useUpdateJobStatus() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ id, status, hours_worked, km_driven, notes }: { id: number; status: JobStatus; hours_worked?: number; km_driven?: number; notes?: string }) => {
+    mutationFn: async ({ id, status, hours_worked, km_driven, notes, end_time, client_price, cleaner_payout }: { id: number; status: JobStatus; hours_worked?: number; km_driven?: number; notes?: string; end_time?: string; client_price?: number; cleaner_payout?: number }) => {
       const update: Record<string, unknown> = { status }
       if (hours_worked !== undefined) update.hours_worked = hours_worked
       if (km_driven !== undefined) update.km_driven = km_driven
       if (notes !== undefined) update.notes = notes
+      if (end_time !== undefined) update.end_time = end_time
+      if (client_price !== undefined) update.client_price = client_price
+      if (cleaner_payout !== undefined) update.cleaner_payout = cleaner_payout
 
       const { error } = await supabase.from('jobs').update(update).eq('id', id)
       if (error) throw error

@@ -33,8 +33,9 @@ export function getJobHours(job: { start_time?: string; end_time?: string; hours
   return diff > 0 ? diff / 60 : 1
 }
 
-/** Total revenue for a job: client_price (rate) × hours */
-export function getJobRevenue(job: { client_price?: number; start_time?: string; end_time?: string; hours_worked?: number }): number {
+/** Total revenue for a job: fixed price OR hourly rate × hours */
+export function getJobRevenue(job: { client_price?: number; start_time?: string; end_time?: string; hours_worked?: number; property?: { pricing_type?: string } | null }): number {
+  if (job.property?.pricing_type === 'fixed') return job.client_price || 0
   return (job.client_price || 0) * getJobHours(job)
 }
 

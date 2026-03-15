@@ -5,10 +5,10 @@ import { useJobs } from '@/lib/hooks/use-jobs'
 import { useCleaners } from '@/lib/hooks/use-cleaners'
 import { usePartners } from '@/lib/hooks/use-partners'
 import { useLocale } from '@/lib/i18n'
-import { formatCurrency, getJobRevenue, getJobPayout } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
+import { CleanerAvatar } from '@/components/cleaners/cleaner-avatar'
 import TopPartnersByRevenue from '@/components/financial/top-partners'
-
-type Period = 'maand' | 'jaar' | 'alles'
+import { filterByPeriod, aggregateFinancials, aggregateByCleaners, type Period } from '@/lib/financial'
 
 export default function FinancialPage() {
   const { data: jobs = [], isLoading } = useJobs()
@@ -16,46 +16,34 @@ export default function FinancialPage() {
   const { data: partners = [] } = usePartners()
   const { t } = useLocale()
   const [period, setPeriod] = useState<Period>('maand')
+  const [selectedCleaner, setSelectedCleaner] = useState<string | null>(null)
 
   if (isLoading) {
     return <div className="flex items-center justify-center py-20" style={{ color: 'var(--t3)' }}>{t('loading')}</div>
   }
 
-  const now = new Date()
-  const filtered = (() => {
-    if (period === 'maand') {
-      const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-      return jobs.filter(j => j.date?.startsWith(ym))
-    }
-    if (period === 'jaar') return jobs.filter(j => j.date?.startsWith(String(now.getFullYear())))
-    return jobs
-  })()
+  // Filter by cleaner, then by period
+  const cleanerJobs = selectedCleaner ? jobs.filter(j => j.cleaner_id === selectedCleaner) : jobs
+  const filtered = filterByPeriod(cleanerJobs, period)
+  const { revenue: totalRev, totalCost, profit: netProfit, margin } = aggregateFinancials(filtered)
 
-  const KM_RATE = 0.10
-  const totalRev = filtered.reduce((s, j) => s + getJobRevenue(j), 0)
-  const totalCost = filtered.reduce((s, j) => s + getJobPayout(j) + (j.km_driven || 0) * KM_RATE, 0)
-  const netProfit = totalRev - totalCost
-  const margin = totalRev > 0 ? Math.round((netProfit / totalRev) * 100) : 0
+  // Per-cleaner breakdown (always show all cleaners, not filtered by selected cleaner)
+  const allFiltered = filterByPeriod(jobs, period)
+  const perCleaner = aggregateByCleaners(allFiltered, cleaners.map(c => c.id))
+    .map(cf => ({ ...cf, cleaner: cleaners.find(c => c.id === cf.cleanerId)! }))
+    .filter(c => c.jobCount > 0)
+    .sort((a, b) => b.revenue - a.revenue)
 
-  // Per-cleaner breakdown
-  const perCleaner = cleaners.map(c => {
-    const cJobs = filtered.filter(j => j.cleaner_id === c.id)
-    const rev = cJobs.reduce((s, j) => s + getJobRevenue(j), 0)
-    const cost = cJobs.reduce((s, j) => s + getJobPayout(j) + (j.km_driven || 0) * KM_RATE, 0)
-    const outstanding = cJobs.filter(j => j.status === 'delivered').reduce((s, j) => s + getJobPayout(j), 0)
-    return { cleaner: c, jobCount: cJobs.length, rev, cost, profit: rev - cost, outstanding }
-  }).filter(c => c.jobCount > 0).sort((a, b) => b.rev - a.rev)
+  const maxRev = Math.max(1, ...perCleaner.map(c => c.revenue))
 
-  const maxRev = Math.max(1, ...perCleaner.map(c => c.rev))
-
-  const periods: Period[] = ['maand', 'jaar', 'alles']
+  const periods: Period[] = ['dag', 'week', 'maand', 'jaar', 'alles']
 
   return (
     <>
       {/* Hero */}
       <div className="rounded-[22px] p-[22px] mt-3.5 relative overflow-hidden" style={{ background: 'var(--hero-bg)', boxShadow: 'var(--shadow-md)' }}>
         <div className="text-[11px] font-medium mb-1" style={{ color: 'rgba(255,255,255,0.45)' }}>
-          {t('fin')} · {t(period)}
+          {selectedCleaner ? cleaners.find(c => c.id === selectedCleaner)?.name?.split(' ')[0] : t('fin')} · {t(period)}
         </div>
         <div className="text-[44px] font-bold tracking-[-2px] leading-none mb-0.5 text-white">
           {formatCurrency(totalRev)}
@@ -80,7 +68,7 @@ export default function FinancialPage() {
         </div>
 
         {/* Revenue / Cost / Profit */}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-2 mb-4">
           <div className="rounded-[18px] p-3" style={{ background: 'rgba(255,255,255,0.09)' }}>
             <div className="text-[9px] font-semibold tracking-[.1em] uppercase mb-1" style={{ color: 'rgba(255,255,255,0.40)' }}>{t('totalRev')}</div>
             <div className="text-[18px] font-bold tracking-[-0.5px] leading-none text-white">{formatCurrency(totalRev)}</div>
@@ -95,6 +83,36 @@ export default function FinancialPage() {
             <div className={`text-[10px] font-semibold mt-0.5 ${margin > 0 ? 'text-green-400' : 'text-white/30'}`}>
               {margin > 0 ? '+' : ''}{margin}%
             </div>
+          </div>
+        </div>
+
+        {/* Cleaner avatars filter */}
+        <div className="border-t pt-3.5" style={{ borderColor: 'rgba(255,255,255,0.10)' }}>
+          <div className="text-[9px] font-bold tracking-[.12em] uppercase mb-2.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
+            {t('cleaners')}
+          </div>
+          <div className="flex gap-2.5 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
+            <div
+              className="flex flex-col items-center gap-1 cursor-pointer shrink-0"
+              onClick={() => setSelectedCleaner(null)}
+            >
+              <div className={`w-[38px] h-[38px] rounded-full flex items-center justify-center text-[10px] font-extrabold text-white ${!selectedCleaner ? 'outline outline-[2.5px] outline-white outline-offset-2' : ''}`} style={{ background: 'rgba(255,255,255,0.14)' }}>
+                ALL
+              </div>
+              <div className="text-[9px] font-semibold max-w-[42px] text-center truncate" style={{ color: 'rgba(255,255,255,0.40)' }}>{t('allCl')}</div>
+            </div>
+            {cleaners.map(c => (
+              <div
+                key={c.id}
+                className="flex flex-col items-center gap-1 cursor-pointer shrink-0"
+                onClick={() => setSelectedCleaner(c.id)}
+              >
+                <div className={selectedCleaner === c.id ? 'outline outline-[2.5px] outline-white outline-offset-2 rounded-full' : ''}>
+                  <CleanerAvatar src={c.avatar_url} name={c.name} size={38} />
+                </div>
+                <div className="text-[9px] font-semibold max-w-[42px] text-center truncate" style={{ color: 'rgba(255,255,255,0.40)' }}>{c.name?.split(' ')[0]}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -113,18 +131,15 @@ export default function FinancialPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-2.5">
-          {perCleaner.map(({ cleaner, jobCount, rev, cost, profit, outstanding }) => (
+          {perCleaner.map(({ cleaner, jobCount, revenue: rev, totalCost: cost, profit, outstanding }) => (
             <div
               key={cleaner.id}
               className="rounded-[18px] p-4"
               style={{ background: 'var(--card)', boxShadow: 'var(--shadow)' }}
             >
               <div className="flex items-center gap-3 mb-3">
-                <div
-                  className="w-[38px] h-[38px] rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
-                  style={{ background: 'var(--hero-bg)' }}
-                >
-                  {(cleaner.name || '?')[0].toUpperCase()}
+                <div className="shrink-0">
+                  <CleanerAvatar src={cleaner.avatar_url} name={cleaner.name} size={38} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[14px] font-bold tracking-[-0.2px] truncate" style={{ color: 'var(--t1)' }}>{cleaner.name}</div>

@@ -1,37 +1,20 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { isToday, startOfWeek, format } from 'date-fns'
 import { useLocale } from '@/lib/i18n'
 import { formatCurrency, getJobRevenue } from '@/lib/utils'
+import { filterByPeriod, type Period } from '@/lib/financial'
 import type { Job, Partner } from '@/lib/types'
 
-type PartnerPeriod = 'today' | 'week' | 'maand' | 'jaar' | 'alles'
-
-const PERIODS: PartnerPeriod[] = ['today', 'week', 'maand', 'jaar', 'alles']
+const PERIODS: Period[] = ['dag', 'week', 'maand', 'jaar', 'alles']
 
 const BAR_COLORS = ['#00A651', '#0064D2', 'var(--hero-bg)', 'var(--hero-bg)', 'var(--hero-bg)']
 const RANK_BG = ['rgba(0,166,81,0.10)', 'rgba(0,100,210,0.10)', 'var(--fill)']
 const RANK_COLOR = ['#00A651', '#0064D2', 'var(--t2)']
 
-function filterByPeriod(jobs: Job[], period: PartnerPeriod): Job[] {
-  if (period === 'alles') return jobs
-  const now = new Date()
-  if (period === 'today') return jobs.filter(j => j.date && isToday(new Date(j.date + 'T00:00:00')))
-  if (period === 'week') {
-    const weekStart = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd')
-    return jobs.filter(j => j.date && j.date >= weekStart)
-  }
-  if (period === 'maand') {
-    const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-    return jobs.filter(j => j.date?.startsWith(ym))
-  }
-  return jobs.filter(j => j.date?.startsWith(String(now.getFullYear())))
-}
-
 export default function TopPartnersByRevenue({ jobs, partners }: { jobs: Job[]; partners: Partner[] }) {
   const { t } = useLocale()
-  const [period, setPeriod] = useState<PartnerPeriod>('maand')
+  const [period, setPeriod] = useState<Period>('maand')
 
   const { ranked, totalRevenue } = useMemo(() => {
     const filtered = filterByPeriod(jobs, period)

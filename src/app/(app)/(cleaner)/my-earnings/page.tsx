@@ -1,38 +1,61 @@
 'use client'
 
+import { useState } from 'react'
 import { useJobs } from '@/lib/hooks/use-jobs'
 import { useAuth } from '@/providers/auth-provider'
 import { useLocale } from '@/lib/i18n'
 import { STATUS_COLORS } from '@/lib/constants'
 import { formatCurrency, formatDate, getJobPayout } from '@/lib/utils'
+import { filterByPeriod, type Period } from '@/lib/financial'
 
 export default function MyEarningsPage() {
   const { user } = useAuth()
   const { data: jobs = [], isLoading } = useJobs(user?.id)
   const { t } = useLocale()
+  const [period, setPeriod] = useState<Period>('alles')
 
   if (isLoading) {
     return <div className="flex items-center justify-center py-20" style={{ color: 'var(--t3)' }}>{t('loading')}</div>
   }
 
-  const doneJobs = jobs.filter(j => j.status === 'done')
-  const deliveredJobs = jobs.filter(j => j.status === 'delivered')
+  const filtered = filterByPeriod(jobs, period)
+  const doneJobs = filtered.filter(j => j.status === 'done')
+  const deliveredJobs = filtered.filter(j => j.status === 'delivered')
   const totalEarned = doneJobs.reduce((s, j) => s + getJobPayout(j), 0)
   const outstanding = deliveredJobs.reduce((s, j) => s + getJobPayout(j), 0)
 
   const recentDone = [...doneJobs].sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 20)
+
+  const periods: Period[] = ['dag', 'week', 'maand', 'jaar', 'alles']
 
   return (
     <>
       {/* Hero */}
       <div className="rounded-[22px] p-[22px] mt-3.5 relative overflow-hidden" style={{ background: 'var(--hero-bg)', boxShadow: 'var(--shadow-md)' }}>
         <div className="text-[11px] font-medium mb-1" style={{ color: 'rgba(255,255,255,0.45)' }}>
-          {t('myEarn')}
+          {t('myEarn')} · {t(period)}
         </div>
         <div className="text-[44px] font-bold tracking-[-2px] leading-none mb-0.5 text-white">
           {formatCurrency(totalEarned)}
         </div>
         <div className="text-xs mb-4" style={{ color: 'rgba(255,255,255,0.40)' }}>{t('totalEarned').toLowerCase()}</div>
+
+        {/* Period tabs */}
+        <div className="flex gap-0.5 mb-4 rounded-full p-0.5 w-fit" style={{ background: 'rgba(255,255,255,0.08)' }}>
+          {periods.map(p => (
+            <button
+              key={p}
+              className="px-3 py-1 rounded-full text-[11px] font-semibold transition-all"
+              style={{
+                background: period === p ? 'rgba(255,255,255,0.18)' : 'transparent',
+                color: period === p ? '#fff' : 'rgba(255,255,255,0.45)',
+              }}
+              onClick={() => setPeriod(p)}
+            >
+              {t(p)}
+            </button>
+          ))}
+        </div>
 
         <div className="grid grid-cols-2 gap-2">
           <div className="rounded-[18px] p-3" style={{ background: 'rgba(255,255,255,0.09)' }}>

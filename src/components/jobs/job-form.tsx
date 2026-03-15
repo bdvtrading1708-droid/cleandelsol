@@ -111,9 +111,7 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
   const handleCleanerChange = (id: string) => {
     setCleanerId(id)
     const cl = cleaners.find(c => c.id === id)
-    if (cl?.hourly_rate) {
-      setCleanerPayout(cl.hourly_rate.toString())
-    }
+    setCleanerPayout(cl?.hourly_rate ? cl.hourly_rate.toString() : '')
   }
 
   const inputStyle = { background: 'var(--inp)', color: 'var(--t1)' }

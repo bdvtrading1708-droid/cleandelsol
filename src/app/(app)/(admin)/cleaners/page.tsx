@@ -4,11 +4,12 @@ import { useState } from 'react'
 import { useCleaners } from '@/lib/hooks/use-cleaners'
 import { useJobs } from '@/lib/hooks/use-jobs'
 import { useLocale } from '@/lib/i18n'
-import { formatCurrency, getJobPayout } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
 import { Plus } from 'lucide-react'
 import { CleanerPanel } from '@/components/cleaners/cleaner-panel'
 import { CleanerForm } from '@/components/cleaners/cleaner-form'
 import { CleanerAvatar } from '@/components/cleaners/cleaner-avatar'
+import { filterByPeriod, aggregateByCleaners, type Period } from '@/lib/financial'
 import type { User } from '@/lib/types'
 
 export default function CleanersPage() {
@@ -18,10 +19,16 @@ export default function CleanersPage() {
   const [selectedCleaner, setSelectedCleaner] = useState<User | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [editCleaner, setEditCleaner] = useState<User | null>(null)
+  const [period, setPeriod] = useState<Period>('alles')
 
   if (isLoading) {
     return <div className="flex items-center justify-center py-20" style={{ color: 'var(--t3)' }}>{t('loading')}</div>
   }
+
+  const filtered = filterByPeriod(jobs, period)
+  const cleanerStats = aggregateByCleaners(filtered, cleaners.map(c => c.id))
+
+  const periods: Period[] = ['dag', 'week', 'maand', 'jaar', 'alles']
 
   return (
     <>
@@ -38,6 +45,24 @@ export default function CleanersPage() {
         </button>
       </div>
 
+      {/* Period filter */}
+      <div className="flex gap-0.5 mb-4 rounded-full p-0.5 w-fit" style={{ background: 'var(--fill)' }}>
+        {periods.map(p => (
+          <button
+            key={p}
+            className="px-3 py-1 rounded-full text-[11px] font-semibold transition-all"
+            style={{
+              background: period === p ? 'var(--card)' : 'transparent',
+              color: period === p ? 'var(--t1)' : 'var(--t3)',
+              boxShadow: period === p ? 'var(--shadow)' : 'none',
+            }}
+            onClick={() => setPeriod(p)}
+          >
+            {t(p)}
+          </button>
+        ))}
+      </div>
+
       {cleaners.length === 0 ? (
         <div className="text-center py-12" style={{ color: 'var(--t3)' }}>
           <div className="text-sm font-semibold" style={{ color: 'var(--t2)' }}>Geen schoonmaaksters</div>
@@ -45,15 +70,12 @@ export default function CleanersPage() {
       ) : (
         <div className="grid grid-cols-2 gap-2.5">
           {cleaners.map(cleaner => {
-            const cleanerJobs = jobs.filter(j => j.cleaner_id === cleaner.id)
-            const totalEarned = cleanerJobs
-              .filter(j => j.status === 'done')
-              .reduce((s, j) => s + getJobPayout(j), 0)
-            const outstanding = cleanerJobs
-              .filter(j => j.status === 'delivered')
-              .reduce((s, j) => s + getJobPayout(j), 0)
-            const totalRevenue = cleanerJobs.reduce((s, j) => s + getJobPayout(j), 0)
-            const earnedPct = totalRevenue > 0 ? Math.round((totalEarned / totalRevenue) * 100) : 0
+            const stats = cleanerStats.find(s => s.cleanerId === cleaner.id)
+            const totalEarned = stats?.earned || 0
+            const outstanding = stats?.outstanding || 0
+            const jobCount = stats?.jobCount || 0
+            const revenue = stats?.revenue || 0
+            const earnedPct = revenue > 0 ? Math.round((totalEarned / (totalEarned + outstanding)) * 100) : 0
 
             return (
               <div
@@ -92,8 +114,12 @@ export default function CleanersPage() {
                   </div>
                 </div>
                 <div className="flex justify-between items-baseline mt-1">
+                  <div className="text-[10px] font-semibold" style={{ color: 'var(--t3)' }}>{t('revenue')}</div>
+                  <div className="text-[12px] font-bold" style={{ color: 'var(--t1)' }}>{formatCurrency(revenue)}</div>
+                </div>
+                <div className="flex justify-between items-baseline mt-1">
                   <div className="text-[10px] font-semibold" style={{ color: 'var(--t3)' }}>{t('jobs')}</div>
-                  <div className="text-[12px] font-bold" style={{ color: 'var(--t1)' }}>{cleanerJobs.length}</div>
+                  <div className="text-[12px] font-bold" style={{ color: 'var(--t1)' }}>{jobCount}</div>
                 </div>
               </div>
             )

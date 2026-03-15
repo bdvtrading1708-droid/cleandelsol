@@ -4,18 +4,10 @@ import { useJobs } from '@/lib/hooks/use-jobs'
 import { useCleaners } from '@/lib/hooks/use-cleaners'
 import { useLocale } from '@/lib/i18n'
 import { useState } from 'react'
-import { formatCurrency, getJobRevenue, getJobPayout } from '@/lib/utils'
+import { formatCurrency, getJobRevenue } from '@/lib/utils'
 import { STATUS_COLORS } from '@/lib/constants'
 import { CleanerAvatar } from '@/components/cleaners/cleaner-avatar'
-
-type Period = 'dag' | 'week' | 'maand' | 'jaar' | 'alles'
-
-function toDateStr(d: Date): string {
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
+import { filterByPeriod, aggregateFinancials, toDateStr, type Period } from '@/lib/financial'
 
 function smoothPath(pts: { x: number; y: number }[]): string {
   if (pts.length < 2) return ''
@@ -34,28 +26,6 @@ function smoothPath(pts: { x: number; y: number }[]): string {
   return d.join(' ')
 }
 
-function filterByPeriod(jobs: any[], period: Period) {
-  const now = new Date()
-  const today = toDateStr(now)
-
-  if (period === 'dag') return jobs.filter(j => j.date === today)
-  if (period === 'week') {
-    const dow = now.getDay()
-    const diff = dow === 0 ? 6 : dow - 1
-    const mon = new Date(now)
-    mon.setDate(now.getDate() - diff)
-    const sun = new Date(mon)
-    sun.setDate(mon.getDate() + 6)
-    return jobs.filter(j => j.date >= toDateStr(mon) && j.date <= toDateStr(sun))
-  }
-  if (period === 'maand') {
-    const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-    return jobs.filter(j => j.date?.startsWith(ym))
-  }
-  if (period === 'jaar') return jobs.filter(j => j.date?.startsWith(String(now.getFullYear())))
-  return jobs
-}
-
 export default function DashboardPage() {
   const { data: jobs = [], isLoading } = useJobs()
   const { data: cleaners = [] } = useCleaners()
@@ -68,14 +38,10 @@ export default function DashboardPage() {
     return <div className="flex items-center justify-center py-20" style={{ color: 'var(--t3)' }}>{t('loading')}</div>
   }
 
-  const filtered = filterByPeriod(
-    selectedCleaner ? jobs.filter(j => j.cleaner_id === selectedCleaner) : jobs,
-    period
-  )
-  const rev = filtered.reduce((s, j) => s + getJobRevenue(j), 0)
-  const costs = filtered.reduce((s, j) => s + getJobPayout(j), 0)
-  const profit = rev - costs
-  const margin = rev > 0 ? Math.round((profit / rev) * 100) : 0
+  // Filter by cleaner first, then by period
+  const cleanerJobs = selectedCleaner ? jobs.filter(j => j.cleaner_id === selectedCleaner) : jobs
+  const filtered = filterByPeriod(cleanerJobs, period)
+  const { revenue: rev, totalCost: costs, profit, margin } = aggregateFinancials(filtered)
 
   // 7-day chart
   const today = toDateStr(new Date())
@@ -85,8 +51,7 @@ export default function DashboardPage() {
     const d = new Date()
     d.setDate(d.getDate() - i)
     const ds = toDateStr(d)
-    const src = selectedCleaner ? jobs.filter(j => j.cleaner_id === selectedCleaner) : jobs
-    const dayJobs = src.filter(j => j.date === ds)
+    const dayJobs = cleanerJobs.filter(j => j.date === ds)
     const dow = d.getDay() === 0 ? 6 : d.getDay() - 1
     bars.push({ label: days[dow], value: dayJobs.reduce((s, j) => s + getJobRevenue(j), 0), isToday: ds === today })
   }

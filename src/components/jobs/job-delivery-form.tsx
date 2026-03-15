@@ -20,11 +20,15 @@ export function JobDeliveryForm({ job, open, onClose, onSuccess }: Props) {
   const updateStatus = useUpdateJobStatus()
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const [hours, setHours] = useState(job.hours_worked?.toString() || '')
+  const [endTime, setEndTime] = useState(job.end_time?.slice(0, 5) || '')
   const [km, setKm] = useState(job.km_driven?.toString() || '')
   const [notes, setNotes] = useState(job.notes || '')
   const [files, setFiles] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
+  const [tried, setTried] = useState(false)
+
+  const endTimeInvalid = !endTime
+  const kmInvalid = !km || parseFloat(km) < 0
 
   const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -37,6 +41,9 @@ export function JobDeliveryForm({ job, open, onClose, onSuccess }: Props) {
   }
 
   const handleSubmit = async () => {
+    setTried(true)
+    if (endTimeInvalid || kmInvalid) return
+
     setUploading(true)
     try {
       const supabase = createClient()
@@ -52,12 +59,22 @@ export function JobDeliveryForm({ job, open, onClose, onSuccess }: Props) {
         await supabase.from('job_photos').insert({ job_id: job.id, url: publicUrl })
       }
 
+      // Calculate hours from start_time and end_time
+      let hours_worked: number | undefined
+      if (job.start_time && endTime) {
+        const [sh, sm] = job.start_time.split(':').map(Number)
+        const [eh, em] = endTime.split(':').map(Number)
+        const diff = (eh * 60 + em) - (sh * 60 + sm)
+        hours_worked = diff > 0 ? diff / 60 : undefined
+      }
+
       // Update status to delivered
       updateStatus.mutate({
         id: job.id,
         status: 'delivered',
-        hours_worked: hours ? parseFloat(hours) : undefined,
-        km_driven: km ? parseFloat(km) : undefined,
+        end_time: endTime,
+        hours_worked,
+        km_driven: parseFloat(km),
         notes: notes || undefined,
       }, {
         onSuccess,
@@ -78,29 +95,47 @@ export function JobDeliveryForm({ job, open, onClose, onSuccess }: Props) {
           <SheetTitle className="text-[20px] font-bold tracking-[-0.5px] text-left" style={{ color: 'var(--t1)' }}>
             {t('delivery')}
           </SheetTitle>
+          {job.start_time && (
+            <div className="text-[13px] mt-1" style={{ color: 'var(--t3)' }}>
+              {t('start')}: {job.start_time.slice(0, 5)}
+            </div>
+          )}
         </SheetHeader>
 
         <div className="px-5 pb-5 mt-4 flex flex-col gap-3">
-          {/* Hours */}
+          {/* End Time - REQUIRED */}
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
-              {t('hours')}
+            <label
+              className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block"
+              style={{ color: tried && endTimeInvalid ? '#ef4444' : 'var(--t3)' }}
+            >
+              {t('endTime') || 'Eindtijd'} *
             </label>
             <input
-              type="number"
-              step="0.5"
-              value={hours}
-              onChange={(e) => setHours(e.target.value)}
+              type="time"
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
               className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
-              style={{ background: 'var(--inp)', color: 'var(--t1)' }}
-              placeholder="0"
+              style={{
+                background: 'var(--inp)',
+                color: 'var(--t1)',
+                border: tried && endTimeInvalid ? '2px solid #ef4444' : 'none',
+              }}
             />
+            {tried && endTimeInvalid && (
+              <div className="text-[11px] mt-1 font-medium" style={{ color: '#ef4444' }}>
+                Vul de eindtijd in
+              </div>
+            )}
           </div>
 
-          {/* KM */}
+          {/* KM - REQUIRED */}
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
-              {t('kmD')}
+            <label
+              className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block"
+              style={{ color: tried && kmInvalid ? '#ef4444' : 'var(--t3)' }}
+            >
+              {t('kmD')} *
             </label>
             <input
               type="number"
@@ -108,9 +143,18 @@ export function JobDeliveryForm({ job, open, onClose, onSuccess }: Props) {
               value={km}
               onChange={(e) => setKm(e.target.value)}
               className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
-              style={{ background: 'var(--inp)', color: 'var(--t1)' }}
+              style={{
+                background: 'var(--inp)',
+                color: 'var(--t1)',
+                border: tried && kmInvalid ? '2px solid #ef4444' : 'none',
+              }}
               placeholder="0"
             />
+            {tried && kmInvalid && (
+              <div className="text-[11px] mt-1 font-medium" style={{ color: '#ef4444' }}>
+                Vul het aantal km in
+              </div>
+            )}
           </div>
 
           {/* Notes */}
