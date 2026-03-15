@@ -322,14 +322,79 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
                   <StatBox icon={<span className="text-[13px] font-bold" style={{ color: 'var(--blue)' }}>€</span>} label={t('payout')} value={formatCurrency(getJobPayout(job))} />
                   <StatBox icon={<Clock size={14} style={{ color: 'var(--amber)' }} />} label={t('hours')} value={job.hours_worked != null ? `${job.hours_worked}h` : '—'} />
                   <StatBox icon={<Car size={14} style={{ color: 'var(--t2)' }} />} label={t('km')} value={job.km_driven != null ? `${job.km_driven}` : '—'} />
-                  {(job.extra_costs != null && job.extra_costs > 0) && (
-                    <StatBox icon={<span className="text-[13px] font-bold" style={{ color: '#ef4444' }}>€</span>} label="Extra kosten" value={formatCurrency(job.extra_costs)} />
-                  )}
-                  {job.payment_method && (
-                    <StatBox icon={<CreditCard size={14} style={{ color: 'var(--t2)' }} />} label="Betaalwijze" value={job.payment_method === 'cash' ? 'Cash' : 'Bank'} />
-                  )}
                 </div>
               </div>
+            )}
+
+            {/* Extra kosten - always editable */}
+            <div>
+              <label className="text-[10px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+                Extra kosten (€)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={editExtraCosts}
+                onChange={(e) => setEditExtraCosts(e.target.value)}
+                className="w-full h-[42px] rounded-[14px] px-3.5 text-[14px] font-medium border-0 outline-none"
+                style={{ background: 'var(--fill)', color: 'var(--t1)' }}
+                placeholder="Bv. parkeerkosten, schoonmaakmiddel..."
+              />
+            </div>
+
+            {/* Betaalwijze - always editable */}
+            <div>
+              <label className="text-[10px] font-semibold uppercase tracking-[.08em] mb-1.5 block" style={{ color: 'var(--t3)' }}>
+                Betaalwijze
+              </label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditPaymentMethod('bank')
+                    updateStatus.mutate({ id: job.id, status: job.status, payment_method: 'bank' })
+                  }}
+                  className="flex-1 h-[42px] rounded-[14px] text-[13px] font-semibold transition-all"
+                  style={{
+                    background: editPaymentMethod === 'bank' ? 'var(--t1)' : 'var(--fill)',
+                    color: editPaymentMethod === 'bank' ? 'var(--bg)' : 'var(--t3)',
+                  }}
+                >
+                  Bank
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditPaymentMethod('cash')
+                    updateStatus.mutate({ id: job.id, status: job.status, payment_method: 'cash' })
+                  }}
+                  className="flex-1 h-[42px] rounded-[14px] text-[13px] font-semibold transition-all"
+                  style={{
+                    background: editPaymentMethod === 'cash' ? 'var(--t1)' : 'var(--fill)',
+                    color: editPaymentMethod === 'cash' ? 'var(--bg)' : 'var(--t3)',
+                  }}
+                >
+                  Cash
+                </button>
+              </div>
+            </div>
+
+            {/* Save extra costs when changed */}
+            {editExtraCosts !== (job.extra_costs?.toString() || '') && (
+              <button
+                onClick={() => {
+                  updateStatus.mutate({
+                    id: job.id,
+                    status: job.status,
+                    extra_costs: editExtraCosts ? parseFloat(editExtraCosts) : 0,
+                  })
+                }}
+                disabled={updateStatus.isPending}
+                className="w-full h-[38px] rounded-[12px] text-[12px] font-bold transition-all"
+                style={{ background: 'var(--green)', color: '#fff', opacity: updateStatus.isPending ? 0.6 : 1 }}
+              >
+                {updateStatus.isPending ? t('loading') : 'Extra kosten opslaan'}
+              </button>
             )}
 
             {/* Address */}
