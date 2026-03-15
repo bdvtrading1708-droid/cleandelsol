@@ -57,8 +57,10 @@ export default function DashboardPage() {
   }
   const maxBar = Math.max(1, ...bars.map(b => b.value))
 
-  // Agenda
-  const agendaJobs = filterByPeriod(jobs, agendaPeriod).sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.start_time || '').localeCompare(b.start_time || ''))
+  // Agenda - only show today and future jobs
+  const agendaJobs = filterByPeriod(jobs, agendaPeriod)
+    .filter(j => j.date != null && j.date >= today)
+    .sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.start_time || '').localeCompare(b.start_time || ''))
   const grouped: Record<string, typeof jobs> = {}
   agendaJobs.forEach(j => {
     if (!grouped[j.date]) grouped[j.date] = []
