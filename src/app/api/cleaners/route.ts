@@ -48,7 +48,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: insertError.message }, { status: 400 })
     }
 
-    return NextResponse.json({ success: true, id: authData.user.id })
+    return NextResponse.json({ success: true, id: authData.user.id, password })
   } catch (err) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

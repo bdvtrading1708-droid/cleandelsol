@@ -12,9 +12,10 @@ interface Props {
   open: boolean
   onClose: () => void
   editCleaner?: User | null
+  onCreated?: (creds: { name: string; email: string; password: string }) => void
 }
 
-export function CleanerForm({ open, onClose, editCleaner }: Props) {
+export function CleanerForm({ open, onClose, editCleaner, onCreated }: Props) {
   const { t } = useLocale()
   const queryClient = useQueryClient()
 
@@ -62,7 +63,7 @@ export function CleanerForm({ open, onClose, editCleaner }: Props) {
   }
 
   const saveCleaner = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (): Promise<{ password?: string } | void> => {
       const supabase = createClient()
 
       if (isEdit && editCleaner) {
@@ -125,7 +126,7 @@ export function CleanerForm({ open, onClose, editCleaner }: Props) {
           const err = await res.json()
           throw new Error(err.error || 'Failed to create cleaner')
         }
-        const data = await res.json()
+        const data = await res.json() as { id: string; password: string }
 
         // Upload avatar if selected
         if (avatarFile && data.id) {
@@ -147,12 +148,19 @@ export function CleanerForm({ open, onClose, editCleaner }: Props) {
               .eq('id', data.id)
           }
         }
+
+        return { password: data.password }
       }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['cleaners'] })
+      const createdName = name
+      const createdEmail = email
       reset()
       onClose()
+      if (!isEdit && result?.password && onCreated) {
+        onCreated({ name: createdName, email: createdEmail, password: result.password })
+      }
     },
   })
 

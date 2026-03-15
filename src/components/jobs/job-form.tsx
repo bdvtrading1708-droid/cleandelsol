@@ -301,13 +301,33 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
                               <label className="text-[10px] font-semibold uppercase tracking-[.08em] mb-0.5 block" style={{ color: 'var(--t3)' }}>
                                 {t('endT')}
                               </label>
-                              <input
-                                type="time"
-                                value={sc.end_time}
-                                onChange={(e) => updateCleanerTime(sc.cleaner_id, 'end_time', e.target.value)}
-                                className="w-full h-[38px] rounded-[10px] px-3 text-[14px] font-medium border-0 outline-none"
-                                style={inputStyle}
-                              />
+                              <div className="relative">
+                                <input
+                                  type="time"
+                                  value={sc.end_time}
+                                  onChange={(e) => updateCleanerTime(sc.cleaner_id, 'end_time', e.target.value)}
+                                  className="w-full h-[38px] rounded-[10px] px-3 text-[14px] font-medium border-0 outline-none"
+                                  style={{ ...inputStyle, ...(sc.end_time ? {} : { color: 'transparent' }) }}
+                                />
+                                {!sc.end_time && (
+                                  <span
+                                    className="absolute inset-0 flex items-center px-3 text-[12px] font-medium pointer-events-none"
+                                    style={{ color: 'var(--t3)' }}
+                                  >
+                                    Kies eindtijd
+                                  </span>
+                                )}
+                                {sc.end_time && (
+                                  <button
+                                    type="button"
+                                    onClick={() => updateCleanerTime(sc.cleaner_id, 'end_time', '')}
+                                    className="absolute right-1.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center"
+                                    style={{ background: 'var(--fill)', color: 'var(--t3)' }}
+                                  >
+                                    <X size={10} />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -387,13 +407,33 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
               <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
                 {t('endT')}
               </label>
-              <input
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
-                style={inputStyle}
-              />
+              <div className="relative">
+                <input
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
+                  style={{ ...inputStyle, ...(endTime ? {} : { color: 'transparent' }) }}
+                />
+                {!endTime && (
+                  <span
+                    className="absolute inset-0 flex items-center px-3.5 text-[14px] font-medium pointer-events-none"
+                    style={{ color: 'var(--t3)' }}
+                  >
+                    Kies eindtijd
+                  </span>
+                )}
+                {endTime && (
+                  <button
+                    type="button"
+                    onClick={() => setEndTime('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center"
+                    style={{ background: 'var(--fill)', color: 'var(--t3)' }}
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 

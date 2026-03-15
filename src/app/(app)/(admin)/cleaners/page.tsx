@@ -5,7 +5,9 @@ import { useCleaners } from '@/lib/hooks/use-cleaners'
 import { useJobs } from '@/lib/hooks/use-jobs'
 import { useLocale } from '@/lib/i18n'
 import { formatCurrency } from '@/lib/utils'
-import { Plus } from 'lucide-react'
+import { Plus, Copy, Check } from 'lucide-react'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { toast } from 'sonner'
 import { CleanerPanel } from '@/components/cleaners/cleaner-panel'
 import { CleanerForm } from '@/components/cleaners/cleaner-form'
 import { CleanerAvatar } from '@/components/cleaners/cleaner-avatar'
@@ -20,6 +22,8 @@ export default function CleanersPage() {
   const [showForm, setShowForm] = useState(false)
   const [editCleaner, setEditCleaner] = useState<User | null>(null)
   const [period, setPeriod] = useState<Period>('alles')
+  const [createdCreds, setCreatedCreds] = useState<{ name: string; email: string; password: string } | null>(null)
+  const [copied, setCopied] = useState(false)
 
   if (isLoading) {
     return <div className="flex items-center justify-center py-20" style={{ color: 'var(--t3)' }}>{t('loading')}</div>
