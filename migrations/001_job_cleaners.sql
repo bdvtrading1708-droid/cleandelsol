@@ -4,7 +4,7 @@
 -- 1. Create the junction table
 CREATE TABLE IF NOT EXISTS job_cleaners (
   id SERIAL PRIMARY KEY,
-  job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+  job_id UUID NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
   cleaner_id UUID NOT NULL REFERENCES users(id),
   cleaner_payout NUMERIC,
   start_time TEXT,

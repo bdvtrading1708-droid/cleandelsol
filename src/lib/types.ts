@@ -45,7 +45,7 @@ export type JobStatus = 'planned' | 'progress' | 'delivered' | 'done'
 
 export interface JobCleaner {
   id: number
-  job_id: number
+  job_id: string
   cleaner_id: string
   cleaner_payout?: number
   start_time?: string
@@ -79,6 +79,6 @@ export interface Job {
 
 export interface JobPhoto {
   id: number
-  job_id: number
+  job_id: string
   url: string
 }
