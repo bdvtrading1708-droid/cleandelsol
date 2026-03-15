@@ -2,9 +2,10 @@
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useLocale } from '@/lib/i18n'
-import { useJobs } from '@/lib/hooks/use-jobs'
-import { formatCurrency, getCleanerPayout, getCleanerHours } from '@/lib/utils'
-import { Phone, Mail, Camera, Pencil, Send, Check, KeyRound } from 'lucide-react'
+import { useJobs, useUpdateJobStatus } from '@/lib/hooks/use-jobs'
+import { formatCurrency, formatDate, getCleanerPayout, getCleanerHours, getCleanerTotalPayout } from '@/lib/utils'
+import { Phone, Mail, Camera, Pencil, Send, Check, KeyRound, CheckCircle2 } from 'lucide-react'
+import { STATUS_COLORS } from '@/lib/constants'
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { CleanerAvatar } from '@/components/cleaners/cleaner-avatar'
@@ -27,6 +28,7 @@ export function CleanerPanel({ cleaner, open, onClose, onEdit, onPasswordReset }
   const queryClient = useQueryClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+  const updateStatus = useUpdateJobStatus()
 
   const sendWelcome = useMutation({
     mutationFn: async (cleanerId: string) => {
@@ -84,7 +86,7 @@ export function CleanerPanel({ cleaner, open, onClose, onEdit, onPasswordReset }
     .filter(j => j.status === 'done')
     .reduce((s, j) => { const my = getMyAssignment(j); return s + (my ? getCleanerPayout(my) : 0) }, 0)
   const outstanding = cleanerJobs
-    .filter(j => j.status === 'delivered')
+    .filter(j => j.status === 'delivered' || j.status === 'progress')
     .reduce((s, j) => { const my = getMyAssignment(j); return s + (my ? getCleanerPayout(my) : 0) }, 0)
   const totalHours = cleanerJobs.reduce((s, j) => { const my = getMyAssignment(j); return s + (my ? getCleanerHours(my) : 0) }, 0)
 
@@ -271,6 +273,88 @@ export function CleanerPanel({ cleaner, open, onClose, onEdit, onPasswordReset }
               </div>
             </div>
           </div>
+
+          {/* Te betalen - payment overview */}
+          {(() => {
+            const unpaidJobs = cleanerJobs
+              .filter(j => j.status === 'delivered' || j.status === 'progress')
+              .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+            const deliveredJobs = unpaidJobs.filter(j => j.status === 'delivered')
+
+            if (unpaidJobs.length === 0) return null
+
+            return (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-[11px] font-semibold uppercase tracking-[.08em]" style={{ color: 'var(--t3)' }}>
+                    {t('toPay') || 'Te betalen'} ({unpaidJobs.length})
+                  </div>
+                </div>
+                <div className="rounded-[14px] overflow-hidden" style={{ background: 'var(--fill)' }}>
+                  {unpaidJobs.map((job, i) => {
+                    const my = getMyAssignment(job)
+                    if (!my) return null
+                    const payout = getCleanerTotalPayout(my)
+                    const hours = getCleanerHours(my)
+                    const isDelivered = job.status === 'delivered'
+
+                    return (
+                      <div
+                        key={job.id}
+                        className="flex items-center gap-2.5 px-3 py-2.5"
+                        style={{ borderBottom: i < unpaidJobs.length - 1 ? '1px solid var(--border)' : 'none' }}
+                      >
+                        <div className="w-[3px] h-8 rounded-[2px] shrink-0" style={{ background: STATUS_COLORS[job.status] || 'var(--t3)' }} />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[13px] font-bold tracking-[-0.2px] truncate" style={{ color: 'var(--t1)' }}>
+                            {job.property?.name || job.custom_property_name || '—'}
+                          </div>
+                          <div className="text-[10px] mt-0.5" style={{ color: 'var(--t3)' }}>
+                            {job.date ? formatDate(job.date) : '—'} · {hours}u · {my.km_driven || 0}km
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0 mr-1">
+                          <div className="text-[13px] font-bold tracking-[-0.3px]" style={{ color: isDelivered ? 'var(--t1)' : '#FF9900' }}>
+                            {formatCurrency(payout)}
+                          </div>
+                          <div className="text-[8px] font-bold uppercase tracking-[.05em] mt-0.5" style={{ color: isDelivered ? 'var(--t3)' : '#FF9900' }}>
+                            {isDelivered ? (t('delivered') || 'Opgeleverd') : (t('inprog') || 'Bezig')}
+                          </div>
+                        </div>
+                        {isDelivered && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              updateStatus.mutate({ id: job.id, status: 'done' })
+                            }}
+                            disabled={updateStatus.isPending}
+                            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95"
+                            style={{ background: '#00A651' }}
+                          >
+                            <CheckCircle2 size={16} className="text-white" />
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+                {deliveredJobs.length > 1 && (
+                  <button
+                    onClick={() => {
+                      deliveredJobs.forEach(job => {
+                        updateStatus.mutate({ id: job.id, status: 'done' })
+                      })
+                    }}
+                    disabled={updateStatus.isPending}
+                    className="w-full h-[44px] rounded-[14px] text-[13px] font-bold mt-2 transition-all active:scale-[0.98]"
+                    style={{ background: '#00A651', color: '#fff' }}
+                  >
+                    {updateStatus.isPending ? t('loading') : (t('allPaid') || 'Alles betaald')}
+                  </button>
+                )}
+              </div>
+            )
+          })()}
 
           {/* Payment notes */}
           {cleaner.payment_notes && (

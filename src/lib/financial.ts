@@ -195,7 +195,7 @@ export function aggregateByCleaners(
           hours += cleanerHours
           totalPayout += cleanerTotalWithCosts
 
-          if (job.status === 'delivered') outstanding += cleanerTotalWithCosts
+          if (job.status === 'delivered' || job.status === 'progress') outstanding += cleanerTotalWithCosts
           if (job.status === 'done') earned += cleanerTotalWithCosts
         }
       } else {
@@ -208,7 +208,7 @@ export function aggregateByCleaners(
         hours += getJobHours(job)
         totalPayout += legacyTotalWithCosts
 
-        if (job.status === 'delivered') outstanding += legacyTotalWithCosts
+        if (job.status === 'delivered' || job.status === 'progress') outstanding += legacyTotalWithCosts
         if (job.status === 'done') earned += legacyTotalWithCosts
       }
 

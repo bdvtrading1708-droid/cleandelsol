@@ -23,7 +23,7 @@ export default function MyEarningsPage() {
 
   const filtered = filterByPeriod(jobs, period)
   const doneJobs = filtered.filter(j => j.status === 'done')
-  const deliveredJobs = filtered.filter(j => j.status === 'delivered')
+  const deliveredJobs = filtered.filter(j => j.status === 'delivered' || j.status === 'progress')
   const totalEarned = doneJobs.reduce((s, j) => {
     const my = getMyAssignment(j)
     return s + (my ? getCleanerTotalPayout(my) : 0)
