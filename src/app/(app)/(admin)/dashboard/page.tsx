@@ -242,7 +242,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="w-[3px] h-9 rounded-[2px] shrink-0" style={{ background: getCleanerColor((j.cleaners || [])[0]?.cleaner?.name || j.cleaner?.name) }} />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold tracking-[-0.2px] truncate" style={{ color: 'var(--t1)' }}>{j.property?.name || '—'}</div>
+                      <div className="text-sm font-semibold tracking-[-0.2px] truncate" style={{ color: 'var(--t1)' }}>{j.property?.name || j.custom_property_name || '—'}</div>
                       <div className="flex items-center gap-1 mt-1 flex-wrap">
                         {(j.cleaners || []).map(jc => jc.cleaner && (
                           <div

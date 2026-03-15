@@ -161,7 +161,7 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
                 <SheetTitle className="text-[20px] font-bold tracking-[-0.5px] text-left" style={{ color: 'var(--t1)' }}>
-                  {job.property?.name || '—'}
+                  {job.property?.name || job.custom_property_name || '—'}
                 </SheetTitle>
                 <div className="text-[13px] mt-0.5" style={{ color: 'var(--t3)' }}>
                   {cleaners.length > 0

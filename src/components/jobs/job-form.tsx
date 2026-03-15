@@ -5,9 +5,9 @@ import { useLocale } from '@/lib/i18n'
 import { useCreateJob } from '@/lib/hooks/use-jobs'
 import { useProperties } from '@/lib/hooks/use-properties'
 import { useCleaners } from '@/lib/hooks/use-cleaners'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { addDays, format } from 'date-fns'
-import { Copy, X, ChevronDown, ChevronUp } from 'lucide-react'
+import { Copy, X, ChevronDown, ChevronUp, Search } from 'lucide-react'
 import { CleanerAvatar } from '@/components/cleaners/cleaner-avatar'
 import { getCleanerColor } from '@/lib/constants'
 
@@ -33,6 +33,13 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
   const { data: cleaners = [] } = useCleaners()
 
   const [propertyId, setPropertyId] = useState('')
+  const [customPropertyName, setCustomPropertyName] = useState('')
+  const [propertySearch, setPropertySearch] = useState('')
+  const [showPropertyDropdown, setShowPropertyDropdown] = useState(false)
+  const [pricingType, setPricingType] = useState<'hourly' | 'fixed'>('hourly')
+  const propertyInputRef = useRef<HTMLInputElement>(null)
+  const propertyDropdownRef = useRef<HTMLDivElement>(null)
+
   const [selectedCleaners, setSelectedCleaners] = useState<SelectedCleaner[]>([])
   const [date, setDate] = useState(defaultDate ?? '')
   useEffect(() => { if (open && defaultDate) setDate(defaultDate) }, [open, defaultDate])
@@ -72,9 +79,7 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
 
   const hours = calcHours(startTime, endTime)
 
-  // Check if the selected property uses fixed pricing
-  const selectedProp = properties.find(p => p.id === propertyId)
-  const isFixedPrice = selectedProp?.pricing_type === 'fixed' || (selectedProp?.fixed_price && !selectedProp?.default_price)
+  const isFixedPrice = pricingType === 'fixed'
 
   // Calculate totals
   const priceNum = parseFloat(clientPrice) || 0
@@ -88,8 +93,25 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
     return sum + (cleanerHours > 0 ? payoutNum * cleanerHours : payoutNum)
   }, 0)
 
+  // Filter properties based on search
+  const filteredProperties = properties.filter(p =>
+    p.name.toLowerCase().includes(propertySearch.toLowerCase())
+  )
+  const hasExactMatch = properties.some(p => p.name.toLowerCase() === propertySearch.toLowerCase())
+
+  // The display name for the selected property
+  const selectedPropertyName = propertyId
+    ? properties.find(p => p.id === propertyId)?.name || ''
+    : customPropertyName
+
+  const hasProperty = !!propertyId || !!customPropertyName
+
   const reset = () => {
     setPropertyId('')
+    setCustomPropertyName('')
+    setPropertySearch('')
+    setShowPropertyDropdown(false)
+    setPricingType('hourly')
     setSelectedCleaners([])
     setDate(defaultDate ?? '')
     setStartTime('')
@@ -103,10 +125,12 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
   }
 
   const handleSubmit = () => {
-    if (!propertyId || selectedCleaners.length === 0 || !date) return
+    if ((!propertyId && !customPropertyName) || selectedCleaners.length === 0 || !date) return
 
     const baseJob = {
-      property_id: propertyId,
+      property_id: propertyId || undefined,
+      custom_property_name: !propertyId ? customPropertyName : undefined,
+      pricing_type: pricingType,
       date,
       start_time: startTime || undefined,
       end_time: endTime || undefined,
@@ -143,16 +167,54 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
     }
   }
 
-  // Auto-fill rate when property selected
-  const handlePropertyChange = (id: string) => {
+  // Select a property from the dropdown
+  const handlePropertySelect = (id: string) => {
     setPropertyId(id)
+    setCustomPropertyName('')
     const prop = properties.find(p => p.id === id)
-    if (prop?.fixed_price) {
-      setClientPrice(prop.fixed_price.toString())
-    } else if (prop?.default_price) {
-      setClientPrice(prop.default_price.toString())
+    if (prop) {
+      setPropertySearch(prop.name)
+      // Set pricing type from property
+      if (prop.pricing_type === 'fixed' || (prop.fixed_price && !prop.default_price)) {
+        setPricingType('fixed')
+      } else {
+        setPricingType('hourly')
+      }
+      // Auto-fill price
+      if (prop.fixed_price) {
+        setClientPrice(prop.fixed_price.toString())
+      } else if (prop.default_price) {
+        setClientPrice(prop.default_price.toString())
+      }
     }
+    setShowPropertyDropdown(false)
   }
+
+  // Use custom property name (not in database)
+  const handleCustomProperty = (name: string) => {
+    setPropertyId('')
+    setCustomPropertyName(name)
+    setPropertySearch(name)
+    setShowPropertyDropdown(false)
+    // Default to hourly pricing for custom properties
+    setPricingType('hourly')
+  }
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        propertyDropdownRef.current &&
+        !propertyDropdownRef.current.contains(e.target as Node) &&
+        propertyInputRef.current &&
+        !propertyInputRef.current.contains(e.target as Node)
+      ) {
+        setShowPropertyDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // Toggle cleaner selection
   const toggleCleaner = (cleanerId: string) => {
@@ -204,22 +266,127 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
         </SheetHeader>
 
         <div className="px-5 pb-5 mt-4 flex flex-col gap-3">
-          {/* Property */}
-          <div>
+          {/* Property - Searchable */}
+          <div className="relative">
             <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
               {t('props')}
             </label>
-            <select
-              value={propertyId}
-              onChange={(e) => handlePropertyChange(e.target.value)}
-              className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none appearance-none"
-              style={inputStyle}
-            >
-              <option value="">—</option>
-              {properties.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
+            <div className="relative">
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--t3)' }} />
+              <input
+                ref={propertyInputRef}
+                type="text"
+                value={showPropertyDropdown ? propertySearch : selectedPropertyName}
+                onChange={(e) => {
+                  setPropertySearch(e.target.value)
+                  if (!showPropertyDropdown) setShowPropertyDropdown(true)
+                  // If the user clears or changes text, clear the selected property
+                  if (propertyId) {
+                    const prop = properties.find(p => p.id === propertyId)
+                    if (prop && e.target.value !== prop.name) {
+                      setPropertyId('')
+                      setCustomPropertyName('')
+                    }
+                  }
+                }}
+                onFocus={() => {
+                  setShowPropertyDropdown(true)
+                  setPropertySearch(selectedPropertyName)
+                }}
+                className="w-full h-[46px] rounded-[14px] pl-10 pr-3.5 text-[15px] font-medium border-0 outline-none"
+                style={inputStyle}
+                placeholder="Zoek of typ property naam..."
+              />
+              {(propertyId || customPropertyName) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPropertyId('')
+                    setCustomPropertyName('')
+                    setPropertySearch('')
+                    setClientPrice('')
+                    setPricingType('hourly')
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center"
+                  style={{ background: 'var(--fill)', color: 'var(--t3)' }}
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+
+            {/* Property dropdown */}
+            {showPropertyDropdown && (
+              <div
+                ref={propertyDropdownRef}
+                className="absolute left-0 right-0 mt-1.5 rounded-[14px] overflow-hidden max-h-[240px] overflow-y-auto z-10"
+                style={{ background: 'var(--inp)', border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}
+              >
+                {filteredProperties.map(p => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => handlePropertySelect(p.id)}
+                    className="w-full flex items-center gap-3 px-3.5 py-3 text-left transition-colors"
+                    style={{ borderBottom: '1px solid var(--border)' }}
+                  >
+                    <span className="flex-1 text-[14px] font-medium" style={{ color: 'var(--t1)' }}>{p.name}</span>
+                    <span className="text-[11px] font-medium" style={{ color: 'var(--t3)' }}>
+                      {p.pricing_type === 'fixed' ? `€${p.fixed_price || 0} vast` : `€${p.default_price || 0}/u`}
+                    </span>
+                  </button>
+                ))}
+                {/* Option to use custom name */}
+                {propertySearch.trim() && !hasExactMatch && (
+                  <button
+                    type="button"
+                    onClick={() => handleCustomProperty(propertySearch.trim())}
+                    className="w-full flex items-center gap-3 px-3.5 py-3 text-left"
+                    style={{ borderBottom: '1px solid var(--border)', background: 'var(--fill)' }}
+                  >
+                    <span className="text-[14px] font-medium" style={{ color: 'var(--acc)' }}>
+                      + &ldquo;{propertySearch.trim()}&rdquo; als eenmalige klant
+                    </span>
+                  </button>
+                )}
+                {filteredProperties.length === 0 && !propertySearch.trim() && (
+                  <div className="px-3.5 py-3 text-[13px]" style={{ color: 'var(--t3)' }}>Geen properties gevonden</div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Pricing type toggle */}
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+              Tarief type
+            </label>
+            <div className="flex rounded-[14px] overflow-hidden" style={{ background: 'var(--inp)' }}>
+              <button
+                type="button"
+                onClick={() => setPricingType('hourly')}
+                className="flex-1 h-[42px] text-[14px] font-semibold transition-all"
+                style={{
+                  background: pricingType === 'hourly' ? 'var(--t1)' : 'transparent',
+                  color: pricingType === 'hourly' ? 'var(--bg)' : 'var(--t3)',
+                  borderRadius: '14px',
+                }}
+              >
+                Per uur
+              </button>
+              <button
+                type="button"
+                onClick={() => setPricingType('fixed')}
+                className="flex-1 h-[42px] text-[14px] font-semibold transition-all"
+                style={{
+                  background: pricingType === 'fixed' ? 'var(--t1)' : 'transparent',
+                  color: pricingType === 'fixed' ? 'var(--bg)' : 'var(--t3)',
+                  borderRadius: '14px',
+                }}
+              >
+                Vast tarief
+              </button>
+            </div>
           </div>
 
           {/* Cleaners - Multi-select */}
@@ -558,12 +725,12 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
             </button>
             <button
               onClick={handleSubmit}
-              disabled={!propertyId || selectedCleaners.length === 0 || !date || createJob.isPending}
+              disabled={!hasProperty || selectedCleaners.length === 0 || !date || createJob.isPending}
               className="flex-1 h-[50px] rounded-[16px] text-[15px] font-bold transition-all"
               style={{
                 background: 'var(--t1)',
                 color: 'var(--bg)',
-                opacity: (!propertyId || selectedCleaners.length === 0 || !date || createJob.isPending) ? 0.4 : 1,
+                opacity: (!hasProperty || selectedCleaners.length === 0 || !date || createJob.isPending) ? 0.4 : 1,
               }}
             >
               {createJob.isPending ? t('loading') : t('create')}

@@ -242,7 +242,7 @@ export default function CalendarPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-[13px] font-semibold truncate" style={{ color: 'var(--t1)' }}>
-                            {job.property?.name || '—'}
+                            {job.property?.name || job.custom_property_name || '—'}
                           </div>
                           <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                             {(job.cleaners || []).map(jc => jc.cleaner && (

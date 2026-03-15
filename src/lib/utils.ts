@@ -47,8 +47,9 @@ export function getCleanerHours(jc: { start_time?: string | null; end_time?: str
 }
 
 /** Total revenue for a job: fixed price OR hourly rate × hours. If no hours data, returns client_price as-is. */
-export function getJobRevenue(job: { client_price?: number; start_time?: string; end_time?: string; hours_worked?: number; property?: { pricing_type?: string } | null; cleaners?: JobCleaner[] }): number {
-  if (job.property?.pricing_type === 'fixed') return job.client_price || 0
+export function getJobRevenue(job: { client_price?: number; start_time?: string; end_time?: string; hours_worked?: number; pricing_type?: string; property?: { pricing_type?: string } | null; cleaners?: JobCleaner[] }): number {
+  const pricingType = job.pricing_type || job.property?.pricing_type
+  if (pricingType === 'fixed') return job.client_price || 0
   const price = job.client_price || 0
   if (job.cleaners && job.cleaners.length > 0) {
     const totalHours = job.cleaners.reduce((sum, jc) => sum + getCleanerHours(jc), 0)

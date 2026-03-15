@@ -58,7 +58,9 @@ export interface JobCleaner {
 
 export interface Job {
   id: number
-  property_id: string
+  property_id?: string
+  custom_property_name?: string
+  pricing_type?: 'hourly' | 'fixed'
   date: string
   start_time?: string
   end_time?: string

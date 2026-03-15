@@ -88,7 +88,7 @@ export default function MyJobsPage() {
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="text-[14px] font-bold tracking-[-0.2px] truncate" style={{ color: 'var(--t1)' }}>
-                  {job.property?.name || '—'}
+                  {job.property?.name || job.custom_property_name || '—'}
                 </div>
                 <div className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--t3)' }}>
                   {formatDate(job.date)} · {job.start_time || '—'}
