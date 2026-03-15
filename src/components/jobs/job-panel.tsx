@@ -19,12 +19,13 @@ interface JobPanelProps {
   onClose: () => void
 }
 
-const ALL_STATUSES: JobStatus[] = ['planned', 'progress', 'delivered', 'done']
+const ALL_STATUSES: JobStatus[] = ['planned', 'progress', 'delivered', 'invoiced', 'done']
 
 const STATUS_FLOW: Record<JobStatus, JobStatus | null> = {
   planned: 'progress',
   progress: 'delivered',
-  delivered: 'done',
+  delivered: 'invoiced',
+  invoiced: 'done',
   done: null,
 }
 

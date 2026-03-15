@@ -87,7 +87,7 @@ export function CleanerPanel({ cleaner, open, onClose, onEdit, onPasswordReset }
     .filter(j => j.status === 'done')
     .reduce((s, j) => { const my = getMyAssignment(j); return s + (my ? getCleanerPayout(my) : 0) }, 0)
   const outstanding = cleanerJobs
-    .filter(j => j.status === 'delivered' || j.status === 'progress')
+    .filter(j => j.status === 'delivered' || j.status === 'invoiced' || j.status === 'progress')
     .reduce((s, j) => { const my = getMyAssignment(j); return s + (my ? getCleanerPayout(my) : 0) }, 0)
   const totalHours = cleanerJobs.reduce((s, j) => { const my = getMyAssignment(j); return s + (my ? getCleanerHours(my) : 0) }, 0)
 
@@ -278,9 +278,9 @@ export function CleanerPanel({ cleaner, open, onClose, onEdit, onPasswordReset }
           {/* Te betalen - payment overview */}
           {(() => {
             const unpaidJobs = cleanerJobs
-              .filter(j => j.status === 'delivered' || j.status === 'progress')
+              .filter(j => j.status === 'delivered' || j.status === 'invoiced' || j.status === 'progress')
               .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
-            const deliveredJobs = unpaidJobs.filter(j => j.status === 'delivered')
+            const payableJobs = unpaidJobs.filter(j => j.status === 'delivered' || j.status === 'invoiced')
 
             if (unpaidJobs.length === 0) return null
 
@@ -297,7 +297,7 @@ export function CleanerPanel({ cleaner, open, onClose, onEdit, onPasswordReset }
                     if (!my) return null
                     const payout = getCleanerTotalPayout(my)
                     const hours = getCleanerHours(my)
-                    const isDelivered = job.status === 'delivered'
+                    const isPayable = job.status === 'delivered' || job.status === 'invoiced'
 
                     return (
                       <div
@@ -315,14 +315,14 @@ export function CleanerPanel({ cleaner, open, onClose, onEdit, onPasswordReset }
                           </div>
                         </div>
                         <div className="text-right shrink-0 mr-1">
-                          <div className="text-[13px] font-bold tracking-[-0.3px]" style={{ color: isDelivered ? 'var(--t1)' : '#FF9900' }}>
+                          <div className="text-[13px] font-bold tracking-[-0.3px]" style={{ color: isPayable ? 'var(--t1)' : '#FF9900' }}>
                             {formatCurrency(payout)}
                           </div>
-                          <div className="text-[8px] font-bold uppercase tracking-[.05em] mt-0.5" style={{ color: isDelivered ? 'var(--t3)' : '#FF9900' }}>
-                            {isDelivered ? (t('delivered') || 'Opgeleverd') : (t('inprog') || 'Bezig')}
+                          <div className="text-[8px] font-bold uppercase tracking-[.05em] mt-0.5" style={{ color: isPayable ? 'var(--t3)' : '#FF9900' }}>
+                            {isPayable ? (t(job.status) || 'Opgeleverd') : (t('inprog') || 'Bezig')}
                           </div>
                         </div>
-                        {isDelivered && (
+                        {isPayable && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
@@ -339,10 +339,10 @@ export function CleanerPanel({ cleaner, open, onClose, onEdit, onPasswordReset }
                     )
                   })}
                 </div>
-                {deliveredJobs.length > 1 && (
+                {payableJobs.length > 1 && (
                   <button
                     onClick={() => {
-                      deliveredJobs.forEach(job => {
+                      payableJobs.forEach(job => {
                         updateStatus.mutate({ id: job.id, status: 'done' })
                       })
                     }}

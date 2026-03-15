@@ -42,7 +42,7 @@ export interface Property {
   partner?: Partner
 }
 
-export type JobStatus = 'planned' | 'progress' | 'delivered' | 'done'
+export type JobStatus = 'planned' | 'progress' | 'delivered' | 'invoiced' | 'done'
 
 export interface JobCleaner {
   id: number

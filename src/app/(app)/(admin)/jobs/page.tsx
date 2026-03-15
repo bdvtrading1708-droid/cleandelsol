@@ -11,7 +11,7 @@ import { JobPanel } from '@/components/jobs/job-panel'
 import { JobForm } from '@/components/jobs/job-form'
 import type { Job, JobStatus } from '@/lib/types'
 
-const STATUSES: JobStatus[] = ['planned', 'progress', 'delivered', 'done']
+const STATUSES: JobStatus[] = ['planned', 'progress', 'delivered', 'invoiced', 'done']
 
 export default function JobsPage() {
   const { data: jobs = [], isLoading } = useJobs()
@@ -28,15 +28,17 @@ export default function JobsPage() {
 
   let filtered = jobs.filter(j => j.status === filter)
 
-  // Sub-filter by partner when on "delivered" (wacht op betaling)
-  if (filter === 'delivered' && partnerFilter) {
+  // Sub-filter by partner when on "delivered" or "invoiced"
+  if ((filter === 'delivered' || filter === 'invoiced') && partnerFilter) {
     filtered = filtered.filter(j => j.property?.partner_id === partnerFilter)
   }
 
-  // Get unique partners for delivered jobs (for sub-filter)
+  // Get unique partners for delivered/invoiced jobs (for sub-filter)
   const deliveredJobs = jobs.filter(j => j.status === 'delivered')
-  const deliveredPartnerIds = [...new Set(deliveredJobs.map(j => j.property?.partner_id).filter(Boolean))] as string[]
-  const deliveredPartners = partners.filter(p => deliveredPartnerIds.includes(p.id))
+  const invoicedJobs = jobs.filter(j => j.status === 'invoiced')
+  const filterJobs = filter === 'invoiced' ? invoicedJobs : deliveredJobs
+  const filterPartnerIds = [...new Set(filterJobs.map(j => j.property?.partner_id).filter(Boolean))] as string[]
+  const filterPartners = partners.filter(p => filterPartnerIds.includes(p.id))
 
   return (
     <>
@@ -69,12 +71,15 @@ export default function JobsPage() {
             {s === 'delivered' && deliveredJobs.length > 0 && (
               <span className="ml-1 opacity-70">({deliveredJobs.length})</span>
             )}
+            {s === 'invoiced' && invoicedJobs.length > 0 && (
+              <span className="ml-1 opacity-70">({invoicedJobs.length})</span>
+            )}
           </button>
         ))}
       </div>
 
-      {/* Partner sub-filter for "Wacht op betaling" */}
-      {filter === 'delivered' && deliveredPartners.length > 0 && (
+      {/* Partner sub-filter for "Maak factuur" / "Factuur verstuurd" */}
+      {(filter === 'delivered' || filter === 'invoiced') && filterPartners.length > 0 && (
         <div className="flex gap-1 mb-4 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
           <button
             className="px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all shrink-0"
@@ -86,8 +91,8 @@ export default function JobsPage() {
           >
             Alle partners
           </button>
-          {deliveredPartners.map(p => {
-            const count = deliveredJobs.filter(j => j.property?.partner_id === p.id).length
+          {filterPartners.map(p => {
+            const count = filterJobs.filter(j => j.property?.partner_id === p.id).length
             return (
               <button
                 key={p.id}

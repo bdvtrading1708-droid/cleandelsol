@@ -3,6 +3,7 @@ export const STATUS_COLORS: Record<string, string> = {
   progress: '#FF9900',
   done: '#00A651',
   delivered: '#000000',
+  invoiced: '#8B5CF6',
 }
 
 const CLEANER_COLOR_PALETTE = [
