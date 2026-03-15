@@ -112,14 +112,19 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
       end_time: endTime || undefined,
       client_price: clientPrice ? parseFloat(clientPrice) : undefined,
       notes: notes || undefined,
-      cleaners: selectedCleaners.map(sc => ({
-        cleaner_id: sc.cleaner_id,
-        cleaner_payout: sc.payout ? parseFloat(sc.payout) : undefined,
-        start_time: sc.start_time || startTime || undefined,
-        end_time: sc.end_time || endTime || undefined,
-        hours_worked: calcHours(sc.start_time || startTime, sc.end_time || endTime) || undefined,
-        km_driven: kmDriven ? parseFloat(kmDriven) : undefined,
-      })),
+      cleaners: selectedCleaners.map(sc => {
+        const cStart = sc.start_time || startTime
+        const cEnd = sc.end_time || endTime
+        const cHours = calcHours(cStart, cEnd)
+        return {
+          cleaner_id: sc.cleaner_id,
+          cleaner_payout: sc.payout ? parseFloat(sc.payout) : undefined,
+          start_time: cStart || undefined,
+          end_time: cEnd || undefined,
+          hours_worked: cHours > 0 ? cHours : undefined,
+          km_driven: kmDriven ? parseFloat(kmDriven) : undefined,
+        }
+      }),
     }
 
     if (repeatDays <= 1) {

@@ -167,7 +167,7 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
                   {cleaners.length > 0
                     ? cleaners.map(jc => jc.cleaner?.name?.split(' ')[0]).join(', ')
                     : job.cleaner?.name || '—'
-                  } · {formatDate(job.date)} · {job.start_time || '—'}
+                  } · {formatDate(job.date)} · {job.start_time?.slice(0, 5) || '—'}{job.end_time ? ` – ${job.end_time.slice(0, 5)}` : ''}
                 </div>
               </div>
               <div
@@ -333,20 +333,52 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
                       const color = getCleanerColor(jc.cleaner?.name)
                       const hours = getCleanerHours(jc)
                       return (
-                        <div key={jc.id} className="rounded-[12px] px-3 py-2 flex items-center gap-2.5" style={{ background: color + '10' }}>
-                          <CleanerAvatar src={jc.cleaner?.avatar_url} name={jc.cleaner?.name || ''} size={22} />
-                          <div className="flex-1 min-w-0">
-                            <div className="text-[12px] font-semibold truncate" style={{ color: 'var(--t1)' }}>{jc.cleaner?.name?.split(' ')[0]}</div>
-                            <div className="text-[10px]" style={{ color: 'var(--t3)' }}>
-                              {jc.start_time?.slice(0, 5) || job.start_time?.slice(0, 5) || '—'}
-                              {(jc.end_time || job.end_time) && ` – ${jc.end_time?.slice(0, 5) || job.end_time?.slice(0, 5)}`}
-                              {hours > 0 && ` · ${hours}u`}
-                              {jc.km_driven ? ` · ${jc.km_driven}km` : ''}
+                        <div key={jc.id} className="rounded-[12px] px-3 py-2" style={{ background: color + '10' }}>
+                          <div className="flex items-center gap-2.5">
+                            <CleanerAvatar src={jc.cleaner?.avatar_url} name={jc.cleaner?.name || ''} size={22} />
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[12px] font-semibold truncate" style={{ color: 'var(--t1)' }}>{jc.cleaner?.name?.split(' ')[0]}</div>
+                              <div className="text-[10px]" style={{ color: 'var(--t3)' }}>
+                                {jc.start_time?.slice(0, 5) || job.start_time?.slice(0, 5) || '—'}
+                                {(jc.end_time || job.end_time) && ` – ${jc.end_time?.slice(0, 5) || job.end_time?.slice(0, 5)}`}
+                                {hours > 0 && ` · ${hours}u`}
+                                {hours === 0 && jc.end_time && ` – ${jc.end_time.slice(0, 5)}`}
+                                {jc.km_driven ? ` · ${jc.km_driven}km` : ''}
+                              </div>
+                            </div>
+                            <div className="text-[13px] font-bold shrink-0" style={{ color }}>
+                              {formatCurrency(getCleanerPayout(jc))}
                             </div>
                           </div>
-                          <div className="text-[13px] font-bold shrink-0" style={{ color }}>
-                            {formatCurrency(getCleanerPayout(jc))}
-                          </div>
+                          {/* Inline end time editor for admin */}
+                          {isAdmin && (
+                            <div className="mt-2 flex items-center gap-2">
+                              <label className="text-[9px] font-semibold uppercase tracking-[.08em] shrink-0" style={{ color: 'var(--t3)' }}>Eindtijd</label>
+                              <input
+                                type="time"
+                                value={editCleanerEndTimes[jc.id] || ''}
+                                onChange={(e) => {
+                                  const newEnd = e.target.value
+                                  setEditCleanerEndTimes(prev => ({ ...prev, [jc.id]: newEnd }))
+                                  const startTime = jc.start_time || job.start_time
+                                  let hours_worked: number | undefined
+                                  if (startTime && newEnd) {
+                                    const [sh, sm] = startTime.split(':').map(Number)
+                                    const [eh, em] = newEnd.split(':').map(Number)
+                                    const diff = (eh * 60 + em) - (sh * 60 + sm)
+                                    hours_worked = diff > 0 ? diff / 60 : undefined
+                                  }
+                                  updateCleaner.mutate({
+                                    id: jc.id,
+                                    end_time: newEnd || undefined,
+                                    hours_worked,
+                                  })
+                                }}
+                                className="flex-1 h-[30px] rounded-[8px] px-2 text-[12px] font-medium border-0 outline-none"
+                                style={{ background: 'var(--inp)', color: 'var(--t1)', maxWidth: '120px' }}
+                              />
+                            </div>
+                          )}
                         </div>
                       )
                     })}
@@ -354,7 +386,7 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
                 )}
 
                 <div className="grid grid-cols-2 gap-2">
-                  <StatBox icon={<Clock size={14} style={{ color: 'var(--amber)' }} />} label={t('hours')} value={cleaners.length > 0 ? cleaners.map(jc => `${getCleanerHours(jc)}u`).join(', ') : (job.hours_worked != null ? `${job.hours_worked}h` : '—')} />
+                  <StatBox icon={<Clock size={14} style={{ color: 'var(--amber)' }} />} label={t('hours')} value={cleaners.length > 0 ? (cleaners.map(jc => getCleanerHours(jc)).filter(h => h > 0).map(h => `${h}u`).join(', ') || '—') : (job.hours_worked != null && job.hours_worked > 0 ? `${job.hours_worked}u` : '—')} />
                   <StatBox icon={<Car size={14} style={{ color: 'var(--t2)' }} />} label={t('km')} value={getJobKm(job) > 0 ? `${getJobKm(job)}` : '—'} />
                 </div>
               </div>

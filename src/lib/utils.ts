@@ -22,22 +22,18 @@ export function getInitials(name: string): string {
   return (name || '?')[0].toUpperCase()
 }
 
-/** Calculate hours from start_time/end_time or hours_worked */
-export function calcHoursFromTimes(start_time?: string, end_time?: string, hours_worked?: number): number {
-  if (hours_worked && hours_worked > 0) return hours_worked
-  if (!start_time || !end_time) return 1
+/** Calculate hours from start_time/end_time or hours_worked. Returns 0 if no data available. */
+export function calcHoursFromTimes(start_time?: string | null, end_time?: string | null, hours_worked?: number | null): number {
+  if (hours_worked != null && hours_worked > 0) return hours_worked
+  if (!start_time || !end_time) return 0
   const [sh, sm] = start_time.split(':').map(Number)
   const [eh, em] = end_time.split(':').map(Number)
   const diff = (eh * 60 + em) - (sh * 60 + sm)
-  return diff > 0 ? diff / 60 : 1
+  return diff > 0 ? diff / 60 : 0
 }
 
-/**
- * Calculate hours for a job from start_time/end_time or hours_worked.
- * Returns 1 if no time data available (so rate = total).
- */
+/** Calculate hours for a job (uses first cleaner's data if available) */
 export function getJobHours(job: { start_time?: string; end_time?: string; hours_worked?: number; cleaners?: JobCleaner[] }): number {
-  // If job has cleaners, use first cleaner's times (for display purposes, total hours is per-cleaner)
   if (job.cleaners && job.cleaners.length > 0) {
     const first = job.cleaners[0]
     return calcHoursFromTimes(first.start_time, first.end_time, first.hours_worked)
@@ -46,21 +42,20 @@ export function getJobHours(job: { start_time?: string; end_time?: string; hours
 }
 
 /** Get hours for a specific job_cleaner entry */
-export function getCleanerHours(jc: { start_time?: string; end_time?: string; hours_worked?: number }): number {
+export function getCleanerHours(jc: { start_time?: string | null; end_time?: string | null; hours_worked?: number | null }): number {
   return calcHoursFromTimes(jc.start_time, jc.end_time, jc.hours_worked)
 }
 
-/** Total revenue for a job: fixed price OR hourly rate × total cleaner hours */
+/** Total revenue for a job: fixed price OR hourly rate × hours. If no hours data, returns client_price as-is. */
 export function getJobRevenue(job: { client_price?: number; start_time?: string; end_time?: string; hours_worked?: number; property?: { pricing_type?: string } | null; cleaners?: JobCleaner[] }): number {
   if (job.property?.pricing_type === 'fixed') return job.client_price || 0
-  // For hourly jobs with multiple cleaners, revenue = price × total cleaner hours
+  const price = job.client_price || 0
   if (job.cleaners && job.cleaners.length > 0) {
     const totalHours = job.cleaners.reduce((sum, jc) => sum + getCleanerHours(jc), 0)
-    return (job.client_price || 0) * totalHours
+    return totalHours > 0 ? price * totalHours : price
   }
-  // Legacy fallback: single cleaner, use job-level times
   const hours = calcHoursFromTimes(job.start_time, job.end_time, job.hours_worked)
-  return (job.client_price || 0) * hours
+  return hours > 0 ? price * hours : price
 }
 
 /** Total payout for a job: sum of all cleaners' (payout × hours) */
@@ -68,16 +63,17 @@ export function getJobPayout(job: { cleaner_payout?: number; start_time?: string
   if (job.cleaners && job.cleaners.length > 0) {
     return job.cleaners.reduce((sum, jc) => {
       const hours = getCleanerHours(jc)
-      return sum + (jc.cleaner_payout || 0) * hours
+      return sum + (jc.cleaner_payout || 0) * (hours > 0 ? hours : 1)
     }, 0)
   }
-  // Legacy fallback
-  return (job.cleaner_payout || 0) * calcHoursFromTimes(job.start_time, job.end_time, job.hours_worked)
+  const hours = calcHoursFromTimes(job.start_time, job.end_time, job.hours_worked)
+  return (job.cleaner_payout || 0) * (hours > 0 ? hours : 1)
 }
 
 /** Get payout for a specific cleaner on a job */
-export function getCleanerPayout(jc: { cleaner_payout?: number; start_time?: string; end_time?: string; hours_worked?: number }): number {
-  return (jc.cleaner_payout || 0) * getCleanerHours(jc)
+export function getCleanerPayout(jc: { cleaner_payout?: number; start_time?: string | null; end_time?: string | null; hours_worked?: number | null }): number {
+  const hours = getCleanerHours(jc)
+  return (jc.cleaner_payout || 0) * (hours > 0 ? hours : 1)
 }
 
 /** Total km for a job (sum of all cleaners) */

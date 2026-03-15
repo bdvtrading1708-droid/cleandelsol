@@ -129,7 +129,7 @@ export default function JobsPage() {
                     {(job.cleaners || []).length > 0
                       ? job.cleaners.map(jc => jc.cleaner?.name?.split(' ')[0]).join(', ')
                       : (job.cleaner?.name || '—')
-                    } · {formatDate(job.date)} · {job.start_time || '—'}
+                    } · {formatDate(job.date)} · {job.start_time?.slice(0, 5) || '—'}{job.end_time ? ` – ${job.end_time.slice(0, 5)}` : ''}
                   </div>
                 </div>
                 <div
@@ -152,7 +152,7 @@ export default function JobsPage() {
                 </div>
                 <div className="rounded-[12px] p-2 text-center" style={{ background: 'var(--fill)' }}>
                   <div className="text-[9px] font-semibold uppercase tracking-[.08em] mb-0.5" style={{ color: 'var(--t3)' }}>{t('hours')}</div>
-                  <div className="text-[14px] font-bold tracking-[-0.3px]" style={{ color: 'var(--t1)' }}>{getJobHours(job) > 1 ? getJobHours(job) : (job.hours_worked ?? '—')}</div>
+                  <div className="text-[14px] font-bold tracking-[-0.3px]" style={{ color: 'var(--t1)' }}>{getJobHours(job) > 0 ? getJobHours(job) : '—'}</div>
                 </div>
                 <div className="rounded-[12px] p-2 text-center" style={{ background: 'var(--fill)' }}>
                   <div className="text-[9px] font-semibold uppercase tracking-[.08em] mb-0.5" style={{ color: 'var(--t3)' }}>{t('km')}</div>
