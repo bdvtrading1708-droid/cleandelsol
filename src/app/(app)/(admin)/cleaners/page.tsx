@@ -27,7 +27,7 @@ export default function CleanersPage() {
   const [createdCreds, setCreatedCreds] = useState<{ name: string; email: string; password: string } | null>(null)
   const [copied, setCopied] = useState(false)
   const [search, setSearch] = useState('')
-  const [sortBy, setSortBy] = useState<SortKey>('name')
+  const [sortBy, setSortBy] = useState<SortKey>('outstanding')
 
   if (isLoading) {
     return <div className="flex items-center justify-center py-20" style={{ color: 'var(--t3)' }}>{t('loading')}</div>
@@ -45,7 +45,10 @@ export default function CleanersPage() {
   const sorted = [...searchFiltered].sort((a, b) => {
     const sa = cleanerStats.find(s => s.cleanerId === a.id)
     const sb = cleanerStats.find(s => s.cleanerId === b.id)
-    if (sortBy === 'outstanding') return (sb?.outstanding || 0) - (sa?.outstanding || 0)
+    if (sortBy === 'outstanding') {
+      const diff = (sb?.outstanding || 0) - (sa?.outstanding || 0)
+      return diff !== 0 ? diff : (sb?.jobCount || 0) - (sa?.jobCount || 0)
+    }
     if (sortBy === 'earned') return (sb?.earned || 0) - (sa?.earned || 0)
     if (sortBy === 'jobs') return (sb?.jobCount || 0) - (sa?.jobCount || 0)
     return a.name.localeCompare(b.name)
