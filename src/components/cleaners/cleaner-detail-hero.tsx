@@ -35,6 +35,10 @@ export function CleanerDetailHero({ cleanerId, jobs, period, setPeriod, chartMon
 
   const stats = aggregateByCleaners(filtered, [cleanerId])[0]
 
+  // Outstanding is always calculated over ALL jobs (not period-filtered)
+  const allStats = aggregateByCleaners(cleanerJobs, [cleanerId])[0]
+  const totalOutstanding = allStats?.outstanding || 0
+
   const chartData: ChartDataPoint[] = useMemo(() => {
     if (period === 'dag') {
       const slots = [6, 8, 10, 12, 14, 16, 18, 20]
@@ -227,8 +231,8 @@ export function CleanerDetailHero({ cleanerId, jobs, period, setPeriod, chartMon
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-[18px] p-3" style={{ background: 'rgba(255,255,255,0.09)' }}>
           <div className="text-[9px] font-semibold tracking-[.1em] uppercase mb-1" style={{ color: 'rgba(255,255,255,0.40)' }}>{t('outstanding')}</div>
-          <div className="text-[20px] font-bold tracking-[-0.5px] leading-none" style={{ color: (stats?.outstanding || 0) > 0 ? '#FF9900' : 'white' }}>
-            {formatCurrency(stats?.outstanding || 0)}
+          <div className="text-[20px] font-bold tracking-[-0.5px] leading-none" style={{ color: totalOutstanding > 0 ? '#FF9900' : 'white' }}>
+            {formatCurrency(totalOutstanding)}
           </div>
         </div>
         <div className="rounded-[18px] p-3" style={{ background: 'rgba(255,255,255,0.09)' }}>

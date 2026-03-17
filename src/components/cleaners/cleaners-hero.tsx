@@ -6,15 +6,18 @@ import { aggregateByCleaners, type Period, type CleanerFinancials } from '@/lib/
 
 interface Props {
   cleanerStats: CleanerFinancials[]
+  allTimeStats?: CleanerFinancials[]
   period: Period
   setPeriod: (p: Period) => void
   cleanerCount: number
 }
 
-export function CleanersHero({ cleanerStats, period, setPeriod, cleanerCount }: Props) {
+export function CleanersHero({ cleanerStats, allTimeStats, period, setPeriod, cleanerCount }: Props) {
   const { t } = useLocale()
 
-  const totalOutstanding = cleanerStats.reduce((s, c) => s + c.outstanding, 0)
+  // Outstanding is always calculated from all-time stats (not period-filtered)
+  const outstandingSource = allTimeStats || cleanerStats
+  const totalOutstanding = outstandingSource.reduce((s, c) => s + c.outstanding, 0)
   const totalEarned = cleanerStats.reduce((s, c) => s + c.earned, 0)
   const totalJobs = cleanerStats.reduce((s, c) => s + c.jobCount, 0)
 

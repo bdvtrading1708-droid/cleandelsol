@@ -36,17 +36,22 @@ export default function CleanersPage() {
   const filtered = filterByPeriod(jobs, period)
   const cleanerStats = aggregateByCleaners(filtered, cleaners.map(c => c.id))
 
+  // Outstanding is always calculated over ALL jobs (not period-filtered)
+  const allTimeStats = period !== 'alles' ? aggregateByCleaners(jobs, cleaners.map(c => c.id)) : cleanerStats
+
   // Filter by search
   const searchFiltered = search
     ? cleaners.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
     : cleaners
 
-  // Sort
+  // Sort — outstanding always uses all-time stats
   const sorted = [...searchFiltered].sort((a, b) => {
     const sa = cleanerStats.find(s => s.cleanerId === a.id)
     const sb = cleanerStats.find(s => s.cleanerId === b.id)
     if (sortBy === 'outstanding') {
-      const diff = (sb?.outstanding || 0) - (sa?.outstanding || 0)
+      const saAll = allTimeStats.find(s => s.cleanerId === a.id)
+      const sbAll = allTimeStats.find(s => s.cleanerId === b.id)
+      const diff = (sbAll?.outstanding || 0) - (saAll?.outstanding || 0)
       return diff !== 0 ? diff : (sb?.jobCount || 0) - (sa?.jobCount || 0)
     }
     if (sortBy === 'earned') return (sb?.earned || 0) - (sa?.earned || 0)
@@ -80,6 +85,7 @@ export default function CleanersPage() {
       {/* Hero */}
       <CleanersHero
         cleanerStats={cleanerStats}
+        allTimeStats={allTimeStats}
         period={period}
         setPeriod={setPeriod}
         cleanerCount={cleaners.length}
@@ -119,7 +125,7 @@ export default function CleanersPage() {
       ) : (
         <div className="flex flex-col gap-2">
           {sorted.map(cleaner => {
-            const stats = cleanerStats.find(s => s.cleanerId === cleaner.id)
+            const stats = allTimeStats.find(s => s.cleanerId === cleaner.id)
             return (
               <CleanerListCard
                 key={cleaner.id}
