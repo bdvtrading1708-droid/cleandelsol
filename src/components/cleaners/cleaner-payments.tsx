@@ -58,7 +58,7 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
 
   const filteredTotal = filteredPaid.reduce((s, j) => {
     const my = getAssignment(j)
-    return s + (my ? getCleanerTotalPayout(my) + (j.extra_costs || 0) : 0)
+    return s + (my ? getCleanerTotalPayout(my) : 0)
   }, 0)
 
   return (
@@ -75,7 +75,7 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
             {unpaidJobs.map((job, i) => {
               const my = getAssignment(job)
               if (!my) return null
-              const payout = getCleanerTotalPayout(my) + (job.extra_costs || 0)
+              const payout = getCleanerTotalPayout(my)
               const hours = getCleanerHours(my)
               const isPayable = job.status === 'delivered' || job.status === 'invoiced'
 
@@ -176,7 +176,7 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
             {filteredPaid.map((job, i) => {
               const my = getAssignment(job)
               if (!my) return null
-              const payout = getCleanerTotalPayout(my) + (job.extra_costs || 0)
+              const payout = getCleanerTotalPayout(my)
               const hours = getCleanerHours(my)
 
               const dateObj = job.date ? parseISO(job.date) : null

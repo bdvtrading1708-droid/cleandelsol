@@ -188,8 +188,7 @@ export function aggregateByCleaners(
           const cleanerPayoutTotal = getCleanerPayout(jc)
           const jcKmCost = (jc.km_driven || 0) * KM_RATE
           const jcExtraCosts = jc.extra_costs || 0
-          const jobExtraCosts = job.extra_costs || 0
-          const cleanerTotalWithCosts = cleanerPayoutTotal + jcKmCost + jcExtraCosts + jobExtraCosts
+          const cleanerTotalWithCosts = cleanerPayoutTotal + jcKmCost + jcExtraCosts
           payout += cleanerPayoutTotal
           kmCost += jcKmCost
           extraCosts += jcExtraCosts
