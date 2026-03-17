@@ -1,11 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { formatCurrency, formatDate, getCleanerHours, getCleanerTotalPayout } from '@/lib/utils'
+import { formatCurrency, getCleanerHours, getCleanerTotalPayout } from '@/lib/utils'
 import { useLocale } from '@/lib/i18n'
 import { useUpdateJobStatus } from '@/lib/hooks/use-jobs'
 import { STATUS_COLORS } from '@/lib/constants'
 import { CheckCircle2 } from 'lucide-react'
+import { format, parseISO } from 'date-fns'
+import { nl } from 'date-fns/locale'
 import type { Job, JobCleaner } from '@/lib/types'
 
 interface Props {
@@ -56,7 +58,7 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
 
   const filteredTotal = filteredPaid.reduce((s, j) => {
     const my = getAssignment(j)
-    return s + (my ? getCleanerTotalPayout(my) : 0)
+    return s + (my ? getCleanerTotalPayout(my) + (j.extra_costs || 0) : 0)
   }, 0)
 
   return (
@@ -73,23 +75,40 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
             {unpaidJobs.map((job, i) => {
               const my = getAssignment(job)
               if (!my) return null
-              const payout = getCleanerTotalPayout(my)
+              const payout = getCleanerTotalPayout(my) + (job.extra_costs || 0)
               const hours = getCleanerHours(my)
               const isPayable = job.status === 'delivered' || job.status === 'invoiced'
+
+              const dateObj = job.date ? parseISO(job.date) : null
+              const dayNum = dateObj ? format(dateObj, 'd') : '—'
+              const dayName = dateObj ? format(dateObj, 'EEE', { locale: nl }) : ''
+              const monthName = dateObj ? format(dateObj, 'MMM', { locale: nl }) : ''
 
               return (
                 <div
                   key={job.id}
-                  className="flex items-center gap-2.5 px-3.5 py-3"
+                  className="flex items-center gap-3 px-3.5 py-3"
                   style={{ borderBottom: i < unpaidJobs.length - 1 ? '1px solid var(--border)' : 'none' }}
                 >
+                  {/* Date badge */}
+                  <div
+                    className="w-[42px] h-[46px] rounded-[10px] flex flex-col items-center justify-center shrink-0"
+                    style={{ background: 'var(--fill)' }}
+                  >
+                    <div className="text-[17px] font-extrabold leading-none tracking-[-0.5px]" style={{ color: 'var(--t1)' }}>
+                      {dayNum}
+                    </div>
+                    <div className="text-[9px] font-semibold uppercase tracking-[.04em] mt-0.5" style={{ color: 'var(--t3)' }}>
+                      {monthName}
+                    </div>
+                  </div>
                   <div className="w-[3px] h-9 rounded-[2px] shrink-0" style={{ background: STATUS_COLORS[job.status] || 'var(--t3)' }} />
                   <div className="flex-1 min-w-0">
                     <div className="text-[13px] font-bold tracking-[-0.2px] truncate" style={{ color: 'var(--t1)' }}>
                       {job.property?.name || job.custom_property_name || '—'}
                     </div>
                     <div className="text-[10px] mt-0.5" style={{ color: 'var(--t3)' }}>
-                      {job.date ? formatDate(job.date) : '—'} · {hours}u · {my.km_driven || 0}km
+                      {dayName} · {hours}u · {my.km_driven || 0}km
                     </div>
                   </div>
                   <div className="text-right shrink-0 mr-1">
@@ -157,22 +176,39 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
             {filteredPaid.map((job, i) => {
               const my = getAssignment(job)
               if (!my) return null
-              const payout = getCleanerTotalPayout(my)
+              const payout = getCleanerTotalPayout(my) + (job.extra_costs || 0)
               const hours = getCleanerHours(my)
+
+              const dateObj = job.date ? parseISO(job.date) : null
+              const dayNum = dateObj ? format(dateObj, 'd') : '—'
+              const dayName = dateObj ? format(dateObj, 'EEE', { locale: nl }) : ''
+              const monthName = dateObj ? format(dateObj, 'MMM', { locale: nl }) : ''
 
               return (
                 <div
                   key={job.id}
-                  className="flex items-center gap-2.5 px-3.5 py-3"
+                  className="flex items-center gap-3 px-3.5 py-3"
                   style={{ borderBottom: i < filteredPaid.length - 1 ? '1px solid var(--border)' : 'none' }}
                 >
+                  {/* Date badge */}
+                  <div
+                    className="w-[42px] h-[46px] rounded-[10px] flex flex-col items-center justify-center shrink-0"
+                    style={{ background: 'var(--fill)' }}
+                  >
+                    <div className="text-[17px] font-extrabold leading-none tracking-[-0.5px]" style={{ color: 'var(--t1)' }}>
+                      {dayNum}
+                    </div>
+                    <div className="text-[9px] font-semibold uppercase tracking-[.04em] mt-0.5" style={{ color: 'var(--t3)' }}>
+                      {monthName}
+                    </div>
+                  </div>
                   <div className="w-[3px] h-9 rounded-[2px] shrink-0" style={{ background: '#00A651' }} />
                   <div className="flex-1 min-w-0">
                     <div className="text-[13px] font-bold tracking-[-0.2px] truncate" style={{ color: 'var(--t1)' }}>
                       {job.property?.name || job.custom_property_name || '—'}
                     </div>
                     <div className="text-[10px] mt-0.5" style={{ color: 'var(--t3)' }}>
-                      {job.date ? formatDate(job.date) : '—'} · {hours}u · {my.km_driven || 0}km
+                      {dayName} · {hours}u · {my.km_driven || 0}km
                     </div>
                   </div>
                   <div className="text-right shrink-0">
