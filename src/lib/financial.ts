@@ -202,17 +202,17 @@ export function aggregateByCleaners(
         // Legacy single-cleaner
         const jobPayout = getJobPayout(job)
         const legacyKmCost = (job.km_driven || 0) * KM_RATE
-        const legacyTotalWithCosts = jobPayout + legacyKmCost
+        const legacyExtraCosts = job.extra_costs || 0
+        const legacyTotalWithCosts = jobPayout + legacyKmCost + legacyExtraCosts
         payout += jobPayout
         kmCost += legacyKmCost
+        extraCosts += legacyExtraCosts
         hours += getJobHours(job)
         totalPayout += legacyTotalWithCosts
 
         if (job.status === 'delivered' || job.status === 'invoiced' || job.status === 'progress') outstanding += legacyTotalWithCosts
         if (job.status === 'done') earned += legacyTotalWithCosts
       }
-
-      extraCosts += job.extra_costs || 0
     }
 
     const totalCost = payout + kmCost + extraCosts

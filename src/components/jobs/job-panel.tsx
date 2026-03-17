@@ -49,6 +49,7 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
   const [editCleanerEndTimes, setEditCleanerEndTimes] = useState<Record<number, string>>({})
   const [editCleanerKms, setEditCleanerKms] = useState<Record<number, string>>({})
   const [editCleanerHours, setEditCleanerHours] = useState<Record<number, string>>({})
+  const [editCleanerExtraCosts, setEditCleanerExtraCosts] = useState<Record<number, string>>({})
 
   // Reset edit state when job changes
   useEffect(() => {
@@ -64,16 +65,19 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
       const endTimes: Record<number, string> = {}
       const kms: Record<number, string> = {}
       const hours: Record<number, string> = {}
+      const extras: Record<number, string> = {}
       for (const jc of (job.cleaners || [])) {
         payouts[jc.id] = jc.cleaner_payout?.toString() || ''
         endTimes[jc.id] = jc.end_time?.slice(0, 5) || ''
         kms[jc.id] = jc.km_driven?.toString() || ''
         hours[jc.id] = jc.hours_worked?.toString() || ''
+        extras[jc.id] = jc.extra_costs?.toString() || ''
       }
       setEditCleanerPayouts(payouts)
       setEditCleanerEndTimes(endTimes)
       setEditCleanerKms(kms)
       setEditCleanerHours(hours)
+      setEditCleanerExtraCosts(extras)
     }
   }, [job?.id])
 
@@ -118,7 +122,6 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
     updateStatus.mutate({
       id: job.id,
       status: job.status,
-      extra_costs: editExtraCosts ? parseFloat(editExtraCosts) : 0,
       laundry_cost: editLaundryCost ? parseFloat(editLaundryCost) : 0,
       payment_method: editPaymentMethod,
     })
@@ -145,6 +148,7 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
         end_time: endTime || undefined,
         hours_worked,
         km_driven: editCleanerKms[jc.id] ? parseFloat(editCleanerKms[jc.id]) : undefined,
+        extra_costs: editCleanerExtraCosts[jc.id] ? parseFloat(editCleanerExtraCosts[jc.id]) : 0,
       })
     }
 
@@ -293,33 +297,35 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
                           />
                         </div>
                       </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[9px] font-semibold uppercase tracking-[.08em] mb-0.5 block" style={{ color: 'var(--t3)' }}>Extra kosten</label>
+                          <input
+                            type="number" step="0.01"
+                            value={editCleanerExtraCosts[jc.id] || ''}
+                            onChange={(e) => setEditCleanerExtraCosts(prev => ({ ...prev, [jc.id]: e.target.value }))}
+                            className="w-full h-[36px] rounded-[10px] px-2.5 text-[13px] font-medium border-0 outline-none"
+                            style={{ background: 'var(--inp)', color: 'var(--t1)' }}
+                            placeholder="0"
+                          />
+                        </div>
+                        <div />
+                      </div>
                     </div>
                   )
                 })}
 
-                {/* Extra kosten + was kosten */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-[10px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>Extra kosten (€)</label>
-                    <input
-                      type="number" step="0.01"
-                      value={editExtraCosts}
-                      onChange={(e) => setEditExtraCosts(e.target.value)}
-                      className="w-full h-[42px] rounded-[12px] px-3 text-[14px] font-medium border-0 outline-none"
-                      style={{ background: 'var(--inp)', color: 'var(--t1)' }}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>Was kosten (€)</label>
-                    <input
-                      type="number" step="0.01"
-                      value={editLaundryCost}
-                      onChange={(e) => setEditLaundryCost(e.target.value)}
-                      className="w-full h-[42px] rounded-[12px] px-3 text-[14px] font-medium border-0 outline-none"
-                      style={{ background: 'var(--inp)', color: 'var(--t1)' }}
-                      placeholder="0"
-                    />
-                  </div>
+                {/* Was kosten */}
+                <div>
+                  <label className="text-[10px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>Was kosten (€)</label>
+                  <input
+                    type="number" step="0.01"
+                    value={editLaundryCost}
+                    onChange={(e) => setEditLaundryCost(e.target.value)}
+                    className="w-full h-[42px] rounded-[12px] px-3 text-[14px] font-medium border-0 outline-none"
+                    style={{ background: 'var(--inp)', color: 'var(--t1)' }}
+                    placeholder="0"
+                  />
                 </div>
 
                 {/* Betaalwijze */}
@@ -438,35 +444,20 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
               </div>
             )}
 
-            {/* Extra kosten + Was kosten - admin only */}
+            {/* Was kosten - admin only */}
             {isAdmin && (
-              <div className="flex flex-col gap-2">
-                <div>
-                  <label className="text-[10px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
-                    Extra kosten (€)
-                  </label>
-                  <input
-                    type="number" step="0.01"
-                    value={editExtraCosts}
-                    onChange={(e) => setEditExtraCosts(e.target.value)}
-                    className="w-full h-[42px] rounded-[14px] px-3.5 text-[14px] font-medium border-0 outline-none"
-                    style={{ background: 'var(--fill)', color: 'var(--t1)' }}
-                    placeholder="Bv. parkeerkosten, schoonmaakmiddel..."
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
-                    Was kosten (€)
-                  </label>
-                  <input
-                    type="number" step="0.01"
-                    value={editLaundryCost}
-                    onChange={(e) => setEditLaundryCost(e.target.value)}
-                    className="w-full h-[42px] rounded-[14px] px-3.5 text-[14px] font-medium border-0 outline-none"
-                    style={{ background: 'var(--fill)', color: 'var(--t1)' }}
-                    placeholder="0"
-                  />
-                </div>
+              <div>
+                <label className="text-[10px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+                  Was kosten (€)
+                </label>
+                <input
+                  type="number" step="0.01"
+                  value={editLaundryCost}
+                  onChange={(e) => setEditLaundryCost(e.target.value)}
+                  className="w-full h-[42px] rounded-[14px] px-3.5 text-[14px] font-medium border-0 outline-none"
+                  style={{ background: 'var(--fill)', color: 'var(--t1)' }}
+                  placeholder="0"
+                />
               </div>
             )}
 
@@ -499,14 +490,13 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
               </div>
             )}
 
-            {/* Save extra/laundry costs when changed - admin only */}
-            {isAdmin && (editExtraCosts !== (job.extra_costs?.toString() || '') || editLaundryCost !== (job.laundry_cost?.toString() || '')) && (
+            {/* Save laundry costs when changed - admin only */}
+            {isAdmin && editLaundryCost !== (job.laundry_cost?.toString() || '') && (
               <button
                 onClick={() => {
                   updateStatus.mutate({
                     id: job.id,
                     status: job.status,
-                    extra_costs: editExtraCosts ? parseFloat(editExtraCosts) : 0,
                     laundry_cost: editLaundryCost ? parseFloat(editLaundryCost) : 0,
                   })
                 }}
