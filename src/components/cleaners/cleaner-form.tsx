@@ -155,13 +155,13 @@ export function CleanerForm({ open, onClose, editCleaner, onCreated }: Props) {
         return { password: data.password }
       }
     },
-    onSuccess: (result) => {
+    onSuccess: (result: { password?: string } | void) => {
       queryClient.invalidateQueries({ queryKey: ['cleaners'] })
       const createdName = name
       const createdEmail = email
       reset()
       onClose()
-      if (!isEdit && result?.password && onCreated) {
+      if (!isEdit && result && 'password' in result && result.password && onCreated) {
         onCreated({ name: createdName, email: createdEmail, password: result.password })
       }
     },
