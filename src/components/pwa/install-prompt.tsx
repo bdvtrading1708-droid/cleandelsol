@@ -89,9 +89,9 @@ export function InstallPrompt() {
     return () => window.removeEventListener('beforeinstallprompt', handler)
   }, [])
 
-  // Register service worker
+  // Register service worker (production only)
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
+    if ('serviceWorker' in navigator && window.location.hostname !== 'localhost') {
       navigator.serviceWorker.register('/sw.js').catch(() => {})
     }
   }, [])

@@ -23,6 +23,9 @@ const routeMap: Record<string, string> = {
   settings: '/settings',
 }
 
+// Max 5 items in mobile tabbar — rest accessible via sidebar
+const ADMIN_TABBAR_IDS = ['dashboard', 'calendar', 'jobs', 'cleaners', 'financial']
+
 export function Tabbar() {
   const { user } = useAuth()
   const { t } = useLocale()
@@ -32,7 +35,12 @@ export function Tabbar() {
   if (!user) return null
 
   const nav = user.role === 'admin' ? NAV_ADMIN : NAV_CLEANER
-  const items = nav.filter(isNavItem).filter(item => item.id !== 'settings')
+  const allItems = nav.filter(isNavItem).filter(item => item.id !== 'settings')
+
+  // Limit admin tabbar to 5 key items
+  const items = user.role === 'admin'
+    ? allItems.filter(item => ADMIN_TABBAR_IDS.includes(item.id))
+    : allItems
 
   return (
     <nav
@@ -42,8 +50,6 @@ export function Tabbar() {
         paddingBottom: 'var(--safe-b)',
         background: 'var(--tabbar)',
         borderColor: 'var(--border)',
-        overflowX: 'auto',
-        scrollbarWidth: 'none',
       }}
     >
       {items.map((item) => {
@@ -55,7 +61,7 @@ export function Tabbar() {
           <div
             key={item.id}
             className="flex flex-col items-center gap-0.5 flex-1 cursor-pointer select-none transition-colors"
-            style={{ color: isActive ? 'var(--t1)' : 'var(--t3)', minWidth: 52 }}
+            style={{ color: isActive ? 'var(--t1)' : 'var(--t3)' }}
             onClick={() => router.push(route)}
           >
             <div className="w-6 h-6 flex items-center justify-center">

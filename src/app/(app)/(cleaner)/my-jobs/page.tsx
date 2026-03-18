@@ -7,6 +7,7 @@ import { useLocale } from '@/lib/i18n'
 import { STATUS_COLORS } from '@/lib/constants'
 import { formatCurrency, formatDate, getCleanerTotalPayout } from '@/lib/utils'
 import { JobPanel } from '@/components/jobs/job-panel'
+import { MapPin } from 'lucide-react'
 import type { Job } from '@/lib/types'
 
 export default function MyJobsPage() {
@@ -58,9 +59,23 @@ export default function MyJobsPage() {
                 <div className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--t3)' }}>
                   {formatDate(job.date)} · {job.start_time || '—'}
                 </div>
-                {job.property?.address && (
-                  <div className="text-[10px] mt-0.5 truncate" style={{ color: 'var(--t3)' }}>
-                    {job.property.address}
+                {(job.property?.maps_url || job.property?.address) && (
+                  <div
+                    className="flex items-center gap-1 mt-1 text-[10px] font-medium"
+                    style={{ color: 'var(--blue)' }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      const url = job.property?.maps_url
+                        || (() => {
+                          const q = encodeURIComponent(job.property?.address || job.property?.name || '')
+                          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+                          return isIOS ? `maps://maps.apple.com/?q=${q}` : `https://www.google.com/maps/search/?api=1&query=${q}`
+                        })()
+                      window.open(url, '_blank')
+                    }}
+                  >
+                    <MapPin size={10} />
+                    <span className="truncate">{job.property?.address || t('openRoute')}</span>
                   </div>
                 )}
               </div>
