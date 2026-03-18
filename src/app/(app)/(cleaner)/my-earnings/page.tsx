@@ -7,12 +7,15 @@ import { useLocale } from '@/lib/i18n'
 import { STATUS_COLORS } from '@/lib/constants'
 import { formatCurrency, formatDate, getCleanerTotalPayout, getCleanerHours } from '@/lib/utils'
 import { filterByPeriod, type Period } from '@/lib/financial'
+import { JobPanel } from '@/components/jobs/job-panel'
+import type { Job } from '@/lib/types'
 
 export default function MyEarningsPage() {
   const { user } = useAuth()
   const { data: jobs = [], isLoading } = useJobs(user?.id)
   const { t } = useLocale()
   const [period, setPeriod] = useState<Period>('alles')
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null)
 
   if (isLoading) {
     return <div className="flex items-center justify-center py-20" style={{ color: 'var(--t3)' }}>{t('loading')}</div>
@@ -22,8 +25,8 @@ export default function MyEarningsPage() {
     (job.cleaners || []).find(jc => jc.cleaner_id === user?.id)
 
   const filtered = filterByPeriod(jobs, period)
-  const doneJobs = filtered.filter(j => j.status === 'done')
-  const deliveredJobs = filtered.filter(j => j.status === 'delivered' || j.status === 'invoiced' || j.status === 'progress')
+  const doneJobs = filtered.filter(j => j.status === 'done' || j.status === 'invoiced')
+  const deliveredJobs = filtered.filter(j => j.status === 'delivered' || j.status === 'progress')
   const totalEarned = doneJobs.reduce((s, j) => {
     const my = getMyAssignment(j)
     return s + (my ? getCleanerTotalPayout(my) : 0)
@@ -34,6 +37,7 @@ export default function MyEarningsPage() {
   }, 0)
 
   const recentDone = [...doneJobs].sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 20)
+  const sortedOutstanding = [...deliveredJobs].sort((a, b) => (b.date || '').localeCompare(a.date || ''))
 
   const periods: Period[] = ['dag', 'week', 'maand', 'jaar', 'alles']
 
@@ -84,6 +88,45 @@ export default function MyEarningsPage() {
         </div>
       </div>
 
+      {/* Outstanding jobs list */}
+      {sortedOutstanding.length > 0 && (
+        <>
+          <div className="flex items-center justify-between mt-5 mb-3">
+            <div className="text-xl font-bold tracking-[-0.5px]" style={{ color: 'var(--t1)' }}>{t('outstanding')}</div>
+            <div className="text-sm font-semibold" style={{ color: 'var(--t3)' }}>{sortedOutstanding.length}</div>
+          </div>
+
+          <div className="rounded-[22px] overflow-hidden" style={{ background: 'var(--card)', boxShadow: 'var(--shadow)' }}>
+            {sortedOutstanding.map((job, i) => (
+              <div
+                key={job.id}
+                className="flex items-center gap-3 px-4 py-3.5 cursor-pointer active:scale-[0.99] transition-transform"
+                style={{ borderBottom: i < sortedOutstanding.length - 1 ? '1px solid var(--border)' : 'none' }}
+                onClick={() => setSelectedJob(job)}
+              >
+                <div className="w-[3px] h-10 rounded-[2px] shrink-0" style={{ background: STATUS_COLORS[job.status] || '#FF9900' }} />
+                <div className="flex-1 min-w-0">
+                  <div className="text-[14px] font-bold tracking-[-0.2px] truncate" style={{ color: 'var(--t1)' }}>
+                    {job.property?.name || job.custom_property_name || '—'}
+                  </div>
+                  <div className="text-[11px] mt-0.5" style={{ color: 'var(--t3)' }}>
+                    {formatDate(job.date)} · {(() => { const my = getMyAssignment(job); return my ? `${getCleanerHours(my)}u` : '—' })()} · {(() => { const my = getMyAssignment(job); return my?.km_driven ? `${my.km_driven}km` : '—' })()}
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="text-[15px] font-bold tracking-[-0.3px]" style={{ color: '#FF9900' }}>
+                    {formatCurrency(getMyAssignment(job) ? getCleanerTotalPayout(getMyAssignment(job)!) : 0)}
+                  </div>
+                  <div className="text-[9px] font-bold uppercase tracking-[.05em] mt-0.5" style={{ color: STATUS_COLORS[job.status] }}>
+                    {t(job.status === 'progress' ? 'inprog' : job.status)}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
       {/* Recent done jobs */}
       <div className="flex items-center justify-between mt-5 mb-3">
         <div className="text-xl font-bold tracking-[-0.5px]" style={{ color: 'var(--t1)' }}>{t('recentJobs')}</div>
@@ -98,8 +141,9 @@ export default function MyEarningsPage() {
           {recentDone.map((job, i) => (
             <div
               key={job.id}
-              className="flex items-center gap-3 px-4 py-3.5"
+              className="flex items-center gap-3 px-4 py-3.5 cursor-pointer active:scale-[0.99] transition-transform"
               style={{ borderBottom: i < recentDone.length - 1 ? '1px solid var(--border)' : 'none' }}
+              onClick={() => setSelectedJob(job)}
             >
               {/* Status bar */}
               <div className="w-[3px] h-10 rounded-[2px] shrink-0" style={{ background: STATUS_COLORS[job.status] || '#00A651' }} />
@@ -127,6 +171,13 @@ export default function MyEarningsPage() {
           ))}
         </div>
       )}
+
+      {/* Detail panel */}
+      <JobPanel
+        job={selectedJob}
+        open={!!selectedJob}
+        onClose={() => setSelectedJob(null)}
+      />
     </>
   )
 }

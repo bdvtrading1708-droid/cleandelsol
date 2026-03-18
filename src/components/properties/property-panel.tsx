@@ -31,7 +31,7 @@ export function PropertyPanel({ property, open, onClose, onEdit }: Props) {
 
   const propJobs = jobs.filter(j => j.property_id === property.id)
   const totalRevenue = propJobs.reduce((s, j) => s + getJobTotalRevenue(j), 0)
-  const completedJobs = propJobs.filter(j => j.status === 'done').length
+  const completedJobs = propJobs.filter(j => j.status === 'done' || j.status === 'invoiced').length
 
   const openMaps = () => {
     // Use explicit maps URL if available, otherwise search by address

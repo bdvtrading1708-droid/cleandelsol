@@ -26,8 +26,8 @@ export function CleanerJobsList({ cleanerId, jobs }: Props) {
     (job.cleaners || []).find(jc => jc.cleaner_id === cleanerId)
 
   const filtered = cleanerJobs.filter(j => {
-    if (filter === 'openstaand') return j.status === 'delivered' || j.status === 'invoiced' || j.status === 'progress'
-    if (filter === 'betaald') return j.status === 'done'
+    if (filter === 'openstaand') return j.status === 'delivered' || j.status === 'progress'
+    if (filter === 'betaald') return j.status === 'done' || j.status === 'invoiced'
     return true
   })
 
@@ -85,7 +85,7 @@ export function CleanerJobsList({ cleanerId, jobs }: Props) {
             if (!my) return null
             const payout = getCleanerTotalPayout(my)
             const hours = getCleanerHours(my)
-            const isPaid = job.status === 'done'
+            const isPaid = job.status === 'done' || job.status === 'invoiced'
 
             return (
               <div

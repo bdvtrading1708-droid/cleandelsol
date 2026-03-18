@@ -19,14 +19,14 @@ interface JobPanelProps {
   onClose: () => void
 }
 
-const ALL_STATUSES: JobStatus[] = ['planned', 'progress', 'delivered', 'invoiced', 'done']
+const ALL_STATUSES: JobStatus[] = ['planned', 'progress', 'delivered', 'done', 'invoiced']
 
 const STATUS_FLOW: Record<JobStatus, JobStatus | null> = {
   planned: 'progress',
   progress: 'delivered',
-  delivered: 'invoiced',
-  invoiced: 'done',
-  done: null,
+  delivered: 'done',
+  done: 'invoiced',
+  invoiced: null,
 }
 
 export function JobPanel({ job, open, onClose }: JobPanelProps) {
@@ -91,7 +91,8 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
   const getActionLabel = (): string | null => {
     if (job.status === 'planned' && (isAdmin || isCleaner)) return t('start')
     if (job.status === 'progress' && (isAdmin || isCleaner)) return t('deliver')
-    if (job.status === 'delivered' && isAdmin) return t('approve')
+    if (job.status === 'delivered' && isAdmin) return t('done')
+    if (job.status === 'done' && isAdmin) return t('invoiced')
     return null
   }
 
@@ -159,8 +160,14 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
   const actionLabel = getActionLabel()
 
   const openMaps = () => {
-    if (!job.property?.address) return
-    const q = encodeURIComponent(job.property.address)
+    if (job.property?.maps_url) {
+      window.open(job.property.maps_url, '_blank')
+      return
+    }
+    // Fallback: search by address, or property name if no address
+    const searchTerm = job.property?.address || job.property?.name || job.custom_property_name
+    if (!searchTerm) return
+    const q = encodeURIComponent(searchTerm)
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
     window.open(isIOS ? `maps://maps.apple.com/?q=${q}` : `https://www.google.com/maps/search/?api=1&query=${q}`, '_blank')
   }
@@ -378,8 +385,8 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
                   )} />
                 </div>
 
-                {/* Per-cleaner breakdown */}
-                {cleaners.length > 0 && (
+                {/* Per-cleaner breakdown (hidden for cleaners in planned stage) */}
+                {!(isCleaner && job.status === 'planned') && cleaners.length > 0 && (
                   <div className="flex flex-col gap-1.5 mb-2">
                     {(isCleaner ? cleaners.filter(jc => jc.cleaner_id === user?.id) : cleaners).map(jc => {
                       const color = getCleanerColor(jc.cleaner?.name)
@@ -437,10 +444,13 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-2">
-                  <StatBox icon={<Clock size={14} style={{ color: 'var(--amber)' }} />} label={t('hours')} value={cleaners.length > 0 ? (cleaners.map(jc => getCleanerHours(jc)).filter(h => h > 0).map(h => `${h}u`).join(', ') || '—') : (job.hours_worked != null && job.hours_worked > 0 ? `${job.hours_worked}u` : '—')} />
-                  <StatBox icon={<Car size={14} style={{ color: 'var(--t2)' }} />} label={t('km')} value={getJobKm(job) > 0 ? `${getJobKm(job)}` : '—'} />
-                </div>
+                {/* Hours & KM (hidden for cleaners in planned stage) */}
+                {!(isCleaner && job.status === 'planned') && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <StatBox icon={<Clock size={14} style={{ color: 'var(--amber)' }} />} label={t('hours')} value={cleaners.length > 0 ? (cleaners.map(jc => getCleanerHours(jc)).filter(h => h > 0).map(h => `${h}u`).join(', ') || '—') : (job.hours_worked != null && job.hours_worked > 0 ? `${job.hours_worked}u` : '—')} />
+                    <StatBox icon={<Car size={14} style={{ color: 'var(--t2)' }} />} label={t('km')} value={getJobKm(job) > 0 ? `${getJobKm(job)}` : '—'} />
+                  </div>
+                )}
               </div>
             )}
 
@@ -507,13 +517,15 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
               </button>
             )}
 
-            {/* Address */}
-            {job.property?.address && (
+            {/* Address / Maps link — always show if there's any location info */}
+            {(job.property?.maps_url || job.property?.address || job.property?.name || job.custom_property_name) && (
               <button onClick={openMaps}
                 className="flex items-center gap-2.5 rounded-[14px] p-3 text-left w-full transition-colors"
                 style={{ background: 'var(--fill)' }}>
                 <MapPin size={16} style={{ color: 'var(--blue)' }} />
-                <span className="flex-1 text-[13px] font-medium truncate" style={{ color: 'var(--t1)' }}>{job.property.address}</span>
+                <span className="flex-1 text-[13px] font-medium truncate" style={{ color: 'var(--t1)' }}>
+                  {job.property?.address || job.property?.name || job.custom_property_name || 'Google Maps'}
+                </span>
                 <ChevronRight size={14} style={{ color: 'var(--t3)' }} />
               </button>
             )}
@@ -529,15 +541,17 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
               </div>
             )}
 
-            {/* Photos button */}
-            <button onClick={() => setShowPhotos(true)}
-              className="flex items-center gap-2.5 rounded-[14px] p-3 text-left w-full transition-colors"
-              style={{ background: 'var(--fill)' }}>
-              <Camera size={16} style={{ color: 'var(--t2)' }} />
-              <span className="flex-1 text-[13px] font-medium" style={{ color: 'var(--t1)' }}>{t('photos')}</span>
-              <span className="text-[12px] font-semibold" style={{ color: 'var(--t3)' }}>{job.photos?.length || 0}</span>
-              <ChevronRight size={14} style={{ color: 'var(--t3)' }} />
-            </button>
+            {/* Photos button (hidden for cleaners in planned stage) */}
+            {!(isCleaner && job.status === 'planned') && (
+              <button onClick={() => setShowPhotos(true)}
+                className="flex items-center gap-2.5 rounded-[14px] p-3 text-left w-full transition-colors"
+                style={{ background: 'var(--fill)' }}>
+                <Camera size={16} style={{ color: 'var(--t2)' }} />
+                <span className="flex-1 text-[13px] font-medium" style={{ color: 'var(--t1)' }}>{t('photos')}</span>
+                <span className="text-[12px] font-semibold" style={{ color: 'var(--t3)' }}>{job.photos?.length || 0}</span>
+                <ChevronRight size={14} style={{ color: 'var(--t3)' }} />
+              </button>
+            )}
 
             {/* Action button */}
             {actionLabel && (

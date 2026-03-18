@@ -195,8 +195,8 @@ export function aggregateByCleaners(
           hours += cleanerHours
           totalPayout += cleanerTotalWithCosts
 
-          if (job.status === 'delivered' || job.status === 'invoiced' || job.status === 'progress') outstanding += cleanerTotalWithCosts
-          if (job.status === 'done') earned += cleanerTotalWithCosts
+          if (job.status === 'delivered' || job.status === 'progress') outstanding += cleanerTotalWithCosts
+          if (job.status === 'done' || job.status === 'invoiced') earned += cleanerTotalWithCosts
         }
       } else {
         // Legacy single-cleaner
@@ -210,8 +210,8 @@ export function aggregateByCleaners(
         hours += getJobHours(job)
         totalPayout += legacyTotalWithCosts
 
-        if (job.status === 'delivered' || job.status === 'invoiced' || job.status === 'progress') outstanding += legacyTotalWithCosts
-        if (job.status === 'done') earned += legacyTotalWithCosts
+        if (job.status === 'delivered' || job.status === 'progress') outstanding += legacyTotalWithCosts
+        if (job.status === 'done' || job.status === 'invoiced') earned += legacyTotalWithCosts
       }
     }
 

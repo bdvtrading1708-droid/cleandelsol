@@ -29,13 +29,13 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
 
   // Te betalen
   const unpaidJobs = cleanerJobs
-    .filter(j => j.status === 'delivered' || j.status === 'invoiced' || j.status === 'progress')
+    .filter(j => j.status === 'delivered' || j.status === 'progress')
     .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
-  const payableJobs = unpaidJobs.filter(j => j.status === 'delivered' || j.status === 'invoiced')
+  const payableJobs = unpaidJobs.filter(j => j.status === 'delivered')
 
   // Betaald
   const paidJobs = cleanerJobs
-    .filter(j => j.status === 'done')
+    .filter(j => j.status === 'done' || j.status === 'invoiced')
     .sort((a, b) => ((b.paid_at || b.date || '')).localeCompare(a.paid_at || a.date || ''))
 
   const monthOptions = Array.from(new Set(
@@ -77,7 +77,7 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
               if (!my) return null
               const payout = getCleanerTotalPayout(my)
               const hours = getCleanerHours(my)
-              const isPayable = job.status === 'delivered' || job.status === 'invoiced'
+              const isPayable = job.status === 'delivered'
 
               const dateObj = job.date ? parseISO(job.date) : null
               const dayNum = dateObj ? format(dateObj, 'd') : '—'

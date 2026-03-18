@@ -12,7 +12,7 @@ import { JobPanel } from '@/components/jobs/job-panel'
 import { JobForm } from '@/components/jobs/job-form'
 import type { Job, JobStatus } from '@/lib/types'
 
-const STATUSES: JobStatus[] = ['planned', 'progress', 'delivered', 'invoiced', 'done']
+const STATUSES: JobStatus[] = ['planned', 'progress', 'delivered', 'done', 'invoiced']
 
 export default function JobsPage() {
   const { data: jobs = [], isLoading } = useJobs()
@@ -33,20 +33,20 @@ export default function JobsPage() {
 
   let filtered = jobs.filter(j => j.status === filter)
 
-  // Sub-filter by partner when on "delivered" or "invoiced"
-  if ((filter === 'delivered' || filter === 'invoiced') && partnerFilter) {
+  // Sub-filter by partner when on "done" or "invoiced"
+  if ((filter === 'done' || filter === 'invoiced') && partnerFilter) {
     filtered = filtered.filter(j => j.property?.partner_id === partnerFilter)
   }
 
-  // Get unique partners for delivered/invoiced jobs (for sub-filter)
-  const deliveredJobs = jobs.filter(j => j.status === 'delivered')
+  // Get unique partners for done/invoiced jobs (for sub-filter and invoice creation)
+  const doneJobs = jobs.filter(j => j.status === 'done')
   const invoicedJobs = jobs.filter(j => j.status === 'invoiced')
-  const filterJobs = filter === 'invoiced' ? invoicedJobs : deliveredJobs
+  const filterJobs = filter === 'invoiced' ? invoicedJobs : doneJobs
   const filterPartnerIds = [...new Set(filterJobs.map(j => j.property?.partner_id).filter(Boolean))] as string[]
   const filterPartners = partners.filter(p => filterPartnerIds.includes(p.id))
 
-  // Selection mode: only when on "delivered" tab with a partner selected
-  const isSelectionMode = filter === 'delivered' && !!partnerFilter
+  // Selection mode: only when on "done" tab with a partner selected (for invoice creation)
+  const isSelectionMode = filter === 'done' && !!partnerFilter
 
   const toggleJobSelection = (jobId: number) => {
     setSelectedJobIds(prev => {
@@ -219,8 +219,8 @@ export default function JobsPage() {
             onClick={() => { setFilter(s); setPartnerFilter(null); setSelectedJobIds(new Set()) }}
           >
             {t(s === 'progress' ? 'inprog' : s)}
-            {s === 'delivered' && deliveredJobs.length > 0 && (
-              <span className="ml-1 opacity-70">({deliveredJobs.length})</span>
+            {s === 'done' && doneJobs.length > 0 && (
+              <span className="ml-1 opacity-70">({doneJobs.length})</span>
             )}
             {s === 'invoiced' && invoicedJobs.length > 0 && (
               <span className="ml-1 opacity-70">({invoicedJobs.length})</span>
@@ -229,8 +229,8 @@ export default function JobsPage() {
         ))}
       </div>
 
-      {/* Partner sub-filter for "Maak factuur" / "Factuur verstuurd" */}
-      {(filter === 'delivered' || filter === 'invoiced') && filterPartners.length > 0 && (
+      {/* Partner sub-filter for "Afgerond" / "Gefactureerd" */}
+      {(filter === 'done' || filter === 'invoiced') && filterPartners.length > 0 && (
         <div className="flex gap-1 mb-4 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
           <button
             className="px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all shrink-0"
