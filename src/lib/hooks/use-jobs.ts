@@ -113,6 +113,7 @@ export function useDeleteJob() {
 interface CreateJobInput {
   property_id?: string
   custom_property_name?: string
+  custom_address?: string
   pricing_type?: 'hourly' | 'fixed'
   date: string
   start_time?: string
@@ -145,6 +146,7 @@ export function useCreateJob() {
           .insert({
             property_id: job.property_id || null,
             custom_property_name: job.custom_property_name || null,
+            custom_address: job.custom_address || null,
             pricing_type: job.pricing_type || null,
             date: job.date,
             start_time: job.start_time,

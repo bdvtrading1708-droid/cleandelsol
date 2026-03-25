@@ -165,7 +165,7 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
       return
     }
     // Fallback: search by address, or property name if no address
-    const searchTerm = job.property?.address || job.property?.name || job.custom_property_name
+    const searchTerm = job.property?.address || job.custom_address || job.property?.name || job.custom_property_name
     if (!searchTerm) return
     const q = encodeURIComponent(searchTerm)
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
@@ -518,13 +518,13 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
             )}
 
             {/* Address / Maps link — always show if there's any location info */}
-            {(job.property?.maps_url || job.property?.address || job.property?.name || job.custom_property_name) && (
+            {(job.property?.maps_url || job.property?.address || job.custom_address || job.property?.name || job.custom_property_name) && (
               <button onClick={openMaps}
                 className="flex items-center gap-2.5 rounded-[14px] p-3 text-left w-full transition-colors"
                 style={{ background: 'var(--fill)' }}>
                 <MapPin size={16} style={{ color: 'var(--blue)' }} />
                 <span className="flex-1 text-[13px] font-medium truncate" style={{ color: 'var(--t1)' }}>
-                  {job.property?.address || job.property?.name || job.custom_property_name || 'Google Maps'}
+                  {job.property?.address || job.custom_address || job.property?.name || job.custom_property_name || 'Google Maps'}
                 </span>
                 <ChevronRight size={14} style={{ color: 'var(--t3)' }} />
               </button>

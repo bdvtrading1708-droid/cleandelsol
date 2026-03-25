@@ -36,6 +36,7 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
 
   const [propertyId, setPropertyId] = useState('')
   const [customPropertyName, setCustomPropertyName] = useState('')
+  const [customAddress, setCustomAddress] = useState('')
   const [propertySearch, setPropertySearch] = useState('')
   const [showPropertyDropdown, setShowPropertyDropdown] = useState(false)
   const [pricingType, setPricingType] = useState<'hourly' | 'fixed'>('hourly')
@@ -113,6 +114,7 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
   const reset = () => {
     setPropertyId('')
     setCustomPropertyName('')
+    setCustomAddress('')
     setPropertySearch('')
     setShowPropertyDropdown(false)
     setPricingType('hourly')
@@ -136,6 +138,7 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
     const baseJob = {
       property_id: propertyId || undefined,
       custom_property_name: !propertyId ? customPropertyName : undefined,
+      custom_address: !propertyId && customAddress ? customAddress : undefined,
       pricing_type: pricingType,
       date,
       start_time: startTime || undefined,
@@ -311,7 +314,7 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
                 }}
                 className="w-full h-[46px] rounded-[14px] pl-10 pr-3.5 text-[15px] font-medium border-0 outline-none"
                 style={inputStyle}
-                placeholder="Zoek of typ property naam..."
+                placeholder={t('searchPropPh')}
               />
               {(propertyId || customPropertyName) && (
                 <button
@@ -319,6 +322,7 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
                   onClick={() => {
                     setPropertyId('')
                     setCustomPropertyName('')
+                    setCustomAddress('')
                     setPropertySearch('')
                     setClientPrice('')
                     setPricingType('hourly')
@@ -348,7 +352,7 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
                   >
                     <span className="flex-1 text-[14px] font-medium" style={{ color: 'var(--t1)' }}>{p.name}</span>
                     <span className="text-[11px] font-medium" style={{ color: 'var(--t3)' }}>
-                      {p.pricing_type === 'fixed' ? `€${p.fixed_price || 0} vast` : `€${p.default_price || 0}/u`}
+                      {p.pricing_type === 'fixed' ? `€${p.fixed_price || 0}` : `€${p.default_price || 0}/u`}
                     </span>
                   </button>
                 ))}
@@ -361,21 +365,38 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
                     style={{ borderBottom: '1px solid var(--border)', background: 'var(--fill)' }}
                   >
                     <span className="text-[14px] font-medium" style={{ color: 'var(--acc)' }}>
-                      + &ldquo;{propertySearch.trim()}&rdquo; als eenmalige klant
+                      + &ldquo;{propertySearch.trim()}&rdquo; {t('oneTimeClient')}
                     </span>
                   </button>
                 )}
                 {filteredProperties.length === 0 && !propertySearch.trim() && (
-                  <div className="px-3.5 py-3 text-[13px]" style={{ color: 'var(--t3)' }}>Geen properties gevonden</div>
+                  <div className="px-3.5 py-3 text-[13px]" style={{ color: 'var(--t3)' }}>{t('noPropsFound')}</div>
                 )}
               </div>
             )}
           </div>
 
+          {/* Address field for custom (one-time) properties */}
+          {customPropertyName && !propertyId && (
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
+                {t('address')}
+              </label>
+              <input
+                type="text"
+                value={customAddress}
+                onChange={(e) => setCustomAddress(e.target.value)}
+                className="w-full h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
+                style={inputStyle}
+                placeholder={t('addressPh')}
+              />
+            </div>
+          )}
+
           {/* Pricing type toggle */}
           <div>
             <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
-              Tarief type
+              {t('rateType')}
             </label>
             <div className="flex rounded-[14px] overflow-hidden" style={{ background: 'var(--inp)' }}>
               <button
@@ -388,7 +409,7 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
                   borderRadius: '14px',
                 }}
               >
-                Per uur
+                {t('hourly')}
               </button>
               <button
                 type="button"
@@ -400,7 +421,7 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
                   borderRadius: '14px',
                 }}
               >
-                Vast tarief
+                {t('fixedRate')}
               </button>
             </div>
           </div>
@@ -497,7 +518,7 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
                                     className="absolute inset-0 flex items-center px-3 text-[12px] font-medium pointer-events-none"
                                     style={{ color: 'var(--t3)' }}
                                   >
-                                    Kies eindtijd
+                                    {t('chooseEndTime')}
                                   </span>
                                 )}
                                 {sc.end_time && (
@@ -516,7 +537,7 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
                           <div className="grid grid-cols-2 gap-2">
                             <div>
                               <label className="text-[10px] font-semibold uppercase tracking-[.08em] mb-0.5 block" style={{ color: 'var(--t3)' }}>
-                                Uren
+                                {t('hoursLabel')}
                               </label>
                               <input
                                 type="number"
@@ -526,7 +547,7 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
                                 onChange={(e) => updateCleanerField(sc.cleaner_id, 'hours_worked', e.target.value)}
                                 className="w-full h-[38px] rounded-[10px] px-3 text-[14px] font-medium border-0 outline-none"
                                 style={inputStyle}
-                                placeholder="Optioneel"
+                                placeholder={t('optional')}
                               />
                             </div>
                             <div>
@@ -541,7 +562,7 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
                                 onChange={(e) => updateCleanerField(sc.cleaner_id, 'km_driven', e.target.value)}
                                 className="w-full h-[38px] rounded-[10px] px-3 text-[14px] font-medium border-0 outline-none"
                                 style={inputStyle}
-                                placeholder="Optioneel"
+                                placeholder={t('optional')}
                               />
                             </div>
                           </div>
@@ -561,7 +582,7 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
               style={inputStyle}
             >
               <span style={{ color: selectedCleaners.length > 0 ? 'var(--t3)' : 'var(--t2)' }}>
-                {selectedCleaners.length > 0 ? '+ Schoonmaakster toevoegen' : '— Selecteer schoonmaaksters'}
+                {selectedCleaners.length > 0 ? `+ ${t('addCleaner')}` : `— ${t('selectCleaners')}`}
               </span>
             </button>
 
@@ -584,7 +605,7 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
                     </button>
                   ))}
                 {cleaners.filter(c => !selectedCleaners.some(sc => sc.cleaner_id === c.id)).length === 0 && (
-                  <div className="px-3.5 py-3 text-[13px]" style={{ color: 'var(--t3)' }}>Alle schoonmaaksters zijn al geselecteerd</div>
+                  <div className="px-3.5 py-3 text-[13px]" style={{ color: 'var(--t3)' }}>{t('allSelected')}</div>
                 )}
               </div>
             )}
@@ -593,7 +614,7 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
           {/* Date */}
           <div>
             <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
-              Datum
+              {t('date')}
             </label>
             <input
               type="date"
@@ -635,7 +656,7 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
                     className="absolute inset-0 flex items-center px-3.5 text-[14px] font-medium pointer-events-none"
                     style={{ color: 'var(--t3)' }}
                   >
-                    Kies eindtijd
+                    {t('chooseEndTime')}
                   </span>
                 )}
                 {endTime && (
@@ -676,26 +697,26 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
             <div className="rounded-[14px] p-3 flex flex-col gap-1" style={{ background: 'var(--inp)' }}>
               <div className="flex justify-between items-center">
                 <span className="text-[12px] font-medium" style={{ color: 'var(--t3)' }}>
-                  {isFixedPrice ? `Vast tarief` : `${totalCleanerHours}u × €${priceNum}`}
+                  {isFixedPrice ? t('fixedRate') : `${totalCleanerHours}u × €${priceNum}`}
                   {laundryNum > 0 && ` + was €${laundryNum}`}
                 </span>
                 <span className="text-[15px] font-bold" style={{ color: 'var(--t1)' }}>
-                  Omzet: €{displayRevenue.toFixed(2).replace(/\.00$/, '')}
+                  {t('revenueLabel')}: €{displayRevenue.toFixed(2).replace(/\.00$/, '')}
                 </span>
               </div>
               {totalPayout > 0 && (
                 <div className="flex justify-between items-center">
                   <span className="text-[12px] font-medium" style={{ color: 'var(--t3)' }}>
-                    {selectedCleaners.length} schoonmaakster{selectedCleaners.length > 1 ? 's' : ''}
+                    {selectedCleaners.length} {t('cleaner')}{selectedCleaners.length > 1 ? 's' : ''}
                   </span>
                   <span className="text-[13px] font-semibold" style={{ color: 'var(--t2)' }}>
-                    Uitbetaling: €{totalPayout.toFixed(2).replace(/\.00$/, '')}
+                    {t('payoutTotal')}: €{totalPayout.toFixed(2).replace(/\.00$/, '')}
                   </span>
                 </div>
               )}
               {displayRevenue > 0 && totalPayout > 0 && (
                 <div className="flex justify-between items-center pt-1 mt-1" style={{ borderTop: '1px solid var(--border)' }}>
-                  <span className="text-[12px] font-medium" style={{ color: 'var(--t3)' }}>Winst</span>
+                  <span className="text-[12px] font-medium" style={{ color: 'var(--t3)' }}>{t('profitLabel')}</span>
                   <span className="text-[13px] font-bold" style={{ color: displayRevenue - totalPayout > 0 ? '#00A651' : '#ef4444' }}>
                     €{(displayRevenue - totalPayout).toFixed(2).replace(/\.00$/, '')}
                   </span>
@@ -724,7 +745,7 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
           {/* Laundry / Was service */}
           <div>
             <label className="text-[11px] font-semibold uppercase tracking-[.08em] mb-1 block" style={{ color: 'var(--t3)' }}>
-              Was service
+              {t('laundry')}
             </label>
             <div className="flex items-center gap-3">
               <button
@@ -746,7 +767,7 @@ export function JobForm({ open, onClose, defaultDate }: Props) {
                   onChange={(e) => setLaundryCost(e.target.value)}
                   className="flex-1 h-[46px] rounded-[14px] px-3.5 text-[15px] font-medium border-0 outline-none"
                   style={inputStyle}
-                  placeholder="Prijs (€)"
+                  placeholder={t('laundryPricePh')}
                 />
               )}
             </div>
