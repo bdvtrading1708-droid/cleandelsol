@@ -5,6 +5,7 @@ import { formatCurrency, getJobTotalRevenue } from '@/lib/utils'
 import { useLocale } from '@/lib/i18n'
 import { RevenueChart, type ChartDataPoint } from '@/components/dashboard/revenue-chart'
 import { filterByPeriod, filterByMonth, aggregateByCleaners, toDateStr, getMonday, type Period } from '@/lib/financial'
+import { useCleanerPayments } from '@/lib/hooks/use-cleaner-payments'
 import type { Job } from '@/lib/types'
 
 interface Props {
@@ -35,9 +36,11 @@ export function CleanerDetailHero({ cleanerId, jobs, period, setPeriod, chartMon
 
   const stats = aggregateByCleaners(filtered, [cleanerId])[0]
 
-  // Outstanding is always calculated over ALL jobs (not period-filtered)
+  // Outstanding is always calculated over ALL jobs (not period-filtered), minus cash payments
   const allStats = aggregateByCleaners(cleanerJobs, [cleanerId])[0]
-  const totalOutstanding = allStats?.outstanding || 0
+  const { data: cashPayments = [] } = useCleanerPayments(cleanerId)
+  const totalCashPaid = cashPayments.reduce((s, p) => s + p.amount, 0)
+  const totalOutstanding = Math.max(0, (allStats?.outstanding || 0) - totalCashPaid)
 
   const chartData: ChartDataPoint[] = useMemo(() => {
     if (period === 'dag') {
