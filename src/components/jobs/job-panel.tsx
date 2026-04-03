@@ -88,9 +88,14 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
   const nextStatus = STATUS_FLOW[job.status]
   const cleaners = job.cleaners || []
 
+  // Check if this cleaner has already delivered their hours
+  const myAssignment = isCleaner ? cleaners.find(jc => jc.cleaner_id === user?.id) : null
+  const myDelivered = myAssignment?.hours_worked != null && myAssignment.hours_worked > 0
+
   const getActionLabel = (): string | null => {
     if (job.status === 'planned' && (isAdmin || isCleaner)) return t('start')
     if (job.status === 'progress' && (isAdmin || isCleaner)) return t('deliver')
+    if (job.status === 'delivered' && isCleaner && !myDelivered) return t('deliver')
     if (job.status === 'delivered' && isAdmin) return t('done')
     if (job.status === 'done' && isAdmin) return t('invoiced')
     return null
@@ -102,6 +107,10 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
       return
     }
     if (job.status === 'progress' && isCleaner) {
+      setShowDelivery(true)
+      return
+    }
+    if (job.status === 'delivered' && isCleaner && !myDelivered) {
       setShowDelivery(true)
       return
     }

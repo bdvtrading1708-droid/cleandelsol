@@ -15,10 +15,9 @@ export function useJobs(cleanerId?: string) {
         .select('*, property:properties(*), job_cleaners(*, cleaner:users!job_cleaners_cleaner_id_fkey(id, name, email, phone, avatar_url))')
         .order('date', { ascending: false })
 
-      if (cleanerId) {
-        // Filter jobs that have this cleaner assigned
-        query = query.filter('job_cleaners.cleaner_id', 'eq', cleanerId)
-      }
+      // Don't filter job_cleaners at the PostgREST level — we need ALL cleaners
+      // per job so the delivery form can correctly determine if all cleaners submitted.
+      // We filter which JOBS to show at the JS level instead.
 
       const { data, error } = await query
       if (error) throw error
@@ -40,7 +39,7 @@ export function useJobs(cleanerId?: string) {
         } as Job
       })
 
-      // If filtering by cleanerId, only return jobs that actually have that cleaner
+      // If filtering by cleanerId, only return jobs that have this cleaner assigned
       if (cleanerId) {
         return jobs.filter(j => j.cleaners.some(jc => jc.cleaner_id === cleanerId))
       }

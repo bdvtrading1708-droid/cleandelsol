@@ -24,8 +24,15 @@ export default function MyJobsPage() {
   const getMyAssignment = (job: typeof jobs[0]) =>
     (job.cleaners || []).find(jc => jc.cleaner_id === user?.id)
 
-  const upcoming = jobs.filter(j => j.status === 'planned' || j.status === 'progress')
-    .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
+  // Show job as upcoming if this cleaner hasn't filled in hours yet (even if status is 'delivered' by another cleaner)
+  const upcoming = jobs.filter(j => {
+    if (j.status === 'planned' || j.status === 'progress') return true
+    if (j.status === 'delivered') {
+      const my = getMyAssignment(j)
+      return my && !my.hours_worked
+    }
+    return false
+  }).sort((a, b) => (a.date || '').localeCompare(b.date || ''))
 
   return (
     <>

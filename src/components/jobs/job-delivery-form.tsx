@@ -2,7 +2,7 @@
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useLocale } from '@/lib/i18n'
-import { useUpdateJobStatus, useUpdateJobCleaner } from '@/lib/hooks/use-jobs'
+import { useUpdateJobCleaner } from '@/lib/hooks/use-jobs'
 import { useAuth } from '@/providers/auth-provider'
 import { useState, useRef } from 'react'
 import { Camera, X } from 'lucide-react'
@@ -20,7 +20,6 @@ interface Props {
 export function JobDeliveryForm({ job, open, onClose, onSuccess }: Props) {
   const { t } = useLocale()
   const { user } = useAuth()
-  const updateStatus = useUpdateJobStatus()
   const updateCleaner = useUpdateJobCleaner()
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -87,18 +86,16 @@ export function JobDeliveryForm({ job, open, onClose, onSuccess }: Props) {
         })
       }
 
-      // Update job status to delivered
-      await new Promise<void>((resolve, reject) => {
-        updateStatus.mutate({
-          id: job.id,
-          status: 'delivered',
+      // Status transition (planned→progress→delivered) is handled by database trigger
+      // Only update payment_method and notes here
+      const { error: jobError } = await supabase
+        .from('jobs')
+        .update({
           payment_method: paymentMethod,
           notes: notes || undefined,
-        }, {
-          onSuccess: () => resolve(),
-          onError: (err) => reject(err),
         })
-      })
+        .eq('id', job.id)
+      if (jobError) throw jobError
 
       onSuccess()
     } catch (err) {
