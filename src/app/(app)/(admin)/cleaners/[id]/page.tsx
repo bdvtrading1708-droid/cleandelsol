@@ -9,7 +9,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { formatCurrency } from '@/lib/utils'
 import { aggregateByCleaners } from '@/lib/financial'
 import type { Period } from '@/lib/financial'
-import { ArrowLeft, Pencil, Phone, Mail, Camera } from 'lucide-react'
+import { ArrowLeft, Pencil, Phone, Mail, Camera, Banknote } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
@@ -20,6 +20,7 @@ import { CleanerProfitBreakdown } from '@/components/cleaners/cleaner-profit-bre
 import { CleanerJobsList } from '@/components/cleaners/cleaner-jobs-list'
 import { CleanerPayments } from '@/components/cleaners/cleaner-payments'
 import { CleanerAccount } from '@/components/cleaners/cleaner-account'
+import { useCleanerPayments, useCreateCleanerPayment } from '@/lib/hooks/use-cleaner-payments'
 import { Copy, Check } from 'lucide-react'
 
 export default function CleanerDetailPage() {
@@ -37,6 +38,11 @@ export default function CleanerDetailPage() {
   const [chartYear, setChartYear] = useState(new Date().getFullYear())
   const [createdCreds, setCreatedCreds] = useState<{ name: string; email: string; password: string } | null>(null)
   const [copied, setCopied] = useState(false)
+  const [showCashForm, setShowCashForm] = useState(false)
+  const [cashAmount, setCashAmount] = useState('')
+  const [cashNote, setCashNote] = useState('')
+  const { data: cashPayments = [] } = useCleanerPayments(id)
+  const createPayment = useCreateCleanerPayment()
 
   const cleaner = cleaners.find(c => c.id === id)
 
@@ -175,6 +181,81 @@ export default function CleanerDetailPage() {
           setChartYear={setChartYear}
         />
       </div>
+
+      {/* Cash betaling */}
+      {(allStats[0]?.outstanding || 0) > 0 && (
+        <div className="mb-3">
+          {!showCashForm ? (
+            <button
+              onClick={() => setShowCashForm(true)}
+              className="w-full h-[46px] rounded-[16px] text-[14px] font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+              style={{ background: '#FF990015', color: '#FF9900', border: '1px solid #FF990030' }}
+            >
+              <Banknote size={18} />
+              Cash betalen
+            </button>
+          ) : (
+            <div className="rounded-[18px] p-4 flex flex-col gap-2.5" style={{ background: 'var(--card)', boxShadow: 'var(--shadow)' }}>
+              <div className="text-[11px] font-semibold uppercase tracking-[.08em]" style={{ color: 'var(--t3)' }}>
+                Cash betaling
+              </div>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={cashAmount}
+                onChange={(e) => setCashAmount(e.target.value)}
+                placeholder="Bedrag in €"
+                className="w-full h-[44px] rounded-[12px] px-3.5 text-[15px] font-medium border-0 outline-none"
+                style={{ background: 'var(--fill)', color: 'var(--t1)' }}
+              />
+              <input
+                type="text"
+                value={cashNote}
+                onChange={(e) => setCashNote(e.target.value)}
+                placeholder="Notitie (optioneel)"
+                className="w-full h-[44px] rounded-[12px] px-3.5 text-[15px] font-medium border-0 outline-none"
+                style={{ background: 'var(--fill)', color: 'var(--t1)' }}
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setShowCashForm(false); setCashAmount(''); setCashNote('') }}
+                  className="flex-1 h-[44px] rounded-[14px] text-[13px] font-semibold"
+                  style={{ background: 'var(--fill)', color: 'var(--t2)' }}
+                >
+                  Annuleren
+                </button>
+                <button
+                  onClick={() => {
+                    const amount = parseFloat(cashAmount)
+                    if (!amount || amount <= 0) return
+                    createPayment.mutate({
+                      cleaner_id: id,
+                      amount,
+                      note: cashNote || 'Cash betaling',
+                    }, {
+                      onSuccess: () => {
+                        setShowCashForm(false)
+                        setCashAmount('')
+                        setCashNote('')
+                      },
+                    })
+                  }}
+                  disabled={!cashAmount || parseFloat(cashAmount) <= 0 || createPayment.isPending}
+                  className="flex-1 h-[44px] rounded-[14px] text-[13px] font-bold"
+                  style={{
+                    background: '#FF9900',
+                    color: '#fff',
+                    opacity: (!cashAmount || parseFloat(cashAmount) <= 0 || createPayment.isPending) ? 0.5 : 1,
+                  }}
+                >
+                  {createPayment.isPending ? 'Bezig...' : 'Betalen'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Profit breakdown */}
       <div className="mb-3">
