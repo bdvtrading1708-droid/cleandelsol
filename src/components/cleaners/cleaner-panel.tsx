@@ -37,11 +37,9 @@ export function CleanerPanel({ cleaner, open, onClose, onEdit }: Props) {
   const totalEarned = cleanerJobs
     .filter(j => j.status === 'done')
     .reduce((s, j) => s + (j.cleaner_payout || 0), 0)
-  const outstandingJobs = cleanerJobs
+  const outstanding = cleanerJobs
     .filter(j => j.status === 'delivered')
     .reduce((s, j) => s + (j.cleaner_payout || 0), 0)
-  const totalCashPaid = payments.reduce((s, p) => s + p.amount, 0)
-  const outstanding = Math.max(0, outstandingJobs - totalCashPaid)
   const totalHours = cleanerJobs.reduce((s, j) => s + (j.hours_worked || 0), 0)
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

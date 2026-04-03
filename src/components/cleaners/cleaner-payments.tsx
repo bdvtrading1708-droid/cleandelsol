@@ -7,6 +7,7 @@ import { useUpdateJobStatus } from '@/lib/hooks/use-jobs'
 import { useCleanerPayments, useCreateCleanerPayment } from '@/lib/hooks/use-cleaner-payments'
 import { STATUS_COLORS } from '@/lib/constants'
 import { CheckCircle2, Banknote } from 'lucide-react'
+import { toast } from 'sonner'
 import { format, parseISO } from 'date-fns'
 import { nl } from 'date-fns/locale'
 import type { Job, JobCleaner } from '@/lib/types'
@@ -203,22 +204,39 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
                   Annuleren
                 </button>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     const amount = parseFloat(cashAmount)
                     if (!amount || amount <= 0) return
+
+                    // Mark oldest delivered jobs as done until amount is covered
+                    const delivered = unpaidJobs
+                      .filter(j => j.status === 'delivered')
+                      .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
+                    let remaining = amount
+                    let jobsMarked = 0
+                    for (const job of delivered) {
+                      if (remaining <= 0) break
+                      const my = getAssignment(job)
+                      const payout = my ? getCleanerTotalPayout(my) : 0
+                      updateStatus.mutate({ id: job.id, status: 'done' })
+                      remaining -= payout
+                      jobsMarked++
+                    }
+
                     createPayment.mutate({
                       cleaner_id: cleanerId,
                       amount,
                       note: cashNote || 'Cash betaling',
                     }, {
                       onSuccess: () => {
+                        toast.success(`Cash betaling: €${amount.toFixed(2)} — ${jobsMarked} opdracht${jobsMarked !== 1 ? 'en' : ''} betaald`)
                         setShowCashForm(false)
                         setCashAmount('')
                         setCashNote('')
                       },
                     })
                   }}
-                  disabled={!cashAmount || parseFloat(cashAmount) <= 0 || createPayment.isPending}
+                  disabled={!cashAmount || parseFloat(cashAmount) <= 0 || createPayment.isPending || updateStatus.isPending}
                   className="flex-1 h-[44px] rounded-[14px] text-[13px] font-bold"
                   style={{
                     background: '#FF9900',
