@@ -94,6 +94,36 @@ export function useUpdateJobCleaner() {
   })
 }
 
+export function useAddJobCleaner() {
+  const supabase = createClient()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ job_id, cleaner_id, cleaner_payout, start_time, end_time }: { job_id: number; cleaner_id: string; cleaner_payout?: number; start_time?: string; end_time?: string }) => {
+      const { error } = await supabase.from('job_cleaners').insert({ job_id, cleaner_id, cleaner_payout, start_time, end_time })
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] })
+    },
+  })
+}
+
+export function useRemoveJobCleaner() {
+  const supabase = createClient()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { error } = await supabase.from('job_cleaners').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] })
+    },
+  })
+}
+
 export function useDeleteJob() {
   const supabase = createClient()
   const queryClient = useQueryClient()

@@ -3,10 +3,11 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useLocale } from '@/lib/i18n'
 import { useAuth } from '@/providers/auth-provider'
-import { useUpdateJobStatus, useUpdateJobCleaner, useDeleteJob } from '@/lib/hooks/use-jobs'
+import { useUpdateJobStatus, useUpdateJobCleaner, useDeleteJob, useAddJobCleaner, useRemoveJobCleaner } from '@/lib/hooks/use-jobs'
+import { useCleaners } from '@/lib/hooks/use-cleaners'
 import { STATUS_COLORS, getCleanerColor } from '@/lib/constants'
 import { formatCurrency, formatDate, getJobTotalRevenue, getJobPayout, getCleanerPayout, getCleanerTotalPayout, getCleanerHours, getJobKm } from '@/lib/utils'
-import { MapPin, Clock, Car, FileText, Camera, ChevronRight, Trash2, Pencil, Users } from 'lucide-react'
+import { MapPin, Clock, Car, FileText, Camera, ChevronRight, Trash2, Pencil, Users, X, Plus } from 'lucide-react'
 import { CleanerAvatar } from '@/components/cleaners/cleaner-avatar'
 import type { Job, JobStatus } from '@/lib/types'
 import { useState, useEffect } from 'react'
@@ -35,7 +36,11 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
   const updateStatus = useUpdateJobStatus()
   const updateCleaner = useUpdateJobCleaner()
   const deleteJob = useDeleteJob()
+  const addJobCleaner = useAddJobCleaner()
+  const removeJobCleaner = useRemoveJobCleaner()
+  const { data: allCleaners = [] } = useCleaners()
   const [showDelivery, setShowDelivery] = useState(false)
+  const [showAddCleaner, setShowAddCleaner] = useState(false)
   const [showPhotos, setShowPhotos] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -325,11 +330,70 @@ export function JobPanel({ job, open, onClose }: JobPanelProps) {
                             placeholder="0"
                           />
                         </div>
-                        <div />
+                        {cleaners.length > 1 && (
+                          <div className="flex items-end justify-end pb-1">
+                            <button
+                              type="button"
+                              onClick={() => removeJobCleaner.mutate(jc.id)}
+                              disabled={removeJobCleaner.isPending}
+                              className="h-[36px] px-3 rounded-[10px] text-[11px] font-semibold flex items-center gap-1.5 transition-all"
+                              style={{ background: '#ef444415', color: '#ef4444' }}
+                            >
+                              <X size={12} />
+                              Verwijderen
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )
                 })}
+
+                {/* Add cleaner */}
+                {(() => {
+                  const availableCleaners = allCleaners.filter(c => !cleaners.some(jc => jc.cleaner_id === c.id))
+                  if (availableCleaners.length === 0) return null
+                  return (
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => setShowAddCleaner(!showAddCleaner)}
+                        className="w-full h-[42px] rounded-[12px] text-[13px] font-semibold flex items-center justify-center gap-1.5 transition-all"
+                        style={{ background: 'var(--fill)', color: 'var(--t2)', border: '1px dashed var(--border2)' }}
+                      >
+                        <Plus size={14} />
+                        Schoonmaakster toevoegen
+                      </button>
+                      {showAddCleaner && (
+                        <div className="mt-1.5 rounded-[12px] overflow-hidden" style={{ background: 'var(--inp)', border: '1px solid var(--border)' }}>
+                          {availableCleaners.map(c => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => {
+                                addJobCleaner.mutate({
+                                  job_id: job.id,
+                                  cleaner_id: c.id,
+                                  cleaner_payout: c.hourly_rate || undefined,
+                                  start_time: job.start_time || undefined,
+                                  end_time: job.end_time || undefined,
+                                })
+                                setShowAddCleaner(false)
+                              }}
+                              disabled={addJobCleaner.isPending}
+                              className="w-full flex items-center gap-3 px-3.5 py-3 text-left transition-colors"
+                              style={{ borderBottom: '1px solid var(--border)' }}
+                            >
+                              <CleanerAvatar src={c.avatar_url} name={c.name} size={28} />
+                              <span className="flex-1 text-[14px] font-medium" style={{ color: 'var(--t1)' }}>{c.name}</span>
+                              <span className="text-[12px]" style={{ color: 'var(--t3)' }}>€{c.hourly_rate || 0}/u</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
 
                 {/* Was kosten */}
                 <div>
