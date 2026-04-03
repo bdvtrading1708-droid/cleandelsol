@@ -11,7 +11,8 @@ import { toast } from 'sonner'
 import { CleanerForm } from '@/components/cleaners/cleaner-form'
 import { CleanersHero } from '@/components/cleaners/cleaners-hero'
 import { CleanerListCard } from '@/components/cleaners/cleaner-list-card'
-import { filterByPeriod, aggregateByCleaners, type Period } from '@/lib/financial'
+import { filterByPeriod, aggregateByCleaners, type Period, type CleanerFinancials } from '@/lib/financial'
+import { useAllCleanerPayments } from '@/lib/hooks/use-cleaner-payments'
 import type { User } from '@/lib/types'
 
 type SortKey = 'name' | 'outstanding' | 'earned' | 'jobs'
@@ -20,6 +21,7 @@ export default function CleanersPage() {
   const router = useRouter()
   const { data: cleaners = [], isLoading } = useCleaners()
   const { data: jobs = [] } = useJobs()
+  const { data: allPayments = [] } = useAllCleanerPayments()
   const { t } = useLocale()
   const [showForm, setShowForm] = useState(false)
   const [editCleaner, setEditCleaner] = useState<User | null>(null)
@@ -36,8 +38,17 @@ export default function CleanersPage() {
   const filtered = filterByPeriod(jobs, period)
   const cleanerStats = aggregateByCleaners(filtered, cleaners.map(c => c.id))
 
-  // Outstanding is always calculated over ALL jobs (not period-filtered)
-  const allTimeStats = period !== 'alles' ? aggregateByCleaners(jobs, cleaners.map(c => c.id)) : cleanerStats
+  // Outstanding is always calculated over ALL jobs (not period-filtered), minus cash payments
+  const allTimeStatsRaw = period !== 'alles' ? aggregateByCleaners(jobs, cleaners.map(c => c.id)) : cleanerStats
+
+  // Subtract cash payments from outstanding
+  const adjustOutstanding = (stats: CleanerFinancials[]): CleanerFinancials[] =>
+    stats.map(s => {
+      const paid = allPayments.filter(p => p.cleaner_id === s.cleanerId).reduce((sum, p) => sum + p.amount, 0)
+      return { ...s, outstanding: Math.max(0, s.outstanding - paid) }
+    })
+
+  const allTimeStats = adjustOutstanding(allTimeStatsRaw)
 
   // Filter by search
   const searchFiltered = search

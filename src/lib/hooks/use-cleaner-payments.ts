@@ -29,6 +29,22 @@ export function useCleanerPayments(cleanerId?: string) {
   })
 }
 
+export function useAllCleanerPayments() {
+  const supabase = createClient()
+
+  return useQuery({
+    queryKey: ['cleaner-payments', 'all'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('cleaner_payments')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return (data || []) as CleanerPayment[]
+    },
+  })
+}
+
 export function useCreateCleanerPayment() {
   const supabase = createClient()
   const queryClient = useQueryClient()
