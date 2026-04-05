@@ -22,7 +22,6 @@ import { CleanerPayments } from '@/components/cleaners/cleaner-payments'
 import { CleanerAccount } from '@/components/cleaners/cleaner-account'
 import { useCleanerPayments, useCreateCleanerPayment } from '@/lib/hooks/use-cleaner-payments'
 import { useUpdateJobStatus } from '@/lib/hooks/use-jobs'
-import { getCleanerTotalPayout } from '@/lib/utils'
 import { Copy, Check } from 'lucide-react'
 
 export default function CleanerDetailPage() {
@@ -68,8 +67,14 @@ export default function CleanerDetailPage() {
     )
   }
 
+  // Build cash payments map for this cleaner
+  const cashByCleanerId: Record<string, number> = {}
+  for (const cp of cashPayments) {
+    cashByCleanerId[cp.cleaner_id] = (cashByCleanerId[cp.cleaner_id] || 0) + cp.amount
+  }
+
   // Stats for profit breakdown
-  const allStats = aggregateByCleaners(jobs, [cleaner.id])
+  const allStats = aggregateByCleaners(jobs, [cleaner.id], cashByCleanerId)
   const stats = allStats[0]
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -233,38 +238,28 @@ export default function CleanerDetailPage() {
                     const amount = parseFloat(cashAmount)
                     if (!amount || amount <= 0) return
 
-                    // Find delivered jobs for this cleaner, oldest first
-                    const deliveredJobs = jobs
-                      .filter(j => j.status === 'delivered' && (j.cleaners || []).some(jc => jc.cleaner_id === id))
-                      .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
+                    // Calculate remaining outstanding after this payment
+                    const currentOutstanding = stats?.outstanding || 0
+                    const remainingAfter = Math.max(0, currentOutstanding - amount)
 
-                    // Mark oldest jobs as done until amount is covered
-                    let remaining = amount
-                    let jobsMarked = 0
-                    for (const job of deliveredJobs) {
-                      if (remaining <= 0) break
-                      const my = (job.cleaners || []).find(jc => jc.cleaner_id === id)
-                      const payout = my ? getCleanerTotalPayout(my) : 0
-                      updateStatus.mutate({ id: job.id, status: 'done' })
-                      remaining -= payout
-                      jobsMarked++
-                    }
-
-                    // Record the cash payment
+                    // Only record the cash payment — do NOT mark jobs as done
                     createPayment.mutate({
                       cleaner_id: id,
                       amount,
                       note: cashNote || 'Cash betaling',
                     }, {
                       onSuccess: () => {
-                        toast.success(`Cash betaling: €${amount.toFixed(2)} — ${jobsMarked} opdracht${jobsMarked !== 1 ? 'en' : ''} betaald`)
+                        const msg = remainingAfter > 0
+                          ? `Cash betaling: €${amount.toFixed(2)} — Nog €${remainingAfter.toFixed(2)} openstaand`
+                          : `Cash betaling: €${amount.toFixed(2)} — Volledig betaald`
+                        toast.success(msg)
                         setShowCashForm(false)
                         setCashAmount('')
                         setCashNote('')
                       },
                     })
                   }}
-                  disabled={!cashAmount || parseFloat(cashAmount) <= 0 || createPayment.isPending || updateStatus.isPending}
+                  disabled={!cashAmount || parseFloat(cashAmount) <= 0 || createPayment.isPending}
                   className="flex-1 h-[44px] rounded-[14px] text-[13px] font-bold"
                   style={{
                     background: '#FF9900',

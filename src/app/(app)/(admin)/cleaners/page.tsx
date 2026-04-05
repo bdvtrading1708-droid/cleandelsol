@@ -12,6 +12,7 @@ import { CleanerForm } from '@/components/cleaners/cleaner-form'
 import { CleanersHero } from '@/components/cleaners/cleaners-hero'
 import { CleanerListCard } from '@/components/cleaners/cleaner-list-card'
 import { filterByPeriod, aggregateByCleaners, type Period } from '@/lib/financial'
+import { useAllCleanerPayments } from '@/lib/hooks/use-cleaner-payments'
 import type { User } from '@/lib/types'
 
 type SortKey = 'name' | 'outstanding' | 'earned' | 'jobs'
@@ -20,6 +21,7 @@ export default function CleanersPage() {
   const router = useRouter()
   const { data: cleaners = [], isLoading } = useCleaners()
   const { data: jobs = [] } = useJobs()
+  const { data: allCashPayments = [] } = useAllCleanerPayments()
   const { t } = useLocale()
   const [showForm, setShowForm] = useState(false)
   const [editCleaner, setEditCleaner] = useState<User | null>(null)
@@ -33,11 +35,17 @@ export default function CleanersPage() {
     return <div className="flex items-center justify-center py-20" style={{ color: 'var(--t3)' }}>{t('loading')}</div>
   }
 
+  // Build cash payments map: cleanerId → total cash paid
+  const cashByCleanerId: Record<string, number> = {}
+  for (const cp of allCashPayments) {
+    cashByCleanerId[cp.cleaner_id] = (cashByCleanerId[cp.cleaner_id] || 0) + cp.amount
+  }
+
   const filtered = filterByPeriod(jobs, period)
-  const cleanerStats = aggregateByCleaners(filtered, cleaners.map(c => c.id))
+  const cleanerStats = aggregateByCleaners(filtered, cleaners.map(c => c.id), cashByCleanerId)
 
   // Outstanding is always calculated over ALL jobs (not period-filtered)
-  const allTimeStats = period !== 'alles' ? aggregateByCleaners(jobs, cleaners.map(c => c.id)) : cleanerStats
+  const allTimeStats = period !== 'alles' ? aggregateByCleaners(jobs, cleaners.map(c => c.id), cashByCleanerId) : cleanerStats
 
   // Filter by search
   const searchFiltered = search

@@ -156,7 +156,8 @@ export interface CleanerFinancials extends FinancialSummary {
 /** Break down financials per cleaner (supports multi-cleaner jobs) */
 export function aggregateByCleaners(
   jobs: (JobLike & { cleaners?: JobCleaner[]; cleaner_id?: string; status?: string })[],
-  cleanerIds: string[]
+  cleanerIds: string[],
+  cashPaymentsByCleanerId?: Record<string, number>
 ): CleanerFinancials[] {
   return cleanerIds.map(cleanerId => {
     // Find jobs that involve this cleaner
@@ -225,6 +226,10 @@ export function aggregateByCleaners(
     const totalCost = payout + kmCost + extraCosts
     const profit = revenue - totalCost
     const margin = revenue > 0 ? Math.round((profit / revenue) * 100) : 0
+
+    // Subtract cash payments from outstanding
+    const cashPaid = cashPaymentsByCleanerId?.[cleanerId] || 0
+    outstanding = Math.max(0, outstanding - cashPaid)
 
     const laundryCost = cleanerJobs.reduce((s, j) => s + (j.laundry_cost || 0), 0)
     return { revenue, laundryCost, payout, kmCost, extraCosts, totalCost, profit, margin, jobCount: cleanerJobs.length, hours, cleanerId, outstanding, earned, totalPayout }

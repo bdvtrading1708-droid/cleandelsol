@@ -45,6 +45,14 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
     .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
   const payableJobs = unpaidJobs.filter(j => j.status === 'delivered')
 
+  // Calculate outstanding minus cash payments
+  const totalUnpaidPayout = unpaidJobs.reduce((s, j) => {
+    const my = getAssignment(j)
+    return s + (my ? getCleanerTotalPayout(my) : 0)
+  }, 0)
+  const totalCashPaid = cashPayments.reduce((s, cp) => s + cp.amount, 0)
+  const netOutstanding = Math.max(0, totalUnpaidPayout - totalCashPaid)
+
   // Betaald: this cleaner's assignment has been paid
   const paidJobs = cleanerJobs
     .filter(j => {
@@ -91,7 +99,12 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
         <div>
           <div className="flex items-center justify-between mb-2">
             <div className="text-[15px] font-bold tracking-[-0.3px]" style={{ color: 'var(--t1)' }}>
-              {t('toPay') || 'Te betalen'} ({unpaidJobs.length})
+              {t('toPay') || 'Te betalen'} — {formatCurrency(netOutstanding)}
+              {totalCashPaid > 0 && (
+                <span className="text-[11px] font-normal ml-1.5" style={{ color: '#FF9900' }}>
+                  (cash: -{formatCurrency(totalCashPaid)})
+                </span>
+              )}
             </div>
           </div>
           <div className="rounded-[18px] overflow-hidden" style={{ background: 'var(--card)', boxShadow: 'var(--shadow)' }}>
@@ -227,12 +240,7 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
                     const amount = parseFloat(cashAmount)
                     if (!amount || amount <= 0) return
 
-                    // Calculate current outstanding total
-                    const outstandingTotal = unpaidJobs.reduce((s, j) => {
-                      const my = getAssignment(j)
-                      return s + (my ? getCleanerTotalPayout(my) : 0)
-                    }, 0)
-                    const remainingAfter = outstandingTotal - amount
+                    const remainingAfter = Math.max(0, netOutstanding - amount)
 
                     createPayment.mutate({
                       cleaner_id: cleanerId,
@@ -242,7 +250,7 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
                       onSuccess: () => {
                         const msg = remainingAfter > 0
                           ? `Cash betaling: €${amount.toFixed(2)} — Nog €${remainingAfter.toFixed(2)} openstaand`
-                          : `Cash betaling: €${amount.toFixed(2)}`
+                          : `Cash betaling: €${amount.toFixed(2)} — Volledig betaald`
                         toast.success(msg)
                         setShowCashForm(false)
                         setCashAmount('')

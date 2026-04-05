@@ -9,10 +9,12 @@ import { formatCurrency } from '@/lib/utils'
 import { CleanerAvatar } from '@/components/cleaners/cleaner-avatar'
 import TopPartnersByRevenue from '@/components/financial/top-partners'
 import { filterByPeriod, aggregateFinancials, aggregateByCleaners, type Period } from '@/lib/financial'
+import { useAllCleanerPayments } from '@/lib/hooks/use-cleaner-payments'
 
 export default function FinancialPage() {
   const { data: jobs = [], isLoading } = useJobs()
   const { data: cleaners = [] } = useCleaners()
+  const { data: allCashPayments = [] } = useAllCleanerPayments()
   const { data: partners = [] } = usePartners()
   const { t } = useLocale()
   const [period, setPeriod] = useState<Period>('maand')
@@ -29,9 +31,15 @@ export default function FinancialPage() {
   const filtered = filterByPeriod(cleanerJobs, period)
   const { revenue: totalRev, totalCost, profit: netProfit, margin } = aggregateFinancials(filtered)
 
+  // Build cash payments map
+  const cashByCleanerId: Record<string, number> = {}
+  for (const cp of allCashPayments) {
+    cashByCleanerId[cp.cleaner_id] = (cashByCleanerId[cp.cleaner_id] || 0) + cp.amount
+  }
+
   // Per-cleaner breakdown (always show all cleaners, not filtered by selected cleaner)
   const allFiltered = filterByPeriod(jobs, period)
-  const perCleaner = aggregateByCleaners(allFiltered, cleaners.map(c => c.id))
+  const perCleaner = aggregateByCleaners(allFiltered, cleaners.map(c => c.id), cashByCleanerId)
     .map(cf => ({ ...cf, cleaner: cleaners.find(c => c.id === cf.cleanerId)! }))
     .filter(c => c.jobCount > 0)
     .sort((a, b) => b.revenue - a.revenue)

@@ -5,6 +5,7 @@ import { formatCurrency, getJobTotalRevenue } from '@/lib/utils'
 import { useLocale } from '@/lib/i18n'
 import { RevenueChart, type ChartDataPoint } from '@/components/dashboard/revenue-chart'
 import { filterByPeriod, filterByMonth, aggregateByCleaners, toDateStr, getMonday, type Period } from '@/lib/financial'
+import { useCleanerPayments } from '@/lib/hooks/use-cleaner-payments'
 import type { Job } from '@/lib/types'
 
 interface Props {
@@ -25,6 +26,12 @@ export function CleanerDetailHero({ cleanerId, jobs, period, setPeriod, chartMon
   const now = new Date()
   const today = toDateStr(now)
 
+  const { data: cashPayments = [] } = useCleanerPayments(cleanerId)
+  const cashByCleanerId: Record<string, number> = {}
+  for (const cp of cashPayments) {
+    cashByCleanerId[cp.cleaner_id] = (cashByCleanerId[cp.cleaner_id] || 0) + cp.amount
+  }
+
   const cleanerJobs = jobs.filter(j =>
     (j.cleaners || []).some(jc => jc.cleaner_id === cleanerId) || j.cleaner_id === cleanerId
   )
@@ -33,10 +40,10 @@ export function CleanerDetailHero({ cleanerId, jobs, period, setPeriod, chartMon
     ? filterByMonth(cleanerJobs, chartMonth, chartYear)
     : filterByPeriod(cleanerJobs, period)
 
-  const stats = aggregateByCleaners(filtered, [cleanerId])[0]
+  const stats = aggregateByCleaners(filtered, [cleanerId], cashByCleanerId)[0]
 
   // Outstanding is always calculated over ALL jobs (not period-filtered)
-  const allStats = aggregateByCleaners(cleanerJobs, [cleanerId])[0]
+  const allStats = aggregateByCleaners(cleanerJobs, [cleanerId], cashByCleanerId)[0]
   const totalOutstanding = allStats?.outstanding || 0
 
   const chartData: ChartDataPoint[] = useMemo(() => {
