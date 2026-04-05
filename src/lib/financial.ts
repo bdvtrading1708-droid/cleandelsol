@@ -195,8 +195,15 @@ export function aggregateByCleaners(
           hours += cleanerHours
           totalPayout += cleanerTotalWithCosts
 
-          if (job.status === 'delivered' || job.status === 'progress') outstanding += cleanerTotalWithCosts
-          if (job.status === 'done' || job.status === 'invoiced') earned += cleanerTotalWithCosts
+          // Use per-cleaner paid_at if available, fallback to job status
+          if (jc.paid_at) {
+            earned += cleanerTotalWithCosts
+          } else if (job.status === 'delivered' || job.status === 'progress') {
+            outstanding += cleanerTotalWithCosts
+          } else if (job.status === 'done' || job.status === 'invoiced') {
+            // Legacy: job marked done but no per-cleaner paid_at (pre-migration)
+            earned += cleanerTotalWithCosts
+          }
         }
       } else {
         // Legacy single-cleaner

@@ -3,10 +3,10 @@
 import { useState } from 'react'
 import { formatCurrency, getCleanerHours, getCleanerTotalPayout } from '@/lib/utils'
 import { useLocale } from '@/lib/i18n'
-import { useUpdateJobStatus } from '@/lib/hooks/use-jobs'
+import { useUpdateJobStatus, useMarkJobCleanerPaid, useUnmarkJobCleanerPaid } from '@/lib/hooks/use-jobs'
 import { useCleanerPayments, useCreateCleanerPayment } from '@/lib/hooks/use-cleaner-payments'
 import { STATUS_COLORS } from '@/lib/constants'
-import { CheckCircle2, Banknote } from 'lucide-react'
+import { CheckCircle2, Banknote, Undo2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { format, parseISO } from 'date-fns'
 import { nl } from 'date-fns/locale'
@@ -20,6 +20,8 @@ interface Props {
 export function CleanerPayments({ cleanerId, jobs }: Props) {
   const { t, tArray } = useLocale()
   const updateStatus = useUpdateJobStatus()
+  const markPaid = useMarkJobCleanerPaid()
+  const unmarkPaid = useUnmarkJobCleanerPaid()
   const { data: cashPayments = [] } = useCleanerPayments(cleanerId)
   const createPayment = useCreateCleanerPayment()
   const [paidMonthFilter, setPaidMonthFilter] = useState<string>('all')
@@ -34,20 +36,31 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
   const getAssignment = (job: Job): JobCleaner | undefined =>
     (job.cleaners || []).find(jc => jc.cleaner_id === cleanerId)
 
-  // Te betalen
+  // Te betalen: this cleaner's assignment is not yet paid
   const unpaidJobs = cleanerJobs
-    .filter(j => j.status === 'delivered' || j.status === 'progress')
+    .filter(j => {
+      const my = getAssignment(j)
+      return my && !my.paid_at && (j.status === 'delivered' || j.status === 'progress')
+    })
     .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
   const payableJobs = unpaidJobs.filter(j => j.status === 'delivered')
 
-  // Betaald
+  // Betaald: this cleaner's assignment has been paid
   const paidJobs = cleanerJobs
-    .filter(j => j.status === 'done' || j.status === 'invoiced')
-    .sort((a, b) => ((b.paid_at || b.date || '')).localeCompare(a.paid_at || a.date || ''))
+    .filter(j => {
+      const my = getAssignment(j)
+      return my && my.paid_at
+    })
+    .sort((a, b) => {
+      const myA = getAssignment(a)
+      const myB = getAssignment(b)
+      return ((myB?.paid_at || b.date || '')).localeCompare(myA?.paid_at || a.date || '')
+    })
 
   const monthOptions = Array.from(new Set(
     paidJobs.map(j => {
-      const d = j.paid_at || j.date || ''
+      const my = getAssignment(j)
+      const d = my?.paid_at || j.date || ''
       return d.slice(0, 7)
     }).filter(Boolean)
   )).sort((a, b) => b.localeCompare(a))
@@ -61,7 +74,10 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
 
   const filteredPaid = paidMonthFilter === 'all'
     ? paidJobs
-    : paidJobs.filter(j => (j.paid_at || j.date || '').startsWith(paidMonthFilter))
+    : paidJobs.filter(j => {
+        const my = getAssignment(j)
+        return (my?.paid_at || j.date || '').startsWith(paidMonthFilter)
+      })
 
   const filteredTotal = filteredPaid.reduce((s, j) => {
     const my = getAssignment(j)
@@ -126,13 +142,13 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
                       {isPayable ? (t(job.status) || 'Opgeleverd') : (t('inprog') || 'Bezig')}
                     </div>
                   </div>
-                  {isPayable && (
+                  {isPayable && my && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        updateStatus.mutate({ id: job.id, status: 'done' })
+                        markPaid.mutate({ jobCleanerId: my.id, jobId: job.id })
                       }}
-                      disabled={updateStatus.isPending}
+                      disabled={markPaid.isPending}
                       className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95"
                       style={{ background: '#00A651' }}
                     >
@@ -147,14 +163,15 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
             <button
               onClick={() => {
                 payableJobs.forEach(job => {
-                  updateStatus.mutate({ id: job.id, status: 'done' })
+                  const my = getAssignment(job)
+                  if (my) markPaid.mutate({ jobCleanerId: my.id, jobId: job.id })
                 })
               }}
-              disabled={updateStatus.isPending}
+              disabled={markPaid.isPending}
               className="w-full h-[46px] rounded-[16px] text-[14px] font-bold mt-2.5 transition-all active:scale-[0.98]"
               style={{ background: '#00A651', color: '#fff' }}
             >
-              {updateStatus.isPending ? t('loading') : (t('allPaid') || 'Alles betaald')}
+              {markPaid.isPending ? t('loading') : (t('allPaid') || 'Alles betaald')}
             </button>
           )}
         </div>
@@ -208,7 +225,7 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
                     const amount = parseFloat(cashAmount)
                     if (!amount || amount <= 0) return
 
-                    // Mark oldest delivered jobs as done until amount is covered
+                    // Mark oldest delivered jobs' cleaner assignments as paid until amount is covered
                     const delivered = unpaidJobs
                       .filter(j => j.status === 'delivered')
                       .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
@@ -217,8 +234,9 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
                     for (const job of delivered) {
                       if (remaining <= 0) break
                       const my = getAssignment(job)
-                      const payout = my ? getCleanerTotalPayout(my) : 0
-                      updateStatus.mutate({ id: job.id, status: 'done' })
+                      if (!my) continue
+                      const payout = getCleanerTotalPayout(my)
+                      markPaid.mutate({ jobCleanerId: my.id, jobId: job.id })
                       remaining -= payout
                       jobsMarked++
                     }
@@ -236,7 +254,7 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
                       },
                     })
                   }}
-                  disabled={!cashAmount || parseFloat(cashAmount) <= 0 || createPayment.isPending || updateStatus.isPending}
+                  disabled={!cashAmount || parseFloat(cashAmount) <= 0 || createPayment.isPending || markPaid.isPending}
                   className="flex-1 h-[44px] rounded-[14px] text-[13px] font-bold"
                   style={{
                     background: '#FF9900',
@@ -366,7 +384,7 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
                       {dayName} · {hours}u · {my.km_driven || 0}km
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
+                  <div className="text-right shrink-0 mr-1">
                     <div className="text-[13px] font-bold tracking-[-0.3px]" style={{ color: '#00A651' }}>
                       {formatCurrency(payout)}
                     </div>
@@ -374,6 +392,17 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
                       ✓ {t('markPaid') || 'Betaald'}
                     </div>
                   </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      unmarkPaid.mutate({ jobCleanerId: my.id, jobId: job.id })
+                    }}
+                    disabled={unmarkPaid.isPending}
+                    className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95"
+                    style={{ background: '#FF3B3015' }}
+                  >
+                    <Undo2 size={16} style={{ color: '#FF3B30' }} />
+                  </button>
                 </div>
               )
             })}

@@ -94,6 +94,77 @@ export function useUpdateJobCleaner() {
   })
 }
 
+export function useMarkJobCleanerPaid() {
+  const supabase = createClient()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ jobCleanerId, jobId }: { jobCleanerId: number; jobId: number }) => {
+      // Mark this cleaner as paid
+      const { error } = await supabase
+        .from('job_cleaners')
+        .update({ paid_at: new Date().toISOString() })
+        .eq('id', jobCleanerId)
+      if (error) throw error
+
+      // Check if ALL cleaners on this job are now paid
+      const { data: allCleaners, error: fetchError } = await supabase
+        .from('job_cleaners')
+        .select('id, paid_at')
+        .eq('job_id', jobId)
+      if (fetchError) throw fetchError
+
+      const allPaid = allCleaners?.every(jc => jc.paid_at != null)
+      if (allPaid) {
+        // All cleaners paid → mark the whole job as done
+        const { error: jobError } = await supabase
+          .from('jobs')
+          .update({ status: 'done', paid_at: new Date().toISOString() })
+          .eq('id', jobId)
+        if (jobError) throw jobError
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] })
+    },
+  })
+}
+
+export function useUnmarkJobCleanerPaid() {
+  const supabase = createClient()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ jobCleanerId, jobId }: { jobCleanerId: number; jobId: number }) => {
+      // Remove paid_at from this cleaner
+      const { error } = await supabase
+        .from('job_cleaners')
+        .update({ paid_at: null })
+        .eq('id', jobCleanerId)
+      if (error) throw error
+
+      // If the job was marked as done (all cleaners were paid), revert it to delivered
+      const { data: job, error: jobFetchError } = await supabase
+        .from('jobs')
+        .select('status')
+        .eq('id', jobId)
+        .single()
+      if (jobFetchError) throw jobFetchError
+
+      if (job?.status === 'done') {
+        const { error: jobError } = await supabase
+          .from('jobs')
+          .update({ status: 'delivered', paid_at: null })
+          .eq('id', jobId)
+        if (jobError) throw jobError
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] })
+    },
+  })
+}
+
 export function useAddJobCleaner() {
   const supabase = createClient()
   const queryClient = useQueryClient()

@@ -71,6 +71,7 @@ export interface JobCleaner {
   hours_worked?: number
   km_driven?: number
   extra_costs?: number
+  paid_at?: string
   cleaner?: Pick<User, 'id' | 'name' | 'email' | 'phone' | 'avatar_url'>
 }
 
