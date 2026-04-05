@@ -225,21 +225,12 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
                     const amount = parseFloat(cashAmount)
                     if (!amount || amount <= 0) return
 
-                    // Mark oldest delivered jobs' cleaner assignments as paid until amount is covered
-                    const delivered = unpaidJobs
-                      .filter(j => j.status === 'delivered')
-                      .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
-                    let remaining = amount
-                    let jobsMarked = 0
-                    for (const job of delivered) {
-                      if (remaining <= 0) break
-                      const my = getAssignment(job)
-                      if (!my) continue
-                      const payout = getCleanerTotalPayout(my)
-                      markPaid.mutate({ jobCleanerId: my.id, jobId: job.id })
-                      remaining -= payout
-                      jobsMarked++
-                    }
+                    // Calculate current outstanding total
+                    const outstandingTotal = unpaidJobs.reduce((s, j) => {
+                      const my = getAssignment(j)
+                      return s + (my ? getCleanerTotalPayout(my) : 0)
+                    }, 0)
+                    const remainingAfter = outstandingTotal - amount
 
                     createPayment.mutate({
                       cleaner_id: cleanerId,
@@ -247,14 +238,17 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
                       note: cashNote || 'Cash betaling',
                     }, {
                       onSuccess: () => {
-                        toast.success(`Cash betaling: €${amount.toFixed(2)} — ${jobsMarked} opdracht${jobsMarked !== 1 ? 'en' : ''} betaald`)
+                        const msg = remainingAfter > 0
+                          ? `Cash betaling: €${amount.toFixed(2)} — Nog €${remainingAfter.toFixed(2)} openstaand`
+                          : `Cash betaling: €${amount.toFixed(2)}`
+                        toast.success(msg)
                         setShowCashForm(false)
                         setCashAmount('')
                         setCashNote('')
                       },
                     })
                   }}
-                  disabled={!cashAmount || parseFloat(cashAmount) <= 0 || createPayment.isPending || markPaid.isPending}
+                  disabled={!cashAmount || parseFloat(cashAmount) <= 0 || createPayment.isPending}
                   className="flex-1 h-[44px] rounded-[14px] text-[13px] font-bold"
                   style={{
                     background: '#FF9900',
