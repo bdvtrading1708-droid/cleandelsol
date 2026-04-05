@@ -99,11 +99,13 @@ export function useMarkJobCleanerPaid() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ jobCleanerId, jobId }: { jobCleanerId: number; jobId: number }) => {
+    mutationFn: async ({ jobCleanerId, jobId, paymentNote }: { jobCleanerId: number; jobId: number; paymentNote?: string }) => {
       // Mark this cleaner as paid
+      const update: Record<string, unknown> = { paid_at: new Date().toISOString() }
+      if (paymentNote) update.payment_note = paymentNote
       const { error } = await supabase
         .from('job_cleaners')
-        .update({ paid_at: new Date().toISOString() })
+        .update(update)
         .eq('id', jobCleanerId)
       if (error) throw error
 

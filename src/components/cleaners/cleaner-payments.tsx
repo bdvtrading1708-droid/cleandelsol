@@ -146,7 +146,9 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        markPaid.mutate({ jobCleanerId: my.id, jobId: job.id })
+                        const note = prompt('Notitie (optioneel, bijv. restant bedrag):')
+                        if (note === null) return // cancelled
+                        markPaid.mutate({ jobCleanerId: my.id, jobId: job.id, paymentNote: note || undefined })
                       }}
                       disabled={markPaid.isPending}
                       className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95"
@@ -377,6 +379,11 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
                     <div className="text-[10px] mt-0.5" style={{ color: 'var(--t3)' }}>
                       {dayName} · {hours}u · {my.km_driven || 0}km
                     </div>
+                    {my.payment_note && (
+                      <div className="text-[9px] mt-0.5 italic" style={{ color: '#FF9900' }}>
+                        {my.payment_note}
+                      </div>
+                    )}
                   </div>
                   <div className="text-right shrink-0 mr-1">
                     <div className="text-[13px] font-bold tracking-[-0.3px]" style={{ color: '#00A651' }}>

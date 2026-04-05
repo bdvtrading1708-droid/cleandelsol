@@ -72,6 +72,7 @@ export interface JobCleaner {
   km_driven?: number
   extra_costs?: number
   paid_at?: string
+  payment_note?: string
   cleaner?: Pick<User, 'id' | 'name' | 'email' | 'phone' | 'avatar_url'>
 }
 
