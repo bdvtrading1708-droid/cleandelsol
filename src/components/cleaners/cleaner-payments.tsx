@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { formatCurrency, getCleanerHours, getCleanerTotalPayout } from '@/lib/utils'
 import { useLocale } from '@/lib/i18n'
 import { useUpdateJobStatus, useMarkJobCleanerPaid, useUnmarkJobCleanerPaid } from '@/lib/hooks/use-jobs'
-import { useCleanerPayments, useCreateCleanerPayment } from '@/lib/hooks/use-cleaner-payments'
+import { useCleanerPayments, useCreateCleanerPayment, useDeleteCleanerPayment } from '@/lib/hooks/use-cleaner-payments'
 import { STATUS_COLORS } from '@/lib/constants'
 import { CheckCircle2, Banknote, Undo2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -24,6 +24,7 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
   const unmarkPaid = useUnmarkJobCleanerPaid()
   const { data: cashPayments = [] } = useCleanerPayments(cleanerId)
   const createPayment = useCreateCleanerPayment()
+  const deletePayment = useDeleteCleanerPayment()
   const [paidMonthFilter, setPaidMonthFilter] = useState<string>('all')
   const [showCashForm, setShowCashForm] = useState(false)
   const [cashAmount, setCashAmount] = useState('')
@@ -309,7 +310,7 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
                       {format(dateObj, 'EEEE', { locale: nl })}
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
+                  <div className="text-right shrink-0 mr-1">
                     <div className="text-[13px] font-bold tracking-[-0.3px]" style={{ color: '#FF9900' }}>
                       {formatCurrency(p.amount)}
                     </div>
@@ -317,6 +318,21 @@ export function CleanerPayments({ cleanerId, jobs }: Props) {
                       Cash
                     </div>
                   </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (confirm(`Cash betaling van €${p.amount.toFixed(2)} verwijderen?`)) {
+                        deletePayment.mutate(p.id, {
+                          onSuccess: () => toast.success(`Cash betaling van €${p.amount.toFixed(2)} verwijderd`)
+                        })
+                      }
+                    }}
+                    disabled={deletePayment.isPending}
+                    className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95"
+                    style={{ background: '#FF3B3015' }}
+                  >
+                    <Undo2 size={16} style={{ color: '#FF3B30' }} />
+                  </button>
                 </div>
               )
             })}

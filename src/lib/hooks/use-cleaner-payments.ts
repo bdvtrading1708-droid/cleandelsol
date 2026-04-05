@@ -59,3 +59,18 @@ export function useCreateCleanerPayment() {
     },
   })
 }
+
+export function useDeleteCleanerPayment() {
+  const supabase = createClient()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (paymentId: number) => {
+      const { error } = await supabase.from('cleaner_payments').delete().eq('id', paymentId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cleaner-payments'] })
+    },
+  })
+}
